@@ -6,11 +6,11 @@ import lombok.Data;
 
 @Data
 public class AddLedgerMemberRequest {
-    @NotNull
-    @Schema(example = "2")
-    private Long userId;
+  @NotNull
+  @Schema(example = "2")
+  private Long userId;
 
-    @NotNull
-    @Schema(example = "EDITOR")
-    private String role;
+  @NotNull
+  @Schema(example = "EDITOR")
+  private String role;
 }

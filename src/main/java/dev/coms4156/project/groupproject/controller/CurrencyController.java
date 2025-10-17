@@ -16,16 +16,18 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Currency APIs")
 public class CurrencyController {
 
-    private final CurrencyService currencyService;
+  private final CurrencyService currencyService;
 
-    @Autowired
-    public CurrencyController(CurrencyService currencyService) {
-        this.currencyService = currencyService;
-    }
+  @Autowired
+  public CurrencyController(CurrencyService currencyService) {
+    this.currencyService = currencyService;
+  }
 
-    @GetMapping("/currencies")
-    @Operation(summary = "Get all supported currencies", security = { @SecurityRequirement(name = "X-Auth-Token") })
-    public Result<CurrencyResponse> getAllCurrencies() {
-        return Result.ok(currencyService.getAllCurrencies());
-    }
+  @GetMapping("/currencies")
+  @Operation(
+      summary = "Get all supported currencies",
+      security = {@SecurityRequirement(name = "X-Auth-Token")})
+  public Result<CurrencyResponse> getAllCurrencies() {
+    return Result.ok(currencyService.getAllCurrencies());
+  }
 }

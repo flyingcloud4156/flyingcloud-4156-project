@@ -6,14 +6,14 @@ import lombok.Data;
 
 @Data
 public class CreateCategoryRequest {
-    @NotBlank
-    @Schema(example = "Food")
-    private String name;
+  @NotBlank
+  @Schema(example = "Food")
+  private String name;
 
-    @NotBlank
-    @Schema(example = "EXPENSE")
-    private String kind;
+  @NotBlank
+  @Schema(example = "EXPENSE")
+  private String kind;
 
-    @Schema(example = "1")
-    private Integer sortOrder = 0;
+  @Schema(example = "1")
+  private Integer sortOrder = 0;
 }

@@ -6,6 +6,6 @@ import lombok.Data;
 @Data
 @TableName("currency")
 public class Currency {
-    private String code;
-    private Integer exponent;
+  private String code;
+  private Integer exponent;
 }

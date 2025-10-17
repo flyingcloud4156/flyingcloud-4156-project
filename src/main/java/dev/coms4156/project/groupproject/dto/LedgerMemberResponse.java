@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class LedgerMemberResponse {
-    private Long ledgerId;
-    private Long userId;
-    private String role;
+  private Long ledgerId;
+  private Long userId;
+  private String role;
 }

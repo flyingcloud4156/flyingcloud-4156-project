@@ -5,6 +5,6 @@ import lombok.Data;
 /** Token pair response (opaque access + refresh). */
 @Data
 public class TokenPair {
-    private String accessToken;
-    private String refreshToken;
+  private String accessToken;
+  private String refreshToken;
 }

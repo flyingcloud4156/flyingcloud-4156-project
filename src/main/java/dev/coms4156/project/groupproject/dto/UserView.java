@@ -9,6 +9,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserView {
-    private Long id;
-    private String name;
+  private Long id;
+  private String name;
 }

@@ -5,15 +5,15 @@ import dev.coms4156.project.groupproject.dto.*;
 import dev.coms4156.project.groupproject.entity.Ledger;
 
 public interface LedgerService extends IService<Ledger> {
-    LedgerResponse createLedger(CreateLedgerRequest req);
+  LedgerResponse createLedger(CreateLedgerRequest req);
 
-    MyLedgersResponse getMyLedgers();
+  MyLedgersResponse getMyLedgers();
 
-    LedgerResponse getLedgerDetails(Long ledgerId);
+  LedgerResponse getLedgerDetails(Long ledgerId);
 
-    LedgerMemberResponse addMember(Long ledgerId, AddLedgerMemberRequest req);
+  LedgerMemberResponse addMember(Long ledgerId, AddLedgerMemberRequest req);
 
-    ListLedgerMembersResponse listMembers(Long ledgerId);
+  ListLedgerMembersResponse listMembers(Long ledgerId);
 
-    void removeMember(Long ledgerId, Long userId);
+  void removeMember(Long ledgerId, Long userId);
 }

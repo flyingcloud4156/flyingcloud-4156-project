@@ -10,25 +10,25 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class WebMvcConfig implements WebMvcConfigurer {
 
-    private final AuthInterceptor authInterceptor;
+  private final AuthInterceptor authInterceptor;
 
-    @Autowired
-    public WebMvcConfig(AuthInterceptor authInterceptor) {
-        this.authInterceptor = authInterceptor;
-    }
+  @Autowired
+  public WebMvcConfig(AuthInterceptor authInterceptor) {
+    this.authInterceptor = authInterceptor;
+  }
 
-    @Override
-    public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(authInterceptor)
-            .addPathPatterns("/api/v1/**")
-            .excludePathPatterns(
-                "/api/v1/auth/register",
-                "/api/v1/auth/login",
-                "/api/v1/auth/refresh",
-                "/v3/api-docs/**",
-                "/swagger-ui/**",
-                "/swagger-ui.html",
-                "/actuator/**"
-            );
-    }
+  @Override
+  public void addInterceptors(InterceptorRegistry registry) {
+    registry
+        .addInterceptor(authInterceptor)
+        .addPathPatterns("/api/v1/**")
+        .excludePathPatterns(
+            "/api/v1/auth/register",
+            "/api/v1/auth/login",
+            "/api/v1/auth/refresh",
+            "/v3/api-docs/**",
+            "/swagger-ui/**",
+            "/swagger-ui.html",
+            "/actuator/**");
+  }
 }

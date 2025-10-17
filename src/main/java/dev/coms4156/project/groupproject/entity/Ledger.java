@@ -3,21 +3,21 @@ package dev.coms4156.project.groupproject.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import lombok.Data;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import lombok.Data;
 
 @Data
 @TableName("ledgers")
 public class Ledger {
-    @TableId(type = IdType.AUTO)
-    private Long id;
-    private String name;
-    private Long ownerId;
-    private String ledgerType;
-    private String baseCurrency;
-    private LocalDate shareStartDate;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+  @TableId(type = IdType.AUTO)
+  private Long id;
+
+  private String name;
+  private Long ownerId;
+  private String ledgerType;
+  private String baseCurrency;
+  private LocalDate shareStartDate;
+  private LocalDateTime createdAt;
+  private LocalDateTime updatedAt;
 }

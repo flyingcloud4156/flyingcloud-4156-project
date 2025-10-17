@@ -16,50 +16,51 @@ import org.springframework.web.bind.annotation.*;
 @SecurityRequirement(name = "X-Auth-Token")
 public class LedgerController {
 
-    private final LedgerService ledgerService;
+  private final LedgerService ledgerService;
 
-    @Autowired
-    public LedgerController(LedgerService ledgerService) {
-        this.ledgerService = ledgerService;
-    }
+  @Autowired
+  public LedgerController(LedgerService ledgerService) {
+    this.ledgerService = ledgerService;
+  }
 
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Create a new ledger")
-    public Result<LedgerResponse> createLedger(@Valid @RequestBody CreateLedgerRequest req) {
-        return Result.ok(ledgerService.createLedger(req));
-    }
+  @PostMapping
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(summary = "Create a new ledger")
+  public Result<LedgerResponse> createLedger(@Valid @RequestBody CreateLedgerRequest req) {
+    return Result.ok(ledgerService.createLedger(req));
+  }
 
-    @GetMapping(":mine")
-    @Operation(summary = "Get my ledgers")
-    public Result<MyLedgersResponse> getMyLedgers() {
-        return Result.ok(ledgerService.getMyLedgers());
-    }
+  @GetMapping(":mine")
+  @Operation(summary = "Get my ledgers")
+  public Result<MyLedgersResponse> getMyLedgers() {
+    return Result.ok(ledgerService.getMyLedgers());
+  }
 
-    @GetMapping("/{ledgerId}")
-    @Operation(summary = "Get ledger details")
-    public Result<LedgerResponse> getLedgerDetails(@PathVariable Long ledgerId) {
-        return Result.ok(ledgerService.getLedgerDetails(ledgerId));
-    }
+  @GetMapping("/{ledgerId}")
+  @Operation(summary = "Get ledger details")
+  public Result<LedgerResponse> getLedgerDetails(@PathVariable Long ledgerId) {
+    return Result.ok(ledgerService.getLedgerDetails(ledgerId));
+  }
 
-    @PostMapping("/{ledgerId}/members")
-    @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Add a member to a ledger")
-    public Result<LedgerMemberResponse> addMember(@PathVariable Long ledgerId, @Valid @RequestBody AddLedgerMemberRequest req) {
-        return Result.ok(ledgerService.addMember(ledgerId, req));
-    }
+  @PostMapping("/{ledgerId}/members")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(summary = "Add a member to a ledger")
+  public Result<LedgerMemberResponse> addMember(
+      @PathVariable Long ledgerId, @Valid @RequestBody AddLedgerMemberRequest req) {
+    return Result.ok(ledgerService.addMember(ledgerId, req));
+  }
 
-    @GetMapping("/{ledgerId}/members")
-    @Operation(summary = "List ledger members")
-    public Result<ListLedgerMembersResponse> listMembers(@PathVariable Long ledgerId) {
-        return Result.ok(ledgerService.listMembers(ledgerId));
-    }
+  @GetMapping("/{ledgerId}/members")
+  @Operation(summary = "List ledger members")
+  public Result<ListLedgerMembersResponse> listMembers(@PathVariable Long ledgerId) {
+    return Result.ok(ledgerService.listMembers(ledgerId));
+  }
 
-    @DeleteMapping("/{ledgerId}/members/{userId}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    @Operation(summary = "Remove a member from a ledger")
-    public Result<Void> removeMember(@PathVariable Long ledgerId, @PathVariable Long userId) {
-        ledgerService.removeMember(ledgerId, userId);
-        return Result.ok();
-    }
+  @DeleteMapping("/{ledgerId}/members/{userId}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(summary = "Remove a member from a ledger")
+  public Result<Void> removeMember(@PathVariable Long ledgerId, @PathVariable Long userId) {
+    ledgerService.removeMember(ledgerId, userId);
+    return Result.ok();
+  }
 }

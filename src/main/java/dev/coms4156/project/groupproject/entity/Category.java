@@ -8,11 +8,12 @@ import lombok.Data;
 @Data
 @TableName("categories")
 public class Category {
-    @TableId(type = IdType.AUTO)
-    private Long id;
-    private Long ledgerId;
-    private String name;
-    private String kind;
-    private Boolean isActive;
-    private Integer sortOrder;
+  @TableId(type = IdType.AUTO)
+  private Long id;
+
+  private Long ledgerId;
+  private String name;
+  private String kind;
+  private Boolean isActive;
+  private Integer sortOrder;
 }
