@@ -277,6 +277,13 @@
 			<scope>test</scope>
 		</dependency>
 
+		<!-- Ensure Jupiter API/Engine/Params visible at test compile/run time -->
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<scope>test</scope>
+		</dependency>
+
 	</dependencies>
 
 	<!-- ===== Build plugins ===== -->
@@ -417,6 +424,16 @@
 						</goals>
 					</execution>
 				</executions>
+			</plugin>
+
+			<!-- Modern Surefire for JUnit 5; disable JPMS module path for reliable discovery -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>3.2.5</version>
+				<configuration>
+					<useModulePath>false</useModulePath>
+				</configuration>
 			</plugin>
 
 		</plugins>
