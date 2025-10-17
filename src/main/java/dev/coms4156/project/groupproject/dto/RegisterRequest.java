@@ -9,8 +9,7 @@ import lombok.Data;
 /** Registration request (email + password). */
 @Data
 public class RegisterRequest {
-    @Email @NotBlank
-    @Schema(example = "user@gmail.com")
+    @Email @NotBlank @Schema(example = "user@gmail.com")
     private String email;
 
     @NotBlank @Size(min = 1, max = 80)

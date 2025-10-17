@@ -9,8 +9,7 @@ import lombok.Data;
 /** Login with email + password. */
 @Data
 public class LoginRequest {
-    @Email @NotBlank
-    @Schema(example = "user@gmail.com")
+    @Email @NotBlank @Schema(example = "user@gmail.com")
     private String email;
 
     @NotBlank @Size(min = 6, max = 64)

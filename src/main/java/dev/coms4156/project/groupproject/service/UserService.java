@@ -5,6 +5,7 @@ import dev.coms4156.project.groupproject.dto.*;
 import dev.coms4156.project.groupproject.entity.User;
 
 public interface UserService extends IService<User> {
+    UserLookupResponse lookupUser(String email);
     void register(RegisterRequest req);
     TokenPair login(LoginRequest req);
     TokenPair refresh(String refreshToken);

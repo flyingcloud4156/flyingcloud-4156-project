@@ -10,14 +10,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/v1")
 @Tag(name = "User APIs (password only)")
-public class UserController {
+public class UserV1Controller {
 
     private final UserService userService;
 
     @Autowired
-    public UserController(UserService userService) {
+    public UserV1Controller(UserService userService) {
         this.userService = userService;
     }
 
@@ -50,6 +50,12 @@ public class UserController {
     }
 
     // ==== Users ====
+
+    @GetMapping("/users:lookup")
+    @Operation(summary = "Lookup user by email or phone", security = { @SecurityRequirement(name = "X-Auth-Token") })
+    public Result<UserLookupResponse> lookupUser(@RequestParam String email) {
+        return Result.ok(userService.lookupUser(email));
+    }
 
     @GetMapping("/users/me")
     @Operation(summary = "Get current user (id, name)", security = { @SecurityRequirement(name = "X-Auth-Token") })

@@ -30,7 +30,24 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     @Override
-    @Transactional
+    public UserLookupResponse lookupUser(String email) {
+        if (!StringUtils.hasText(email)) {
+            throw new RuntimeException("VALIDATION_FAILED");
+        }
+
+        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(User::getEmail, email);
+
+        User user = getOne(queryWrapper, false);
+
+        if (user == null) {
+            throw new RuntimeException("USER_NOT_FOUND");
+        }
+
+        return new UserLookupResponse(user.getId(), user.getName());
+    }
+
+    @Override @Transactional
     public void register(RegisterRequest req) {
         // uniqueness: email
         long cnt = count(new LambdaQueryWrapper<User>().eq(User::getEmail, req.getEmail()));
@@ -41,6 +58,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         u.setPasswordHash(PasswordUtil.hashPassword(req.getPassword()));
         u.setTimezone("America/New_York");
         u.setMainCurrency("USD");
+        u.setPhone(null);
         save(u);
     }
 
