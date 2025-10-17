@@ -8,6 +8,7 @@ import dev.coms4156.project.groupproject.service.CurrencyService;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
+/** Implementation of the CurrencyService interface. */
 @Service
 public class CurrencyServiceImpl extends ServiceImpl<CurrencyMapper, Currency>
     implements CurrencyService {

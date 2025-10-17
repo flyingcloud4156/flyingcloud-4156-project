@@ -1,6 +1,9 @@
 package dev.coms4156.project.groupproject.controller;
 
-import dev.coms4156.project.groupproject.dto.*;
+import dev.coms4156.project.groupproject.dto.CategoryResponse;
+import dev.coms4156.project.groupproject.dto.CreateCategoryRequest;
+import dev.coms4156.project.groupproject.dto.ListCategoriesResponse;
+import dev.coms4156.project.groupproject.dto.Result;
 import dev.coms4156.project.groupproject.service.CategoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -8,8 +11,16 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 
+/** Controller for category-related operations. */
 @RestController
 @RequestMapping("/api/v1/ledgers/{ledgerId}/categories")
 @Tag(name = "Category APIs")

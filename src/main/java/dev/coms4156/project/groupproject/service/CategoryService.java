@@ -6,6 +6,7 @@ import dev.coms4156.project.groupproject.dto.CreateCategoryRequest;
 import dev.coms4156.project.groupproject.dto.ListCategoriesResponse;
 import dev.coms4156.project.groupproject.entity.Category;
 
+/** Service for category-related operations. */
 public interface CategoryService extends IService<Category> {
   CategoryResponse createCategory(Long ledgerId, CreateCategoryRequest req);
 

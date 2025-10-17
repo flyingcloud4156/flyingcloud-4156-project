@@ -2,7 +2,13 @@ package dev.coms4156.project.groupproject.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import dev.coms4156.project.groupproject.dto.*;
+import dev.coms4156.project.groupproject.dto.AddLedgerMemberRequest;
+import dev.coms4156.project.groupproject.dto.CreateLedgerRequest;
+import dev.coms4156.project.groupproject.dto.LedgerMemberResponse;
+import dev.coms4156.project.groupproject.dto.LedgerResponse;
+import dev.coms4156.project.groupproject.dto.ListLedgerMembersResponse;
+import dev.coms4156.project.groupproject.dto.MyLedgersResponse;
+import dev.coms4156.project.groupproject.dto.UserView;
 import dev.coms4156.project.groupproject.entity.Ledger;
 import dev.coms4156.project.groupproject.entity.LedgerMember;
 import dev.coms4156.project.groupproject.entity.User;
@@ -18,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/** Implementation of the LedgerService interface. */
 @Service
 public class LedgerServiceImpl extends ServiceImpl<LedgerMapper, Ledger> implements LedgerService {
 
@@ -103,7 +110,8 @@ public class LedgerServiceImpl extends ServiceImpl<LedgerMapper, Ledger> impleme
     }
 
     LedgerMember member = getLedgerMember(ledgerId, currentUser.getId());
-    AuthUtils.B(member != null);
+
+    AuthUtils.checkMembership(member != null);
 
     return new LedgerResponse(
         ledger.getId(),
@@ -117,23 +125,33 @@ public class LedgerServiceImpl extends ServiceImpl<LedgerMapper, Ledger> impleme
   @Override
   @Transactional
   public LedgerMemberResponse addMember(Long ledgerId, AddLedgerMemberRequest req) {
+
     UserView currentUser = CurrentUserContext.get();
+
     if (currentUser == null) {
+
       throw new RuntimeException("AUTH_REQUIRED");
     }
 
     LedgerMember callingUserMember = getLedgerMember(ledgerId, currentUser.getId());
-    AuthUtils.A(callingUserMember, "OWNER", "ADMIN");
+
+    AuthUtils.checkRole(callingUserMember, "OWNER", "ADMIN");
 
     LedgerMember existingMember = getLedgerMember(ledgerId, req.getUserId());
+
     if (existingMember != null) {
+
       return new LedgerMemberResponse(ledgerId, req.getUserId(), existingMember.getRole());
     }
 
     LedgerMember newMember = new LedgerMember();
+
     newMember.setLedgerId(ledgerId);
+
     newMember.setUserId(req.getUserId());
+
     newMember.setRole(req.getRole());
+
     ledgerMemberMapper.insert(newMember);
 
     return new LedgerMemberResponse(ledgerId, req.getUserId(), req.getRole());
@@ -141,12 +159,15 @@ public class LedgerServiceImpl extends ServiceImpl<LedgerMapper, Ledger> impleme
 
   @Override
   public ListLedgerMembersResponse listMembers(Long ledgerId) {
+
     UserView currentUser = CurrentUserContext.get();
+
     if (currentUser == null) {
+
       throw new RuntimeException("AUTH_REQUIRED");
     }
 
-    AuthUtils.B(isMember(ledgerId, currentUser.getId()));
+    AuthUtils.checkMembership(isMember(ledgerId, currentUser.getId()));
 
     List<LedgerMember> members =
         ledgerMemberMapper.selectList(
@@ -157,6 +178,7 @@ public class LedgerServiceImpl extends ServiceImpl<LedgerMapper, Ledger> impleme
             .map(
                 m -> {
                   User user = userMapper.selectById(m.getUserId());
+
                   return new ListLedgerMembersResponse.LedgerMemberItem(
                       m.getUserId(), user.getName(), m.getRole());
                 })
@@ -168,13 +190,17 @@ public class LedgerServiceImpl extends ServiceImpl<LedgerMapper, Ledger> impleme
   @Override
   @Transactional
   public void removeMember(Long ledgerId, Long userId) {
+
     UserView currentUser = CurrentUserContext.get();
+
     if (currentUser == null) {
+
       throw new RuntimeException("AUTH_REQUIRED");
     }
 
     LedgerMember callingUserMember = getLedgerMember(ledgerId, currentUser.getId());
-    AuthUtils.A(callingUserMember, "OWNER", "ADMIN");
+
+    AuthUtils.checkRole(callingUserMember, "OWNER", "ADMIN");
 
     if (currentUser.getId().equals(userId)) {
       long ownerCount =

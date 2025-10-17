@@ -9,6 +9,11 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class MybatisPlusConfig {
 
+  /**
+   * Creates a MybatisPlusInterceptor bean.
+   *
+   * @return the MybatisPlusInterceptor bean.
+   */
   @Bean
   public MybatisPlusInterceptor mybatisPlusInterceptor() {
     MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();

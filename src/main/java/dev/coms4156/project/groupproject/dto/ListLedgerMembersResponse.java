@@ -5,12 +5,14 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/** Response for listing ledger members. */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class ListLedgerMembersResponse {
   private List<LedgerMemberItem> items;
 
+  /** Represents a single member item in the list. */
   @Data
   @NoArgsConstructor
   @AllArgsConstructor

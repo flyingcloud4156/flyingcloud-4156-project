@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import lombok.Data;
 
+/** Request to create a new ledger. */
 @Data
 public class CreateLedgerRequest {
   @NotBlank

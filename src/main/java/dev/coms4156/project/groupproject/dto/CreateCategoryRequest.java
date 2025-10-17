@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
+/** Request to create a new category. */
 @Data
 public class CreateCategoryRequest {
   @NotBlank

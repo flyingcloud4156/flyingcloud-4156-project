@@ -9,6 +9,12 @@ public final class Jsons {
 
   private Jsons() {}
 
+  /**
+   * Converts an object to a JSON string.
+   *
+   * @param o the object to convert.
+   * @return the JSON string.
+   */
   public static String toJson(Object o) {
     try {
       return MAPPER.writeValueAsString(o);
@@ -17,6 +23,14 @@ public final class Jsons {
     }
   }
 
+  /**
+   * Converts a JSON string to an object.
+   *
+   * @param s the JSON string.
+   * @param type the type of the object.
+   * @param <T> the type of the object.
+   * @return the object.
+   */
   public static <T> T fromJson(String s, Class<T> type) {
     try {
       return MAPPER.readValue(s, type);

@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+/** Implementation of the CategoryService interface. */
 @Service
 public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category>
     implements CategoryService {
@@ -37,7 +38,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category>
     }
 
     LedgerMember member = getLedgerMember(ledgerId, currentUser.getId());
-    AuthUtils.A(member, "OWNER", "ADMIN", "EDITOR");
+    AuthUtils.checkRole(member, "OWNER", "ADMIN", "EDITOR");
 
     long count =
         count(
@@ -66,7 +67,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category>
       throw new RuntimeException("AUTH_REQUIRED");
     }
 
-    AuthUtils.B(isMember(ledgerId, currentUser.getId()));
+    AuthUtils.checkMembership(isMember(ledgerId, currentUser.getId()));
 
     LambdaQueryWrapper<Category> queryWrapper =
         new LambdaQueryWrapper<Category>().eq(Category::getLedgerId, ledgerId);

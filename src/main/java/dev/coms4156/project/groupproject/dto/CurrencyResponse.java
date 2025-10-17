@@ -5,12 +5,14 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/** Response for listing supported currencies. */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class CurrencyResponse {
   private List<CurrencyItem> items;
 
+  /** Represents a single currency item. */
   @Data
   @NoArgsConstructor
   @AllArgsConstructor

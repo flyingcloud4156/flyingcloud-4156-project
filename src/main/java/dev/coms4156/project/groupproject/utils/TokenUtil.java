@@ -14,6 +14,11 @@ public final class TokenUtil {
     return UUID.randomUUID().toString().replace("-", "").substring(0, 12);
   }
 
+  /**
+   * Generates a random token.
+   *
+   * @return a random token.
+   */
   public static String randomToken() {
     byte[] b = new byte[32];
     RAND.nextBytes(b);

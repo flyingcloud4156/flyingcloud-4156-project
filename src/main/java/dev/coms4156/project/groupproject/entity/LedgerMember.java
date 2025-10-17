@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import java.time.LocalDateTime;
 import lombok.Data;
 
+/** Represents a ledger member. */
 @Data
 @TableName("ledger_members")
 public class LedgerMember {

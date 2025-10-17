@@ -7,6 +7,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import lombok.Data;
 
+/** Represents a ledger. */
 @Data
 @TableName("ledgers")
 public class Ledger {

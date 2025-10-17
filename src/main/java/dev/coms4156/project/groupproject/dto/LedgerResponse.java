@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/** Response for ledger-related operations. */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

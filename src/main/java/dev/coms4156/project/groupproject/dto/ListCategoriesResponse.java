@@ -5,12 +5,14 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/** Response for listing categories. */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class ListCategoriesResponse {
   private List<CategoryItem> items;
 
+  /** Represents a single category item. */
   @Data
   @NoArgsConstructor
   @AllArgsConstructor
