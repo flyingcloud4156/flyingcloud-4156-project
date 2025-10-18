@@ -17,4 +17,12 @@ public class ChangePasswordRequest {
   @Size(min = 6, max = 64)
   @Schema(example = "S3cure!1")
   private String newPassword;
+
+  @Override
+  public String toString() {
+    return "ChangePasswordRequest{"
+        + "oldPassword=\'[MASKED]\'"
+        + ", newPassword=\'[MASKED]\'"
+        + '}';
+  }
 }

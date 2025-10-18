@@ -1,6 +1,12 @@
 package dev.coms4156.project.groupproject.utils;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import dev.coms4156.project.groupproject.testbase.TestDataFixture;
 import java.util.List;
@@ -57,7 +63,9 @@ class PasswordUtilTest {
           "simple123",
           "VERYLONGPASSWORD123!@#",
           "a1!",
-          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA1!"
+          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+          "A1!"
         })
     @DisplayName("Should hash various valid passwords successfully")
     void shouldHashVariousPasswords_WhenValidPasswordsProvided(String validPassword) {
@@ -324,7 +332,7 @@ class PasswordUtilTest {
       // Act - Measure time for correct and incorrect passwords
       long startTime = System.nanoTime();
       boolean correctResult = PasswordUtil.verifyPassword(password, hashedPassword);
-      long correctTime = System.nanoTime() - startTime;
+      final long correctTime = System.nanoTime() - startTime;
 
       startTime = System.nanoTime();
       boolean incorrectResult = PasswordUtil.verifyPassword("WrongPassword", hashedPassword);

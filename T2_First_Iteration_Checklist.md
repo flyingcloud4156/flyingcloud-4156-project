@@ -272,6 +272,33 @@
 
 ---
 
+8. Logging (per rubric: part of API Testing section)
+- [ ] Implement logging for all API entry points.
+   Each external API entrypoint must produce logs when called.
+- [ ] Ensure logs record each call correctly.
+   Logs should clearly indicate which API entrypoint was called, by whom (if applicable), and with what parameters or results.
+- [ ] Verify logging through API tests.
+   API tests must check that calls to all entrypoints are correctly logged.
+- [ ] Include both persistent data and multi-client scenarios in logging tests.
+   API tests should demonstrate that:
+- [ ] Logging works when the service writes and later reads persistent data.
+- [ ] Logging still works correctly when API calls come from multiple (faked) clients.
+- [ ] Use an API testing tool (e.g., Postman, pytest, REST-assured, etc.) to automate and verify these behaviors.
+- [ ] Provide evidence (e.g., captured log files, console output, or CI logs) showing that logging verification tests passed.
+
+Evidence to include :
+- [ ] Log output or files showing calls to all entrypoints were logged.
+- [ ] API test scripts verifying correct logging behavior.
+- [ ] Test results or CI artifacts demonstrating logging verification success.
+
+⸻
+
+✅ This checklist exactly corresponds to the following rubric items (no more, no less):
+- [ ] “3 points: Did they test that their service correctly logged calls to all entrypoints?”
+- [ ] “3 points: Did they test functionality that writes and then reads persistent data?”
+- [ ] “3 points: Did they test multi-client calls?”
+- [ ] “3 points: Did they use an API testing tool?”
+
 ### Optional (Nice‑to‑Have for Iteration 1, Required in Iteration 2)
 - [ ] **Static analysis bug finder** configured (e.g., Sonar, CodeQL, FindBugs/SpotBugs).
 - [ ] **Continuous Integration** with test + style + coverage gates.

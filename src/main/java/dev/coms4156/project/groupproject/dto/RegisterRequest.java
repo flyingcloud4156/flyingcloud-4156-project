@@ -23,4 +23,17 @@ public class RegisterRequest {
   @Size(min = 6, max = 64)
   @Schema(example = "S3cure!1")
   private String password;
+
+  @Override
+  public String toString() {
+    return "RegisterRequest{"
+        + "email='"
+        + email
+        + '\''
+        + ", name='"
+        + name
+        + '\''
+        + ", password=\'[MASKED]\'"
+        + '}';
+  }
 }

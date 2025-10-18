@@ -73,7 +73,7 @@ public final class TestDataFixture {
    * @return list of User entities for comprehensive testing
    */
   public static List<dev.coms4156.project.groupproject.entity.User> createTestUsers() {
-    List<dev.coms4156.project.groupproject.entity.User> users = new ArrayList<>();
+    final List<dev.coms4156.project.groupproject.entity.User> users = new ArrayList<>();
 
     // Standard user
     dev.coms4156.project.groupproject.entity.User user1 = TestDataBuilder.createTestUser();
@@ -110,7 +110,7 @@ public final class TestDataFixture {
    * @return list of Ledger entities for comprehensive testing
    */
   public static List<dev.coms4156.project.groupproject.entity.Ledger> createTestLedgers() {
-    List<dev.coms4156.project.groupproject.entity.Ledger> ledgers = new ArrayList<>();
+    final List<dev.coms4156.project.groupproject.entity.Ledger> ledgers = new ArrayList<>();
 
     // Standard group balance ledger
     dev.coms4156.project.groupproject.entity.Ledger ledger1 = TestDataBuilder.createTestLedger();
