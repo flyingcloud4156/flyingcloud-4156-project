@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dev.coms4156.project.groupproject.mapper.TransactionMapper">
+
+  <!-- Find transactions by ledger with filtering -->
+  <select id="findTransactionsByLedger" resultType="dev.coms4156.project.groupproject.entity.Transaction">
+    SELECT t.*
+    FROM transactions t
+    WHERE t.ledger_id = #{ledgerId}
+      AND t.txn_at >= COALESCE(#{fromDate}, '1900-01-01')
+      AND t.txn_at &lt; COALESCE(#{toDate}, '2100-01-01')
+      AND (#{type} IS NULL OR t.type = #{type})
+      AND (#{createdBy} IS NULL OR t.created_by = #{createdBy})
+      AND (#{categoryId} IS NULL OR t.category_id = #{categoryId})
+      AND (
+        t.is_private = false 
+        OR t.created_by = #{currentUserId}
+        OR EXISTS (
+          SELECT 1 FROM ledger_members lm 
+          WHERE lm.ledger_id = t.ledger_id 
+            AND lm.user_id = #{currentUserId} 
+            AND lm.role IN ('OWNER', 'ADMIN')
+        )
+      )
+      AND (
+        SELECT l.share_start_date FROM ledgers l WHERE l.id = t.ledger_id
+      ) IS NULL
+      OR t.txn_at >= (
+        SELECT l.share_start_date FROM ledgers l WHERE l.id = t.ledger_id
+      )
+      OR EXISTS (
+        SELECT 1 FROM ledger_members lm 
+        WHERE lm.ledger_id = t.ledger_id 
+          AND lm.user_id = #{currentUserId} 
+          AND lm.role IN ('OWNER', 'ADMIN')
+      )
+    ORDER BY t.txn_at DESC, t.id DESC
+  </select>
+
+  <!-- Find transaction by ID with visibility check -->
+  <select id="findTransactionByIdWithVisibility" resultType="dev.coms4156.project.groupproject.entity.Transaction">
+    SELECT t.*
+    FROM transactions t
+    WHERE t.id = #{transactionId}
+      AND (
+        t.is_private = false 
+        OR t.created_by = #{currentUserId}
+        OR EXISTS (
+          SELECT 1 FROM ledger_members lm 
+          WHERE lm.ledger_id = t.ledger_id 
+            AND lm.user_id = #{currentUserId} 
+            AND lm.role IN ('OWNER', 'ADMIN')
+        )
+      )
+      AND (
+        (SELECT l.share_start_date FROM ledgers l WHERE l.id = t.ledger_id) IS NULL
+        OR t.txn_at >= (SELECT l.share_start_date FROM ledgers l WHERE l.id = t.ledger_id)
+        OR EXISTS (
+          SELECT 1 FROM ledger_members lm 
+          WHERE lm.ledger_id = t.ledger_id 
+            AND lm.user_id = #{currentUserId} 
+            AND lm.role IN ('OWNER', 'ADMIN')
+        )
+      )
+  </select>
+
+</mapper>

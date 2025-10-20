@@ -108,4 +108,41 @@ public final class TestDataBuilder {
     ledger.setLedgerType("INVALID_TYPE");
     return ledger;
   }
+
+  /**
+   * Creates a test transaction with valid data.
+   *
+   * @return a Transaction entity with test data
+   */
+  public static dev.coms4156.project.groupproject.entity.Transaction createTestTransaction() {
+    dev.coms4156.project.groupproject.entity.Transaction transaction =
+        new dev.coms4156.project.groupproject.entity.Transaction();
+    transaction.setId(1L);
+    transaction.setLedgerId(1L);
+    transaction.setCreatedBy(1L);
+    transaction.setTxnAt(LocalDateTime.now(ZoneOffset.UTC));
+    transaction.setType("EXPENSE");
+    transaction.setAmountTotal(new java.math.BigDecimal("100.00"));
+    transaction.setCurrency("USD");
+    transaction.setNote("Test transaction");
+    transaction.setPayerId(1L);
+    transaction.setIsPrivate(false);
+    transaction.setRoundingStrategy("ROUND_HALF_UP");
+    transaction.setTailAllocation("PAYER");
+    transaction.setCreatedAt(LocalDateTime.now(ZoneOffset.UTC));
+    transaction.setUpdatedAt(LocalDateTime.now(ZoneOffset.UTC));
+    return transaction;
+  }
+
+  /**
+   * Creates a test transaction with null ID (for creation tests).
+   *
+   * @return a Transaction entity without ID for creation scenarios
+   */
+  public static dev.coms4156.project.groupproject.entity.Transaction
+      createTestTransactionForCreation() {
+    dev.coms4156.project.groupproject.entity.Transaction transaction = createTestTransaction();
+    transaction.setId(null);
+    return transaction;
+  }
 }
