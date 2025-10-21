@@ -37,6 +37,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -295,12 +297,18 @@ class LedgerServiceImplTest {
       otherUserMember.setRole("EDITOR");
     }
 
-    @Test
-    @DisplayName("addMember() should succeed when current user is OWNER")
-    void addMember_OwnerAddsMember_Success() {
+    @ParameterizedTest
+    @ValueSource(strings = {"OWNER", "ADMIN"})
+    @DisplayName("addMember() should succeed when current user is OWNER/ADMIN")
+    void addMember_ByRole_Success(String callerRole) {
       // Arrange
+      LedgerMember caller = new LedgerMember();
+      caller.setLedgerId(testLedger.getId());
+      caller.setUserId(testUser.getId());
+      caller.setRole(callerRole);
+
       when(ledgerMemberMapper.selectOne(any(LambdaQueryWrapper.class)))
-          .thenReturn(testOwnerMember) // First call: for callingUserMember
+          .thenReturn(caller) // First call: for callingUserMember
           .thenReturn(null); // Second call: for existingMember (new member)
       when(ledgerMemberMapper.insert(any(LedgerMember.class))).thenReturn(1);
 
@@ -311,32 +319,7 @@ class LedgerServiceImplTest {
       assertNotNull(response);
       assertEquals(testLedger.getId(), response.getLedgerId());
       assertEquals(otherUser.getId(), response.getUserId());
-      assertEquals(addMemberRequest.getRole(), response.getRole()); // Assert against requested role
-      verify(ledgerMemberMapper, times(1)).insert(any(LedgerMember.class));
-    }
-
-    @Test
-    @DisplayName("addMember() should succeed when current user is ADMIN")
-    void addMember_AdminAddsMember_Success() {
-      // Arrange
-      LedgerMember adminMember = new LedgerMember();
-      adminMember.setLedgerId(testLedger.getId());
-      adminMember.setUserId(testUser.getId());
-      adminMember.setRole("ADMIN");
-
-      when(ledgerMemberMapper.selectOne(any(LambdaQueryWrapper.class)))
-          .thenReturn(adminMember) // First call: for callingUserMember
-          .thenReturn(null); // Second call: for existingMember (new member)
-      when(ledgerMemberMapper.insert(any(LedgerMember.class))).thenReturn(1);
-
-      // Act
-      LedgerMemberResponse response = ledgerService.addMember(testLedger.getId(), addMemberRequest);
-
-      // Assert
-      assertNotNull(response);
-      assertEquals(testLedger.getId(), response.getLedgerId());
-      assertEquals(otherUser.getId(), response.getUserId());
-      assertEquals(addMemberRequest.getRole(), response.getRole()); // Assert against requested role
+      assertEquals(addMemberRequest.getRole(), response.getRole());
       verify(ledgerMemberMapper, times(1)).insert(any(LedgerMember.class));
     }
 
@@ -482,33 +465,18 @@ class LedgerServiceImplTest {
       otherUserMember.setRole("EDITOR");
     }
 
-    @Test
-    @DisplayName("removeMember() should succeed when current user is OWNER")
-    void removeMember_OwnerRemovesMember_Success() {
+    @ParameterizedTest
+    @ValueSource(strings = {"OWNER", "ADMIN"})
+    @DisplayName("removeMember() should succeed when current user is OWNER/ADMIN")
+    void removeMember_ByRole_Success(String callerRole) {
       // Arrange
-      when(ledgerMemberMapper.selectOne(any(LambdaQueryWrapper.class)))
-          .thenReturn(testOwnerMember) // Current user is OWNER
-          .thenReturn(otherUserMember); // Other user is present
-      when(ledgerMemberMapper.delete(any(LambdaQueryWrapper.class))).thenReturn(1);
-
-      // Act
-      ledgerService.removeMember(testLedger.getId(), otherUser.getId());
-
-      // Assert
-      verify(ledgerMemberMapper, times(1)).delete(any(LambdaQueryWrapper.class));
-    }
-
-    @Test
-    @DisplayName("removeMember() should succeed when current user is ADMIN")
-    void removeMember_AdminRemovesMember_Success() {
-      // Arrange
-      LedgerMember adminMember = new LedgerMember();
-      adminMember.setLedgerId(testLedger.getId());
-      adminMember.setUserId(testUser.getId());
-      adminMember.setRole("ADMIN");
+      LedgerMember caller = new LedgerMember();
+      caller.setLedgerId(testLedger.getId());
+      caller.setUserId(testUser.getId());
+      caller.setRole(callerRole);
 
       when(ledgerMemberMapper.selectOne(any(LambdaQueryWrapper.class)))
-          .thenReturn(adminMember) // Current user is ADMIN
+          .thenReturn(caller) // Current user is OWNER/ADMIN
           .thenReturn(otherUserMember); // Other user is present
       when(ledgerMemberMapper.delete(any(LambdaQueryWrapper.class))).thenReturn(1);
 

@@ -145,4 +145,135 @@ public final class TestDataBuilder {
     transaction.setId(null);
     return transaction;
   }
+
+  /**
+   * Creates a test category with valid data.
+   *
+   * @return a Category entity with test data
+   */
+  public static dev.coms4156.project.groupproject.entity.Category createTestCategory() {
+    dev.coms4156.project.groupproject.entity.Category category =
+        new dev.coms4156.project.groupproject.entity.Category();
+    category.setId(1L);
+    category.setLedgerId(1L);
+    category.setName("Food");
+    category.setKind("EXPENSE");
+    category.setIsActive(true);
+    category.setSortOrder(1);
+    return category;
+  }
+
+  /**
+   * Creates a test category with null ID (for creation tests).
+   *
+   * @return a Category entity without ID for creation scenarios
+   */
+  public static dev.coms4156.project.groupproject.entity.Category createTestCategoryForCreation() {
+    dev.coms4156.project.groupproject.entity.Category category = createTestCategory();
+    category.setId(null);
+    return category;
+  }
+
+  /**
+   * Creates a test category with inactive status.
+   *
+   * @return a Category entity with inactive status
+   */
+  public static dev.coms4156.project.groupproject.entity.Category createTestInactiveCategory() {
+    dev.coms4156.project.groupproject.entity.Category category = createTestCategory();
+    category.setIsActive(false);
+    return category;
+  }
+
+  /**
+   * Creates a test category with invalid kind (for validation tests).
+   *
+   * @return a Category entity with invalid kind
+   */
+  public static dev.coms4156.project.groupproject.entity.Category
+      createTestCategoryWithInvalidKind() {
+    dev.coms4156.project.groupproject.entity.Category category = createTestCategory();
+    category.setKind("INVALID_KIND");
+    return category;
+  }
+
+  /**
+   * Creates a test category with empty name (for validation tests).
+   *
+   * @return a Category entity with empty name
+   */
+  public static dev.coms4156.project.groupproject.entity.Category
+      createTestCategoryWithEmptyName() {
+    dev.coms4156.project.groupproject.entity.Category category = createTestCategory();
+    category.setName("");
+    return category;
+  }
+
+  /**
+   * Creates a test ledger member with valid data.
+   *
+   * @return a LedgerMember entity with test data
+   */
+  public static dev.coms4156.project.groupproject.entity.LedgerMember createTestLedgerMember() {
+    dev.coms4156.project.groupproject.entity.LedgerMember member =
+        new dev.coms4156.project.groupproject.entity.LedgerMember();
+    member.setLedgerId(1L);
+    member.setUserId(1L);
+    member.setRole("OWNER");
+    return member;
+  }
+
+  /**
+   * Creates a test ledger member with specific role.
+   *
+   * @param role the role for the member
+   * @return a LedgerMember entity with specified role
+   */
+  public static dev.coms4156.project.groupproject.entity.LedgerMember createTestLedgerMember(
+      String role) {
+    dev.coms4156.project.groupproject.entity.LedgerMember member = createTestLedgerMember();
+    member.setRole(role);
+    return member;
+  }
+
+  /**
+   * Creates a test user view for authentication context.
+   *
+   * @return a UserView with test data
+   */
+  public static dev.coms4156.project.groupproject.dto.UserView createTestUserView() {
+    dev.coms4156.project.groupproject.dto.UserView userView =
+        new dev.coms4156.project.groupproject.dto.UserView();
+    userView.setId(1L);
+    userView.setName("Test User");
+    return userView;
+  }
+
+  /**
+   * Creates a test create category request.
+   *
+   * @return a CreateCategoryRequest with test data
+   */
+  public static dev.coms4156.project.groupproject.dto.CreateCategoryRequest
+      createTestCreateCategoryRequest() {
+    dev.coms4156.project.groupproject.dto.CreateCategoryRequest request =
+        new dev.coms4156.project.groupproject.dto.CreateCategoryRequest();
+    request.setName("Food");
+    request.setKind("EXPENSE");
+    request.setSortOrder(1);
+    return request;
+  }
+
+  /**
+   * Creates a test create category request with empty name (for validation tests).
+   *
+   * @return a CreateCategoryRequest with empty name
+   */
+  public static dev.coms4156.project.groupproject.dto.CreateCategoryRequest
+      createTestCreateCategoryRequestWithEmptyName() {
+    dev.coms4156.project.groupproject.dto.CreateCategoryRequest request =
+        createTestCreateCategoryRequest();
+    request.setName("");
+    return request;
+  }
 }
