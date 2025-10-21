@@ -262,6 +262,119 @@ class TransactionServiceImplTest {
     }
 
     @Test
+    @DisplayName("should create an EXPENSE transaction with PERCENT split successfully")
+    void createTransaction_shouldCreateExpenseWithPercentSplit() {
+      // Arrange
+      when(ledgerMapper.selectById(1L)).thenReturn(testLedger);
+      when(ledgerMemberMapper.selectOne(any())).thenReturn(new LedgerMember());
+      when(currencyMapper.selectById("USD")).thenReturn(testCurrency);
+
+      CreateTransactionRequest request = new CreateTransactionRequest();
+      request.setType("EXPENSE");
+      request.setCurrency("USD");
+      request.setAmountTotal(new BigDecimal("120.00"));
+      request.setPayerId(1L);
+      request.setTxnAt(LocalDateTime.now());
+
+      SplitItem split1 = new SplitItem();
+      split1.setUserId(1L);
+      split1.setSplitMethod("PERCENT");
+      split1.setShareValue(new BigDecimal("50")); // 50%
+
+      SplitItem split2 = new SplitItem();
+      split2.setUserId(2L);
+      split2.setSplitMethod("PERCENT");
+      split2.setShareValue(new BigDecimal("50")); // 50%
+
+      request.setSplits(Arrays.asList(split1, split2));
+
+      ArgumentCaptor<List<TransactionSplit>> splitsCaptor = ArgumentCaptor.forClass(List.class);
+
+      // Act
+      transactionService.createTransaction(1L, request);
+
+      // Assert
+      verify(transactionSplitMapper).insertBatch(splitsCaptor.capture());
+      List<TransactionSplit> capturedSplits = splitsCaptor.getValue();
+      assertEquals(2, capturedSplits.size());
+      assertEquals(0, new BigDecimal("60.00").compareTo(capturedSplits.get(0).getComputedAmount()));
+      assertEquals(0, new BigDecimal("60.00").compareTo(capturedSplits.get(1).getComputedAmount()));
+    }
+
+    @Test
+    @DisplayName("should create an EXPENSE transaction with EXACT split successfully")
+    void createTransaction_shouldCreateExpenseWithExactSplit() {
+      // Arrange
+      when(ledgerMapper.selectById(1L)).thenReturn(testLedger);
+      when(ledgerMemberMapper.selectOne(any())).thenReturn(new LedgerMember());
+      when(currencyMapper.selectById("USD")).thenReturn(testCurrency);
+
+      CreateTransactionRequest request = new CreateTransactionRequest();
+      request.setType("EXPENSE");
+      request.setCurrency("USD");
+      request.setAmountTotal(new BigDecimal("100.00"));
+      request.setPayerId(1L);
+      request.setTxnAt(LocalDateTime.now());
+
+      SplitItem split1 = new SplitItem();
+      split1.setUserId(1L);
+      split1.setSplitMethod("EXACT");
+      split1.setShareValue(new BigDecimal("70.50"));
+
+      SplitItem split2 = new SplitItem();
+      split2.setUserId(2L);
+      split2.setSplitMethod("EXACT");
+      split2.setShareValue(new BigDecimal("29.50"));
+
+      request.setSplits(Arrays.asList(split1, split2));
+
+      ArgumentCaptor<List<TransactionSplit>> splitsCaptor = ArgumentCaptor.forClass(List.class);
+
+      // Act
+      transactionService.createTransaction(1L, request);
+
+      // Assert
+      verify(transactionSplitMapper).insertBatch(splitsCaptor.capture());
+      List<TransactionSplit> capturedSplits = splitsCaptor.getValue();
+      assertEquals(2, capturedSplits.size());
+      assertEquals(0, new BigDecimal("70.50").compareTo(capturedSplits.get(0).getComputedAmount()));
+      assertEquals(0, new BigDecimal("29.50").compareTo(capturedSplits.get(1).getComputedAmount()));
+    }
+
+    @Test
+    @DisplayName("should throw exception for EXACT split if amounts do not sum to total")
+    void createTransaction_shouldThrowException_forInvalidExactSplit() {
+      // Arrange
+      when(ledgerMapper.selectById(1L)).thenReturn(testLedger);
+      when(ledgerMemberMapper.selectOne(any())).thenReturn(new LedgerMember());
+
+      CreateTransactionRequest request = new CreateTransactionRequest();
+      request.setType("EXPENSE");
+      request.setCurrency("USD");
+      request.setAmountTotal(new BigDecimal("100.00"));
+      request.setPayerId(1L);
+      request.setTxnAt(LocalDateTime.now());
+
+      SplitItem split1 = new SplitItem();
+      split1.setUserId(1L);
+      split1.setSplitMethod("EXACT");
+      split1.setShareValue(new BigDecimal("70.00"));
+
+      SplitItem split2 = new SplitItem();
+      split2.setUserId(2L);
+      split2.setSplitMethod("EXACT");
+      split2.setShareValue(new BigDecimal("20.00")); // Does not sum to 100
+
+      request.setSplits(Arrays.asList(split1, split2));
+
+      // Act & Assert
+      RuntimeException exception =
+          assertThrows(
+              RuntimeException.class, () -> transactionService.createTransaction(1L, request));
+      assertEquals("EXACT splits must sum to total amount", exception.getMessage());
+    }
+
+    @Test
     @DisplayName("should throw exception for EXPENSE if splits are empty")
     void createTransaction_shouldThrowException_forExpenseWithEmptySplits() {
       // Arrange
@@ -280,6 +393,80 @@ class TransactionServiceImplTest {
           assertThrows(
               RuntimeException.class, () -> transactionService.createTransaction(1L, request));
       assertEquals("Splits required for EXPENSE/INCOME type", exception.getMessage());
+    }
+
+    @Test
+    @DisplayName("should create an EXPENSE transaction with WEIGHT split successfully")
+    void createTransaction_shouldCreateExpenseWithWeightSplit() {
+      // Arrange
+      when(ledgerMapper.selectById(1L)).thenReturn(testLedger);
+      when(ledgerMemberMapper.selectOne(any())).thenReturn(new LedgerMember());
+      when(currencyMapper.selectById("USD")).thenReturn(testCurrency);
+
+      CreateTransactionRequest request = new CreateTransactionRequest();
+      request.setType("EXPENSE");
+      request.setCurrency("USD");
+      request.setAmountTotal(new BigDecimal("100.00"));
+      request.setPayerId(1L);
+      request.setTxnAt(LocalDateTime.now());
+
+      // Total weight is 1 + 3 = 4
+      SplitItem split1 = new SplitItem();
+      split1.setUserId(1L);
+      split1.setSplitMethod("WEIGHT");
+      split1.setShareValue(new BigDecimal("1")); // 1/4 -> $25
+
+      SplitItem split2 = new SplitItem();
+      split2.setUserId(2L);
+      split2.setSplitMethod("WEIGHT");
+      split2.setShareValue(new BigDecimal("3")); // 3/4 -> $75
+
+      request.setSplits(Arrays.asList(split1, split2));
+
+      ArgumentCaptor<List<TransactionSplit>> splitsCaptor = ArgumentCaptor.forClass(List.class);
+
+      // Act
+      transactionService.createTransaction(1L, request);
+
+      // Assert
+      verify(transactionSplitMapper).insertBatch(splitsCaptor.capture());
+      List<TransactionSplit> capturedSplits = splitsCaptor.getValue();
+      assertEquals(2, capturedSplits.size());
+      assertEquals(0, new BigDecimal("25.00").compareTo(capturedSplits.get(0).getComputedAmount()));
+      assertEquals(0, new BigDecimal("75.00").compareTo(capturedSplits.get(1).getComputedAmount()));
+    }
+
+    @Test
+    @DisplayName("should throw exception for PERCENT split if percentages do not sum to 100")
+    void createTransaction_shouldThrowException_forInvalidPercentSplit() {
+      // Arrange
+      when(ledgerMapper.selectById(1L)).thenReturn(testLedger);
+      when(ledgerMemberMapper.selectOne(any())).thenReturn(new LedgerMember());
+
+      CreateTransactionRequest request = new CreateTransactionRequest();
+      request.setType("EXPENSE");
+      request.setCurrency("USD");
+      request.setAmountTotal(new BigDecimal("100.00"));
+      request.setPayerId(1L);
+      request.setTxnAt(LocalDateTime.now());
+
+      SplitItem split1 = new SplitItem();
+      split1.setUserId(1L);
+      split1.setSplitMethod("PERCENT");
+      split1.setShareValue(new BigDecimal("40"));
+
+      SplitItem split2 = new SplitItem();
+      split2.setUserId(2L);
+      split2.setSplitMethod("PERCENT");
+      split2.setShareValue(new BigDecimal("50")); // Sums to 90, not 100
+
+      request.setSplits(Arrays.asList(split1, split2));
+
+      // Act & Assert
+      RuntimeException exception =
+          assertThrows(
+              RuntimeException.class, () -> transactionService.createTransaction(1L, request));
+      assertEquals("PERCENT splits must sum to 100", exception.getMessage());
     }
   }
 
