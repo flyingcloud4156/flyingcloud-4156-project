@@ -18,6 +18,7 @@ After you download on your local machine, you can open IntelliJ IDEA to clone th
 2. After cloning the repo, you can build the project with Maven using the following command.
    <code>mvn clean install</code>
 3. Then you can run the project using the command.
+
    <code>mvn compile</code>
    
    <code>mvn spring-boot:run</code>
@@ -208,8 +209,8 @@ This section describes the endpoints provided by this project, along with their 
 - Testing framework: JUnit. 
 - Mocking framework: Mockito. 
 - Configuration files: pom.xml(Main confiduration), Mockito to enable inline mocking (src/test/resources/mockito-extensions/org.mockito.plugins.MockMaker).
-The testing and mocking frameworks are configured via Maven dependencies defined in pom.xml. No additional manual setup is required — Maven automatically downloads and integrates JUnit and Mockito during the build process.
 
+The testing and mocking frameworks are configured via Maven dependencies defined in pom.xml. No additional manual setup is required — Maven automatically downloads and integrates JUnit and Mockito during the build process.
 Our unit tests are located under the directory 'src/test'. You can choose any of the classes present in the src/test directory and click run to see the results.
 
 
@@ -229,6 +230,17 @@ We used the tool "checkstyle" ...to check the style of our code and generate sty
 ## Static Code Analysis
 
 ## Tool Used
+* Checkstyle
+  * We use Checkstyle for code reporting. Note that Checkstyle does NOT get run as part of the CI pipeline.
+  * For running Checkstyle manually, you can use the "Checkstyle-IDEA" plugin for IntelliJ.
+* PMD
+  * We are using PMD to do static analysis of our Java code.
+  * Originally we were planning on using SonarQube, however we did not do this as it requires us to either pay or setup a server to host a SonarQube instance.
+* JUnit
+  * JUnit tests get run automatically as part of the CI pipeline.
+* JaCoCo
+  * We use JaCoCo for generating code coverage reports.
+  * Originally we were planning on using Cobertura, however Cobertura does not support our version of Java.
 
 
 
