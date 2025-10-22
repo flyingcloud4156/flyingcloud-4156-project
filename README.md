@@ -243,5 +243,8 @@ We used the tool "checkstyle" ...to check the style of our code and generate sty
   * We use JaCoCo for generating code coverage reports.
   * Originally we were planning on using Cobertura, however Cobertura does not support our version of Java.
 
+## AI Documentation(待修改)
+* Prompt: Please generate automated API tests for several APIs defined in my project’s Java controller files, such as AuthController, LedgerController, and TransactionController. I would like to perform these tests using Bash, so please write a complete Bash script. The script should automatically reset and import the MySQL database by executing the schema and seed SQL files, use curl to send HTTP requests, and employ jq to parse JSON responses. It needs to extract key fields such as tokens and IDs, stop execution when an API call fails, and display clear success and failure messages in the output. Each test section should also include a descriptive title and separator lines for readability.
+
 
 
