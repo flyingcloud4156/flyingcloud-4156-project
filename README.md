@@ -23,15 +23,27 @@ After you download on your local machine, you can open IntelliJ IDEA to clone th
    <code>mvn spring-boot:run</code>
    
 ## Running a Cloud Based Instance
+You can reach our service through cloud.
 
-## Testing Instructions
+## Endpoints of First Iteration
 
-## Endpoints
 
-## Testing
-Our testing framework is JUnit. Our mocking framework is Mockito. Configuration files is pom.xml
-配置方法和配置文件路径
-各工具对应的说明文档或报告所在路径
+## Unit Testing
+- Testing framework: JUnit. 
+- Mocking framework: Mockito. 
+- Configuration files: pom.xml(Main confiduration), Mockito to enable inline mocking (src/test/resources/mockito-extensions/org.mockito.plugins.MockMaker).
+The testing and mocking frameworks are configured via Maven dependencies defined in pom.xml. No additional manual setup is required — Maven automatically downloads and integrates JUnit and Mockito during the build process.
+
+Our unit tests are located under the directory 'src/test'. You can choose any of the classes present in the src/test directory and click run to see the results.
+
+
+## API Testing
+We use automated Bash scripts for API-level testing to validate the service endpoints and ensure consistent behavior across multiple clients.
+Bash Script File: [final_api_tests_fixed.sh]()
+Result and Report File: [api_test_results.md]()
+To run the full automated API test suite:
+
+<code>bash final_api_tests_fixed.sh</code>
 
 ## Style Check Report
 We used the tool "checkstyle" ...to check the style of our code and generate style checking. ruleset.
@@ -41,3 +53,4 @@ We used the tool "checkstyle" ...to check the style of our code and generate sty
 ## Static Code Analysis
 
 ## Tool Used
+
