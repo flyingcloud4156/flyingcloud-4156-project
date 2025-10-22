@@ -5,8 +5,6 @@ import dev.coms4156.project.groupproject.dto.CreateTransactionResponse;
 import dev.coms4156.project.groupproject.dto.ListTransactionsResponse;
 import dev.coms4156.project.groupproject.dto.Result;
 import dev.coms4156.project.groupproject.dto.TransactionResponse;
-import dev.coms4156.project.groupproject.dto.UpdateTransactionRequest;
-import dev.coms4156.project.groupproject.dto.UpdateTransactionResponse;
 import dev.coms4156.project.groupproject.service.TransactionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -17,7 +15,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -129,10 +126,7 @@ public class TransactionController {
           String type,
       @Parameter(description = "Created by user ID filter", example = "111")
           @RequestParam(value = "created_by", required = false)
-          Long createdBy,
-      @Parameter(description = "Category ID filter", example = "5")
-          @RequestParam(value = "category_id", required = false)
-          Long categoryId) {
+          Long createdBy) {
 
     // Validate page size
     if (size > 200) {
@@ -141,35 +135,7 @@ public class TransactionController {
 
     ListTransactionsResponse response =
         transactionService.listTransactions(
-            ledgerId, page, size, fromDate, toDate, type, createdBy, categoryId);
-    return Result.ok(response);
-  }
-
-  /**
-   * Update an existing transaction.
-   *
-   * @param ledgerId ledger ID
-   * @param transactionId transaction ID
-   * @param request update request
-   * @return update response
-   */
-  @PatchMapping("/{transactionId}")
-  @Operation(
-      summary = "Update transaction",
-      description =
-          "Update transaction details. If splits or calculation parameters change, "
-              + "recalculates splits and regenerates debt edges.")
-  public Result<UpdateTransactionResponse> updateTransaction(
-      @Parameter(description = "Ledger ID", example = "456", required = true)
-          @PathVariable("ledgerId")
-          Long ledgerId,
-      @Parameter(description = "Transaction ID", example = "1001", required = true)
-          @PathVariable("transactionId")
-          Long transactionId,
-      @Valid @RequestBody UpdateTransactionRequest request) {
-
-    UpdateTransactionResponse response =
-        transactionService.updateTransaction(ledgerId, transactionId, request);
+            ledgerId, page, size, fromDate, toDate, type, createdBy);
     return Result.ok(response);
   }
 

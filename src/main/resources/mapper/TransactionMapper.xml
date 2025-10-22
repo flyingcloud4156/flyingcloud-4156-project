@@ -11,7 +11,6 @@
       AND t.txn_at &lt; COALESCE(#{toDate}, '2100-01-01')
       AND (#{type} IS NULL OR t.type = #{type})
       AND (#{createdBy} IS NULL OR t.created_by = #{createdBy})
-      AND (#{categoryId} IS NULL OR t.category_id = #{categoryId})
       AND (
         t.is_private = false 
         OR t.created_by = #{currentUserId}

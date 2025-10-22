@@ -4,8 +4,6 @@ import dev.coms4156.project.groupproject.dto.CreateTransactionRequest;
 import dev.coms4156.project.groupproject.dto.CreateTransactionResponse;
 import dev.coms4156.project.groupproject.dto.ListTransactionsResponse;
 import dev.coms4156.project.groupproject.dto.TransactionResponse;
-import dev.coms4156.project.groupproject.dto.UpdateTransactionRequest;
-import dev.coms4156.project.groupproject.dto.UpdateTransactionResponse;
 
 /**
  * Service interface for transaction operations. Handles transaction creation, updates, queries, and
@@ -51,19 +49,7 @@ public interface TransactionService {
       String fromDate,
       String toDate,
       String type,
-      Long createdBy,
-      Long categoryId);
-
-  /**
-   * Update an existing transaction.
-   *
-   * @param ledgerId ledger ID
-   * @param transactionId transaction ID
-   * @param request update request
-   * @return update response
-   */
-  UpdateTransactionResponse updateTransaction(
-      Long ledgerId, Long transactionId, UpdateTransactionRequest request);
+      Long createdBy);
 
   /**
    * Delete a transaction and its associated splits and debt edges.

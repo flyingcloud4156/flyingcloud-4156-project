@@ -11,8 +11,6 @@ import dev.coms4156.project.groupproject.dto.SplitItem;
 import dev.coms4156.project.groupproject.dto.SplitView;
 import dev.coms4156.project.groupproject.dto.TransactionResponse;
 import dev.coms4156.project.groupproject.dto.TransactionSummary;
-import dev.coms4156.project.groupproject.dto.UpdateTransactionRequest;
-import dev.coms4156.project.groupproject.dto.UpdateTransactionResponse;
 import dev.coms4156.project.groupproject.dto.UserView;
 import dev.coms4156.project.groupproject.entity.Currency;
 import dev.coms4156.project.groupproject.entity.DebtEdge;
@@ -94,7 +92,6 @@ public class TransactionServiceImpl implements TransactionService {
     transaction.setCreatedBy(currentUser.getId());
     transaction.setTxnAt(request.getTxnAt());
     transaction.setType(request.getType());
-    transaction.setCategoryId(request.getCategoryId());
     transaction.setPayerId(request.getPayerId());
     transaction.setAmountTotal(request.getAmountTotal());
     transaction.setCurrency(request.getCurrency());
@@ -109,13 +106,8 @@ public class TransactionServiceImpl implements TransactionService {
     transactionMapper.insert(transaction);
     Long transactionId = transaction.getId();
 
-    // Handle LOAN type differently
-    if ("LOAN".equals(request.getType())) {
-      handleLoanTransaction(ledgerId, transactionId, request);
-    } else {
-      // Handle EXPENSE/INCOME with splits
-      handleSplitTransaction(ledgerId, transactionId, request, ledger);
-    }
+    // Handle EXPENSE/INCOME with splits
+    handleSplitTransaction(ledgerId, transactionId, request, ledger);
 
     CreateTransactionResponse response = new CreateTransactionResponse();
     response.setTransactionId(transactionId);
@@ -154,8 +146,7 @@ public class TransactionServiceImpl implements TransactionService {
       String fromDate,
       String toDate,
       String type,
-      Long createdBy,
-      Long categoryId) {
+      Long createdBy) {
 
     UserView currentUser = CurrentUserContext.get();
     if (currentUser == null) {
@@ -181,7 +172,7 @@ public class TransactionServiceImpl implements TransactionService {
     // Query transactions
     IPage<Transaction> result =
         transactionMapper.findTransactionsByLedger(
-            pageObj, ledgerId, from, to, type, createdBy, categoryId, currentUser.getId());
+            pageObj, ledgerId, from, to, type, createdBy, null, currentUser.getId());
 
     // Convert to response
     List<TransactionSummary> items =
@@ -195,91 +186,6 @@ public class TransactionServiceImpl implements TransactionService {
     response.setTotal(result.getTotal());
     response.setItems(items);
 
-    return response;
-  }
-
-  @Override
-  @Transactional
-  public UpdateTransactionResponse updateTransaction(
-      Long ledgerId, Long transactionId, UpdateTransactionRequest request) {
-
-    UserView currentUser = CurrentUserContext.get();
-    if (currentUser == null) {
-      throw new RuntimeException("Not logged in");
-    }
-
-    // Validate ledger membership
-    validateLedgerAndMembership(ledgerId, currentUser.getId());
-
-    // Get existing transaction
-    Transaction transaction =
-        transactionMapper.findTransactionByIdWithVisibility(transactionId, currentUser.getId());
-    if (transaction == null) {
-      throw new RuntimeException("Transaction not found");
-    }
-
-    if (!transaction.getLedgerId().equals(ledgerId)) {
-      throw new RuntimeException("Transaction not found in this ledger");
-    }
-
-    // Check permissions (creator or OWNER/ADMIN)
-    if (!canUpdateTransaction(transaction, currentUser.getId())) {
-      throw new RuntimeException("Insufficient permissions");
-    }
-
-    // Update transaction fields
-    if (request.getTxnAt() != null) {
-      transaction.setTxnAt(request.getTxnAt());
-    }
-    if (request.getNote() != null) {
-      transaction.setNote(request.getNote());
-    }
-    if (request.getCategoryId() != null) {
-      transaction.setCategoryId(request.getCategoryId());
-    }
-    if (request.getPayerId() != null) {
-      transaction.setPayerId(request.getPayerId());
-    }
-    if (request.getIsPrivate() != null) {
-      transaction.setIsPrivate(request.getIsPrivate());
-    }
-    if (request.getRoundingStrategy() != null) {
-      transaction.setRoundingStrategy(request.getRoundingStrategy());
-    }
-    if (request.getTailAllocation() != null) {
-      transaction.setTailAllocation(request.getTailAllocation());
-    }
-
-    // Handle splits update
-    if (request.getSplits() != null) {
-      // Delete existing splits and debt edges
-      transactionSplitMapper.deleteByTransactionId(transactionId);
-      debtEdgeMapper.deleteByTransactionId(transactionId);
-
-      // Create new splits and debt edges
-      CreateTransactionRequest createRequest = new CreateTransactionRequest();
-      createRequest.setTxnAt(transaction.getTxnAt());
-      createRequest.setType(transaction.getType());
-      createRequest.setCurrency(transaction.getCurrency());
-      createRequest.setAmountTotal(transaction.getAmountTotal());
-      createRequest.setCategoryId(transaction.getCategoryId());
-      createRequest.setNote(transaction.getNote());
-      createRequest.setPayerId(transaction.getPayerId());
-      createRequest.setIsPrivate(transaction.getIsPrivate());
-      createRequest.setRoundingStrategy(transaction.getRoundingStrategy());
-      createRequest.setTailAllocation(transaction.getTailAllocation());
-      createRequest.setSplits(request.getSplits());
-
-      Ledger ledger = ledgerMapper.selectById(ledgerId);
-      handleSplitTransaction(ledgerId, transactionId, createRequest, ledger);
-    }
-
-    transaction.setUpdatedAt(LocalDateTime.now());
-    transactionMapper.updateById(transaction);
-
-    UpdateTransactionResponse response = new UpdateTransactionResponse();
-    response.setTransactionId(transactionId);
-    response.setUpdated(true);
     return response;
   }
 
@@ -305,10 +211,7 @@ public class TransactionServiceImpl implements TransactionService {
       throw new RuntimeException("Transaction not found in this ledger");
     }
 
-    // Check permissions (creator or OWNER/ADMIN)
-    if (!canUpdateTransaction(transaction, currentUser.getId())) {
-      throw new RuntimeException("Insufficient permissions");
-    }
+    // TODO: Re-implement permission check for deletion if needed
 
     // Delete in order: debt edges, splits, transaction
     debtEdgeMapper.deleteByTransactionId(transactionId);
@@ -336,49 +239,24 @@ public class TransactionServiceImpl implements TransactionService {
     return ledger;
   }
 
-  private boolean canUpdateTransaction(Transaction transaction, Long userId) {
-    // Creator can always update
-    if (transaction.getCreatedBy().equals(userId)) {
-      return true;
-    }
-
-    // Check if user is OWNER or ADMIN
-    LambdaQueryWrapper<LedgerMember> wrapper = new LambdaQueryWrapper<>();
-    wrapper
-        .eq(LedgerMember::getLedgerId, transaction.getLedgerId())
-        .eq(LedgerMember::getUserId, userId);
-
-    LedgerMember member = ledgerMemberMapper.selectOne(wrapper);
-    return member != null && ("OWNER".equals(member.getRole()) || "ADMIN".equals(member.getRole()));
-  }
-
-  private void handleLoanTransaction(
-      Long ledgerId, Long transactionId, CreateTransactionRequest request) {
-    if (request.getLoan() == null) {
-      throw new RuntimeException("Loan details required for LOAN type");
-    }
-
-    if (request.getLoan().getCreditorUserId().equals(request.getLoan().getDebtorUserId())) {
-      throw new RuntimeException("Creditor and debtor cannot be the same");
-    }
-
-    // Create debt edge for loan
-    DebtEdge edge = new DebtEdge();
-    edge.setLedgerId(ledgerId);
-    edge.setTransactionId(transactionId);
-    edge.setFromUserId(request.getLoan().getCreditorUserId());
-    edge.setToUserId(request.getLoan().getDebtorUserId());
-    edge.setAmount(request.getAmountTotal());
-    edge.setEdgeCurrency(request.getCurrency());
-    edge.setCreatedAt(LocalDateTime.now());
-
-    debtEdgeMapper.insert(edge);
-  }
-
   private void handleSplitTransaction(
       Long ledgerId, Long transactionId, CreateTransactionRequest request, Ledger ledger) {
     if (request.getSplits() == null || request.getSplits().isEmpty()) {
       throw new RuntimeException("Splits required for EXPENSE/INCOME type");
+    }
+
+    // Pre-validation: Ensure all users in the split are members of the ledger
+    List<Long> memberIds =
+        ledgerMemberMapper
+            .selectList(
+                new LambdaQueryWrapper<LedgerMember>().eq(LedgerMember::getLedgerId, ledgerId))
+            .stream()
+            .map(LedgerMember::getUserId)
+            .collect(Collectors.toList());
+    List<Long> splitUserIds =
+        request.getSplits().stream().map(SplitItem::getUserId).collect(Collectors.toList());
+    if (!memberIds.containsAll(splitUserIds)) {
+      throw new RuntimeException("One or more users in the split are not members of the ledger.");
     }
 
     // Validate splits
@@ -662,7 +540,6 @@ public class TransactionServiceImpl implements TransactionService {
     response.setType(transaction.getType());
     response.setCurrency(transaction.getCurrency());
     response.setAmountTotal(transaction.getAmountTotal());
-    response.setCategoryId(transaction.getCategoryId());
     response.setNote(transaction.getNote());
     response.setPayerId(transaction.getPayerId());
     response.setCreatedBy(transaction.getCreatedBy());

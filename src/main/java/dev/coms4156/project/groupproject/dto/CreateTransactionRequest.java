@@ -24,11 +24,11 @@ public class CreateTransactionRequest {
   private LocalDateTime txnAt;
 
   @NotNull(message = "Transaction type is required")
-  @Pattern(regexp = "EXPENSE|INCOME|LOAN", message = "Type must be EXPENSE, INCOME, or LOAN")
+  @Pattern(regexp = "EXPENSE|INCOME", message = "Type must be EXPENSE or INCOME")
   @Schema(
       description = "Transaction type",
       example = "EXPENSE",
-      allowableValues = {"EXPENSE", "INCOME", "LOAN"},
+      allowableValues = {"EXPENSE", "INCOME"},
       required = true)
   private String type;
 
@@ -41,9 +41,6 @@ public class CreateTransactionRequest {
   @DecimalMin(value = "0.01", message = "Amount must be positive")
   @Schema(description = "Total transaction amount", example = "120.00", required = true)
   private BigDecimal amountTotal;
-
-  @Schema(description = "Category ID (optional)", example = "5")
-  private Long categoryId;
 
   @Size(max = 500, message = "Note cannot exceed 500 characters")
   @Schema(description = "Transaction note", example = "Dinner", maxLength = 500)
@@ -76,10 +73,6 @@ public class CreateTransactionRequest {
   private String tailAllocation = "PAYER";
 
   @Valid
-  @Schema(description = "Split items (required for EXPENSE/INCOME, not allowed for LOAN)")
+  @Schema(description = "Split items (required for EXPENSE/INCOME)")
   private List<SplitItem> splits;
-
-  @Valid
-  @Schema(description = "Loan details (required for LOAN type only)")
-  private LoanRequest loan;
 }
