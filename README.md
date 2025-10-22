@@ -1,5 +1,5 @@
 # COMS-4156-Project
-This is the GitHub repository for the **service portion** of the Team Project associated with COMS 4156 Advanced Software Engineering. Our team name is flycloud and the following are our members: Ziheng Huang, Zhelin Fan, Jingyi Wang, and xxx.
+This is the GitHub repository for the **service portion** of the Team Project associated with COMS 4156 Advanced Software Engineering. Our team name is flycloud and the following are our members: Ziheng Huang, Zhelin Fan, Jingyi Wang, and Haokun Wu.
 
 ## Overview
 It is a financial management and settlement service that streamlines expense tracking, budgeting, and multi-party debt settlement. It allows users to record, categorize, and analyze transactions through a unified API that supports different clients—from personal trip-splitting and dorm bill apps to workplace reimbursement systems. Built with Java 17 and Spring Boot, it integrates PostgreSQL/MySQL databases, offers documented RESTful APIs via Swagger UI, and supports automated testing and deployment through Docker and Google Cloud.
@@ -26,6 +26,7 @@ After you download on your local machine, you can open IntelliJ IDEA to clone th
 You can reach our service through cloud.
 
 ## Endpoints of First Iteration
+This section describes the endpoints provided by this project, along with their corresponding inputs and outputs.
 
 
 ## Unit Testing
@@ -53,4 +54,5 @@ We used the tool "checkstyle" ...to check the style of our code and generate sty
 ## Static Code Analysis
 
 ## Tool Used
+
 
