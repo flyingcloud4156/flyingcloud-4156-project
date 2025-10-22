@@ -216,8 +216,9 @@ Our unit tests are located under the directory 'src/test'. You can choose any of
 
 ## API Testing
 We use automated Bash scripts for API-level testing to validate the service endpoints and ensure consistent behavior across multiple clients.
-Bash Script File: [final_api_tests_fixed.sh]()
-Result and Report File: [api_test_results.md]()
+- Bash Script File: [final_api_tests_fixed.sh]()
+- Result and Report File: [api_test_results.md]()
+
 To run the full automated API test suite:
 
 <code>bash final_api_tests_fixed.sh</code>
@@ -241,6 +242,7 @@ We used the tool "checkstyle" ...to check the style of our code and generate sty
 * JaCoCo
   * We use JaCoCo for generating code coverage reports.
   * Originally we were planning on using Cobertura, however Cobertura does not support our version of Java.
+
 
 
 
