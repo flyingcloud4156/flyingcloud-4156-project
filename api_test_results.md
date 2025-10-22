@@ -1,5 +1,8 @@
 ```angular2html
-Last login: Tue Oct 21 21:56:41 on ttys111
+Last login: Tue Oct 21 22:09:10 on ttys113
+➜  flyingcloud-4156-project git:(staging_small) ✗ bash /Users/Shared/BackendProject/flyingcloud-4156-project/final_api_tests.sh
+
+bash: /Users/Shared/BackendProject/flyingcloud-4156-project/final_api_tests.sh: No such file or directory
 ➜  flyingcloud-4156-project git:(staging_small) ✗ bash /Users/Shared/BackendProject/flyingcloud-4156-project/final_api_tests_fixed.sh
 
 =======================================================================================
@@ -45,7 +48,7 @@ Last login: Tue Oct 21 21:56:41 on ttys111
 --- 1.4 Invalid: Invalid email format
 {
   "success": false,
-  "message": "Invalid request: Validation failed for argument [0] in public dev.coms4156.project.groupproject.dto.Result<java.lang.Void> dev.coms4156.project.groupproject.controller.UserV1Controller.register(dev.coms4156.project.groupproject.dto.RegisterRequest): [Field error in object 'registerRequest' on field 'email': rejected value [invalid-email-format]; codes [Email.registerRequest.email,Email.email,Email.java.lang.String,Email]; arguments [org.springframework.context.support.DefaultMessageSourceResolvable: codes [registerRequest.email,email]; arguments []; default message [email],[Ljakarta.validation.constraints.Pattern$Flag;@4c56a01,.*]; default message [must be a well-formed email address]] ",
+  "message": "Invalid request: Validation failed for argument [0] in public dev.coms4156.project.groupproject.dto.Result<java.lang.Void> dev.coms4156.project.groupproject.controller.UserV1Controller.register(dev.coms4156.project.groupproject.dto.RegisterRequest): [Field error in object 'registerRequest' on field 'email': rejected value [invalid-email-format]; codes [Email.registerRequest.email,Email.email,Email.java.lang.String,Email]; arguments [org.springframework.context.support.DefaultMessageSourceResolvable: codes [registerRequest.email,email]; arguments []; default message [email],[Ljakarta.validation.constraints.Pattern$Flag;@6d59fdb9,.*]; default message [must be a well-formed email address]] ",
   "data": null,
   "total": null
 }
@@ -68,8 +71,8 @@ Last login: Tue Oct 21 21:56:41 on ttys111
   "success": true,
   "message": "OK",
   "data": {
-    "access_token": "AdNVIm6h75Wtga-PprsR9yrMJEqeONUO4Jn4lqC-pCQ",
-    "refresh_token": "yZnYEStqWzxmcZgGpF-fLm0iGufEENcwPk-oAiJ6iZU"
+    "access_token": "7RCiJ8-yh0fat2NWgaOlumu52Oz-SvyEjrF_6XX2JQk",
+    "refresh_token": "Dg6DagDDzms9WZvyLN3_49M21-8daZhUWvBz1u71lFM"
   },
   "total": null
 }
@@ -80,8 +83,8 @@ Last login: Tue Oct 21 21:56:41 on ttys111
   "success": true,
   "message": "OK",
   "data": {
-    "access_token": "Fr9iZfhnUafD4-t0RjYKBB7KuCWzPJnexJhsm7RE7Bw",
-    "refresh_token": "SW8vb9acf7UuC2r6GKcXUMeVrNekSIAkA5A1QhGfztQ"
+    "access_token": "BhrpXsEJbjaqKzm-Zbdw1wP_VaMbVPdtIgZA76cY6VQ",
+    "refresh_token": "TswxHI7UmNARxT7beifDgZFGJ8xG_6jjtj0rgSsesyw"
   },
   "total": null
 }
@@ -145,12 +148,9 @@ Last login: Tue Oct 21 21:56:41 on ttys111
 
 --- 3.4 Invalid: Lookup without auth token
 {
-  "success": true,
-  "message": "OK",
-  "data": {
-    "user_id": 10,
-    "name": "Sarah Johnson"
-  },
+  "success": false,
+  "message": "AUTH_REQUIRED",
+  "data": null,
   "total": null
 }
 ✅ Unauthorized lookup properly rejected
@@ -356,7 +356,7 @@ Last login: Tue Oct 21 21:56:41 on ttys111
 --- 6.5 Invalid: Create transaction without auth token
 {
   "success": false,
-  "message": "Not logged in",
+  "message": "AUTH_REQUIRED",
   "data": null,
   "total": null
 }
@@ -511,7 +511,7 @@ Last login: Tue Oct 21 21:56:41 on ttys111
 --- 7.4 Invalid: List transactions without auth token
 {
   "success": false,
-  "message": "Not logged in",
+  "message": "AUTH_REQUIRED",
   "data": null,
   "total": null
 }

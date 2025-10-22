@@ -29,9 +29,17 @@ public class AuthInterceptor implements HandlerInterceptor {
       if (json != null) {
         UserView uv = mapper.readValue(json, UserView.class);
         CurrentUserContext.set(uv);
+        return true;
       }
     }
-    return true;
+
+    // No valid token found - reject request
+    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+    response.setContentType("application/json");
+    response
+        .getWriter()
+        .write("{\"success\":false,\"message\":\"AUTH_REQUIRED\",\"data\":null,\"total\":null}");
+    return false;
   }
 
   @Override
