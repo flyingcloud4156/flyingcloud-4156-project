@@ -97,14 +97,14 @@ public class TransactionController {
    * @param toDate end date filter (ISO 8601 format)
    * @param type transaction type filter (EXPENSE, INCOME, LOAN)
    * @param createdBy created by user ID filter
-   * @param categoryId category ID filter
    * @return paginated transaction list
    */
   @GetMapping
   @Operation(
       summary = "List transactions",
       description =
-          "Get paginated list of transactions with optional filtering by date, type, creator, and category.")
+          "Get paginated list of transactions with optional filtering by date, type, "
+              + "creator, and category.")
   public Result<ListTransactionsResponse> listTransactions(
       @Parameter(description = "Ledger ID", example = "456", required = true)
           @PathVariable("ledgerId")

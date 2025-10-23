@@ -39,7 +39,6 @@ public interface TransactionService {
    * @param toDate end date filter (ISO 8601)
    * @param type transaction type filter
    * @param createdBy created by user ID filter
-   * @param categoryId category ID filter
    * @return paginated transaction list
    */
   ListTransactionsResponse listTransactions(

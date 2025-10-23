@@ -46,6 +46,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class TransactionServiceImpl implements TransactionService {
 
+  private static final BigDecimal HUNDRED = new BigDecimal("100");
+
   private final TransactionMapper transactionMapper;
   private final TransactionSplitMapper transactionSplitMapper;
   private final DebtEdgeMapper debtEdgeMapper;
@@ -53,6 +55,16 @@ public class TransactionServiceImpl implements TransactionService {
   private final LedgerMemberMapper ledgerMemberMapper;
   private final CurrencyMapper currencyMapper;
 
+  /**
+   * Constructor for TransactionServiceImpl.
+   *
+   * @param transactionMapper mapper for transaction operations
+   * @param transactionSplitMapper mapper for transaction split operations
+   * @param debtEdgeMapper mapper for debt edge operations
+   * @param ledgerMapper mapper for ledger operations
+   * @param ledgerMemberMapper mapper for ledger member operations
+   * @param currencyMapper mapper for currency operations
+   */
   @Autowired
   public TransactionServiceImpl(
       TransactionMapper transactionMapper,
@@ -71,6 +83,7 @@ public class TransactionServiceImpl implements TransactionService {
 
   @Override
   @Transactional
+  @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")
   public CreateTransactionResponse createTransaction(
       Long ledgerId, CreateTransactionRequest request) {
     UserView currentUser = CurrentUserContext.get();
@@ -268,7 +281,7 @@ public class TransactionServiceImpl implements TransactionService {
     // Create transaction splits
     List<TransactionSplit> splits = new ArrayList<>();
     for (SplitItem item : request.getSplits()) {
-      TransactionSplit split = new TransactionSplit();
+      TransactionSplit split = new TransactionSplit(); // NOPMD - Must create new object in loop
       split.setTransactionId(transactionId);
       split.setUserId(item.getUserId());
       split.setSplitMethod(item.getSplitMethod());
@@ -303,7 +316,7 @@ public class TransactionServiceImpl implements TransactionService {
     // Validate split method specific constraints
     for (SplitItem split : splits) {
       if (Boolean.TRUE.equals(split.getIncluded())) {
-        validateSplitMethod(split, amountTotal);
+        validateSplitMethod(split);
       }
     }
 
@@ -331,11 +344,11 @@ public class TransactionServiceImpl implements TransactionService {
     }
   }
 
-  private void validateSplitMethod(SplitItem split, BigDecimal amountTotal) {
+  private void validateSplitMethod(SplitItem split) {
     switch (split.getSplitMethod()) {
       case "PERCENT":
         if (split.getShareValue().compareTo(BigDecimal.ZERO) < 0
-            || split.getShareValue().compareTo(new BigDecimal("100")) > 0) {
+            || split.getShareValue().compareTo(HUNDRED) > 0) {
           throw new RuntimeException("PERCENT share value must be between 0 and 100");
         }
         break;
@@ -382,15 +395,13 @@ public class TransactionServiceImpl implements TransactionService {
             includedSplits.stream()
                 .map(SplitItem::getShareValue)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-        if (totalPercent.compareTo(new BigDecimal("100")) != 0) {
+        if (totalPercent.compareTo(HUNDRED) != 0) {
           throw new RuntimeException("PERCENT splits must sum to 100");
         }
 
         for (SplitItem split : includedSplits) {
           BigDecimal amount =
-              totalAmount
-                  .multiply(split.getShareValue())
-                  .divide(new BigDecimal("100"), 8, RoundingMode.HALF_UP);
+              totalAmount.multiply(split.getShareValue()).divide(HUNDRED, 8, RoundingMode.HALF_UP);
           rawShares.put(split.getUserId(), amount);
         }
         break;
@@ -487,6 +498,7 @@ public class TransactionServiceImpl implements TransactionService {
     }
   }
 
+  @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")
   private void generateDebtEdges(
       Long ledgerId,
       Long transactionId,
@@ -499,7 +511,7 @@ public class TransactionServiceImpl implements TransactionService {
       // For EXPENSE: payer -> participants (participants owe payer)
       for (Map.Entry<Long, BigDecimal> entry : computedAmounts.entrySet()) {
         if (!entry.getKey().equals(request.getPayerId())) {
-          DebtEdge edge = new DebtEdge();
+          DebtEdge edge = new DebtEdge(); // NOPMD - Must create new object in loop
           edge.setLedgerId(ledgerId);
           edge.setTransactionId(transactionId);
           edge.setFromUserId(request.getPayerId()); // Creditor
@@ -514,7 +526,7 @@ public class TransactionServiceImpl implements TransactionService {
       // For INCOME: participants -> payer (payer owes participants)
       for (Map.Entry<Long, BigDecimal> entry : computedAmounts.entrySet()) {
         if (!entry.getKey().equals(request.getPayerId())) {
-          DebtEdge edge = new DebtEdge();
+          DebtEdge edge = new DebtEdge(); // NOPMD - Must create new object in loop
           edge.setLedgerId(ledgerId);
           edge.setTransactionId(transactionId);
           edge.setFromUserId(entry.getKey()); // Creditor

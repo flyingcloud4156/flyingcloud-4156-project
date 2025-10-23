@@ -18,6 +18,11 @@ public class Application {
     SpringApplication.run(Application.class, args);
   }
 
+  /**
+   * Configures the ObjectMapper bean with snake_case property naming strategy.
+   *
+   * @return Configured ObjectMapper instance
+   */
   @Bean
   public ObjectMapper objectMapper() {
     ObjectMapper mapper = new ObjectMapper();

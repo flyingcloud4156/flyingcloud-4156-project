@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 
+/** Request DTO for adding a member to a ledger. */
 @Data
 @Schema(description = "Request to add a member to a ledger")
 public class AddLedgerMemberRequest {
