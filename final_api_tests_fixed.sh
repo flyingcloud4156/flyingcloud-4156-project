@@ -18,8 +18,8 @@ IFS=$'\n\t'
 
 # --- Configuration ---
 HOST="http://localhost:8081"
-DB_SCHEMA_FILE="/Users/Shared/BackendProject/flyingcloud-4156-project/ops/sql/ledger_flow.sql"
-DB_SEED_FILE="/Users/Shared/BackendProject/flyingcloud-4156-project/ops/sql/backup/ledger.sql"
+DB_SCHEMA_FILE="/Users/jinyiwang/Desktop/4156project/flyingcloud-4156-project/ops/sql/ledger_flow.sql"
+DB_SEED_FILE="/Users/jinyiwang/Desktop/4156project/flyingcloud-4156-project/ops/sql/backup/ledger.sql"
 
 # Seeded users (may or may not match your seed data; script will fall back if needed)
 USER1_EMAIL="hzh@gmail.com"
