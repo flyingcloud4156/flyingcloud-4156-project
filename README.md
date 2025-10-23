@@ -23,7 +23,7 @@ After you download on your local machine, you can open IntelliJ IDEA to clone th
    
    <code>mvn spring-boot:run</code>
    
-## Running a Cloud Based Instance
+## Running a Cloud Based Instance (Iteration 2)
 You can reach our service through cloud.
 
 ## Endpoints of First Iteration
@@ -251,6 +251,7 @@ We used the command <code>mvn checktyle:check</code> to check the style of our c
 
 ## AI Documentation(待修改)
 * Prompt: Please generate automated API tests for several APIs defined in my project’s Java controller files, such as AuthController, LedgerController, and TransactionController. I would like to perform these tests using Bash, so please write a complete Bash script. The script should automatically reset and import the MySQL database by executing the schema and seed SQL files, use curl to send HTTP requests, and employ jq to parse JSON responses. It needs to extract key fields such as tokens and IDs, stop execution when an API call fails, and display clear success and failure messages in the output. Each test section should also include a descriptive title and separator lines for readability.
+
 
 
 
