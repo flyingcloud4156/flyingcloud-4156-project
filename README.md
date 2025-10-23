@@ -223,13 +223,19 @@ To run the full automated API test suite:
 
 <code>bash final_api_tests_fixed.sh</code>
 
-## Style Check Report
-We used the tool "checkstyle" ...to check the style of our code and generate style checking. ruleset.
-
 ## Branch Coverage Report
+You can run the command to run all the tests and check the coverage report located in target/site/jacoco/index.html
+
+<code>mvn clean test verify</code>
+![branch coverage](images/coverage.jpg)
 
 ## Static Code Analysis
+Run mvn pmd:pmd to generate the static code analysis and check the report in target/site/pmd.html
+![pmd](images/pmd.jpg)
 
+## Style Check Report
+We used the command <code>mvn checktyle:check</code> to check the style of our code and generate style checking. 
+![check style](images/checkstyle.png)
 ## Tool Used
 * Checkstyle
   * We use Checkstyle for code reporting. Note that Checkstyle does NOT get run as part of the CI pipeline.
