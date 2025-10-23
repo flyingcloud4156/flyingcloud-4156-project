@@ -372,36 +372,6 @@ The results are copied and pasted from terminal after running the bash final_api
 
 ---
 
-## 8. My Ledgers API Tests
-
-### 8.1 Typical Valid: Get ledgers for user with ledgers
-**Status:** ️ ENDPOINT NOT FOUND
-
-```json
-{
-  "timestamp": 1761251107662,
-  "status": 404,
-  "error": "Not Found",
-  "path": "/api/v1/ledgers:mine"
-}
-```
-
-### 8.2 Atypical Valid: Get ledgers for user with no ledgers
-**Status:** ️ ENDPOINT NOT FOUND
-
-### 8.3 Invalid: Get ledgers without authentication
-**Status:**  PASSED (Correctly rejected)
-
-```json
-{
-  "success": false,
-  "message": "AUTH_REQUIRED"
-}
-```
-
-**Result:** ️ Endpoint `/api/v1/ledgers:mine` not implemented
-
----
 
 ## 9. Ledger Details API Tests
 
