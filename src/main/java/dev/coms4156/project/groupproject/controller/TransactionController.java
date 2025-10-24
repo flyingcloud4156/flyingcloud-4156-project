@@ -7,7 +7,6 @@ import dev.coms4156.project.groupproject.dto.Result;
 import dev.coms4156.project.groupproject.dto.TransactionResponse;
 import dev.coms4156.project.groupproject.service.TransactionService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -23,10 +22,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * Controller for transaction-related operations. Handles transaction CRUD operations with split
- * calculations and debt edge generation.
- */
+/** Controller for transaction-related operations. */
 @RestController
 @RequestMapping("/api/v1/ledgers/{ledgerId}/transactions")
 @Tag(name = "Transaction APIs")
@@ -40,126 +36,46 @@ public class TransactionController {
     this.transactionService = transactionService;
   }
 
-  /**
-   * Create a new transaction with splits and debt edges.
-   *
-   * @param ledgerId ledger ID
-   * @param request transaction creation request
-   * @return created transaction response
-   */
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
-  @Operation(
-      summary = "Create a new transaction",
-      description =
-          "Create a transaction with splits and generate debt edges. "
-              + "Supports EXPENSE, INCOME, and LOAN types with automatic split calculations.")
+  @Operation(summary = "Create a new transaction")
   public Result<CreateTransactionResponse> createTransaction(
-      @Parameter(description = "Ledger ID", example = "456", required = true)
-          @PathVariable("ledgerId")
-          Long ledgerId,
-      @Valid @RequestBody CreateTransactionRequest request) {
-
-    CreateTransactionResponse response = transactionService.createTransaction(ledgerId, request);
-    return Result.ok(response);
+      @PathVariable Long ledgerId, @Valid @RequestBody CreateTransactionRequest req) {
+    return Result.ok(transactionService.createTransaction(ledgerId, req));
   }
 
-  /**
-   * Get transaction details by ID.
-   *
-   * @param ledgerId ledger ID
-   * @param transactionId transaction ID
-   * @return transaction details with splits and edge previews
-   */
   @GetMapping("/{transactionId}")
-  @Operation(
-      summary = "Get transaction details",
-      description = "Get detailed transaction information including splits and debt edge previews.")
+  @Operation(summary = "Get transaction details")
   public Result<TransactionResponse> getTransaction(
-      @Parameter(description = "Ledger ID", example = "456", required = true)
-          @PathVariable("ledgerId")
-          Long ledgerId,
-      @Parameter(description = "Transaction ID", example = "1001", required = true)
-          @PathVariable("transactionId")
-          Long transactionId) {
-
-    TransactionResponse response = transactionService.getTransaction(ledgerId, transactionId);
-    return Result.ok(response);
+      @PathVariable Long ledgerId, @PathVariable Long transactionId) {
+    return Result.ok(transactionService.getTransaction(ledgerId, transactionId));
   }
 
-  /**
-   * List transactions with pagination and filtering.
-   *
-   * @param ledgerId ledger ID
-   * @param page page number (1-based, default: 1)
-   * @param size page size (max: 200, default: 50)
-   * @param fromDate start date filter (ISO 8601 format)
-   * @param toDate end date filter (ISO 8601 format)
-   * @param type transaction type filter (EXPENSE, INCOME, LOAN)
-   * @param createdBy created by user ID filter
-   * @return paginated transaction list
-   */
   @GetMapping
-  @Operation(
-      summary = "List transactions",
-      description =
-          "Get paginated list of transactions with optional filtering by date, type, "
-              + "creator, and category.")
+  @Operation(summary = "List transactions")
   public Result<ListTransactionsResponse> listTransactions(
-      @Parameter(description = "Ledger ID", example = "456", required = true)
-          @PathVariable("ledgerId")
-          Long ledgerId,
-      @Parameter(description = "Page number (1-based)", example = "1")
-          @RequestParam(value = "page", defaultValue = "1")
-          Integer page,
-      @Parameter(description = "Page size (max 200)", example = "50")
-          @RequestParam(value = "size", defaultValue = "50")
-          Integer size,
-      @Parameter(description = "Start date filter (ISO 8601)", example = "2025-10-01T00:00:00")
-          @RequestParam(value = "from", required = false)
-          String fromDate,
-      @Parameter(description = "End date filter (ISO 8601)", example = "2025-10-31T23:59:59")
-          @RequestParam(value = "to", required = false)
-          String toDate,
-      @Parameter(description = "Transaction type filter", example = "EXPENSE")
-          @RequestParam(value = "type", required = false)
-          String type,
-      @Parameter(description = "Created by user ID filter", example = "111")
-          @RequestParam(value = "created_by", required = false)
-          Long createdBy) {
+      @PathVariable Long ledgerId,
+      @RequestParam(value = "page", defaultValue = "1") Integer page,
+      @RequestParam(value = "size", defaultValue = "50") Integer size,
+      @RequestParam(value = "from", required = false) String fromDate,
+      @RequestParam(value = "to", required = false) String toDate,
+      @RequestParam(value = "type", required = false) String type,
+      @RequestParam(value = "created_by", required = false) Long createdBy) {
 
-    // Validate page size
     if (size > 200) {
       size = 200;
     }
 
-    ListTransactionsResponse response =
+    return Result.ok(
         transactionService.listTransactions(
-            ledgerId, page, size, fromDate, toDate, type, createdBy);
-    return Result.ok(response);
+            ledgerId, page, size, fromDate, toDate, type, createdBy));
   }
 
-  /**
-   * Delete a transaction and its associated splits and debt edges.
-   *
-   * @param ledgerId ledger ID
-   * @param transactionId transaction ID
-   */
   @DeleteMapping("/{transactionId}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
-  @Operation(
-      summary = "Delete transaction",
-      description =
-          "Delete a transaction and all its associated splits and debt edges. "
-              + "Only creator or OWNER/ADMIN can delete transactions.")
+  @Operation(summary = "Delete transaction")
   public Result<Void> deleteTransaction(
-      @Parameter(description = "Ledger ID", example = "456", required = true)
-          @PathVariable("ledgerId")
-          Long ledgerId,
-      @Parameter(description = "Transaction ID", example = "1001", required = true)
-          @PathVariable("transactionId")
-          Long transactionId) {
-
+      @PathVariable Long ledgerId, @PathVariable Long transactionId) {
     transactionService.deleteTransaction(ledgerId, transactionId);
     return Result.ok();
   }
