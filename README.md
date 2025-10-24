@@ -204,6 +204,16 @@ This section describes the endpoints provided by this project, along with their 
   * HTTP 404 Status Code with "Ledger not found."
   * HTTP 500 Status Code with "Error occurred while listing transactions."
 
+#### DELETE /api/v1/ledgers/{ledgerId}/transactions/{transactionId}
+* Expected Input Parameters:
+  * ledgerId (long): the unique identifier of the ledger
+  * transactionId (long): the unique identifier of the transaction
+* Expected Output: A JSON object (Result<Void>) indicating the deletion result
+* Upon Success: HTTP 204 Status Code returned with no content
+* Upon Failure:
+  * HTTP 404 Status Code with "Ledger or transaction not found."
+  * HTTP 403 Status Code with "Unauthorized to delete transaction."
+  * HTTP 500 Status Code with "Error occurred while deleting transaction."
 
 ## Unit Testing
 - Testing framework: JUnit. 
@@ -255,9 +265,10 @@ We used the command <code>mvn checktyle:check</code> to check the style of our c
   * We use JaCoCo for generating code coverage reports.
   * Originally we were planning on using Cobertura, however Cobertura does not support our version of Java.
 
-## AI Documentation(待修改)
+## AI Documentation
 We use AI to generate an initial API test script and then manually reviewed and modified it.
-* Prompt(Generate API Test Script): Please generate automated API tests for several APIs defined in my project’s Java controller files, such as AuthController, LedgerController, and TransactionController. I would like to perform these tests using Bash, so please write a complete Bash script. The script should automatically reset and import the MySQL database by executing the schema and seed SQL files, use curl to send HTTP requests, and employ jq to parse JSON responses. It needs to extract key fields such as tokens and IDs, stop execution when an API call fails, and display clear success and failure messages in the output. Each test section should also include a descriptive title and separator lines for readability.
+* Prompt(Generate API Test Script): Please generate automated API tests for several APIs defined in my project’s Java controller files, such as AuthController, LedgerController, and TransactionController. We would like to perform these tests using Bash, so please write a complete Bash script. The script should automatically reset and import the MySQL database by executing the schema and seed SQL files, use curl to send HTTP requests, and employ jq to parse JSON responses. It needs to extract key fields such as tokens and IDs, stop execution when an API call fails, and display clear success and failure messages in the output. Each test section should also include a descriptive title and separator lines for readability.
+
 
 
 
