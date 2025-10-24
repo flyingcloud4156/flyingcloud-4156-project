@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dev.coms4156.project.groupproject.mapper.DebtEdgeMapper">
+
+  <!-- Find debt edges by transaction ID -->
+  <select id="findByTransactionId" resultType="dev.coms4156.project.groupproject.entity.DebtEdge">
+    SELECT * FROM debt_edges WHERE transaction_id = #{transactionId}
+    ORDER BY id
+  </select>
+
+  <!-- Delete debt edges by transaction ID -->
+  <delete id="deleteByTransactionId">
+    DELETE FROM debt_edges WHERE transaction_id = #{transactionId}
+  </delete>
+
+  <!-- Insert batch debt edges -->
+  <insert id="insertBatch">
+    INSERT INTO debt_edges (ledger_id, transaction_id, from_user_id, to_user_id, amount, edge_currency, created_at)
+    VALUES
+    <foreach collection="edges" item="edge" separator=",">
+      (#{edge.ledgerId}, #{edge.transactionId}, #{edge.fromUserId}, #{edge.toUserId}, #{edge.amount}, #{edge.edgeCurrency}, #{edge.createdAt})
+    </foreach>
+  </insert>
+
+  <!-- Find debt edges by ledger ID -->
+  <select id="findByLedgerId" resultType="dev.coms4156.project.groupproject.entity.DebtEdge">
+    SELECT * FROM debt_edges WHERE ledger_id = #{ledgerId}
+    ORDER BY created_at DESC, id DESC
+  </select>
+
+</mapper>

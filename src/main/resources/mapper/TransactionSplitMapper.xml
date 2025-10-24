@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="dev.coms4156.project.groupproject.mapper.TransactionSplitMapper">
+
+  <!-- Find splits by transaction ID -->
+  <select id="findByTransactionId" resultType="dev.coms4156.project.groupproject.entity.TransactionSplit">
+    SELECT * FROM transaction_splits WHERE transaction_id = #{transactionId}
+    ORDER BY id
+  </select>
+
+  <!-- Delete splits by transaction ID -->
+  <delete id="deleteByTransactionId">
+    DELETE FROM transaction_splits WHERE transaction_id = #{transactionId}
+  </delete>
+
+  <!-- Insert batch splits -->
+  <insert id="insertBatch">
+    INSERT INTO transaction_splits (transaction_id, user_id, split_method, share_value, included, computed_amount)
+    VALUES
+    <foreach collection="splits" item="split" separator=",">
+      (#{split.transactionId}, #{split.userId}, #{split.splitMethod}, #{split.shareValue}, #{split.included}, #{split.computedAmount})
+    </foreach>
+  </insert>
+
+</mapper>
