@@ -216,14 +216,15 @@ Our unit tests are located under the directory 'src/test'. You can choose any of
 
 ## API Testing
 We use automated Bash scripts for API-level testing to validate the service endpoints and ensure consistent behavior across multiple clients.
-- Bash Script File: [final_api_tests_fixed.sh]()
+- Bash Script File: [final_api_tests_complete.sh]()
 - Result and Report File: [api_test_results.md]()
 
 To run the full automated API test suite:
 
 <code>bash final_api_tests_fixed.sh</code>
 
-Besides,we've also used Postman to test some APIs , you can access the test cases here: https://swjy1412-6196945.postman.co/workspace/Jinyi-Wang's-Workspace~67097b2f-bdc0-4997-8ef5-9b20805b25b5/collection/49421217-e21193f8-cfc5-4f6b-bef2-d9b136d6f83d?action=share&source=copy-link&creator=49421217
+Before using bash scripts to test,we've also used Postman to test some APIs ,you can access the test cases here: https://swjy1412-6196945.postman.co/workspace/Jinyi-Wang's-Workspace~67097b2f-bdc0-4997-8ef5-9b20805b25b5/collection/49421217-e21193f8-cfc5-4f6b-bef2-d9b136d6f83d?action=share&source=copy-link&creator=49421217
+However due to authentication and database issues, this test cases are not easy to be replicated on local machines, so we switched to using bash scripts.
 
 
 ## Branch Coverage Report
