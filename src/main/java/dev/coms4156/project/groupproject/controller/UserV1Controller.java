@@ -1,11 +1,9 @@
 package dev.coms4156.project.groupproject.controller;
 
-import dev.coms4156.project.groupproject.dto.ChangePasswordRequest;
 import dev.coms4156.project.groupproject.dto.LoginRequest;
 import dev.coms4156.project.groupproject.dto.RegisterRequest;
 import dev.coms4156.project.groupproject.dto.Result;
 import dev.coms4156.project.groupproject.dto.TokenPair;
-import dev.coms4156.project.groupproject.dto.UpdateProfileRequest;
 import dev.coms4156.project.groupproject.dto.UserLookupResponse;
 import dev.coms4156.project.groupproject.dto.UserView;
 import dev.coms4156.project.groupproject.service.UserService;
@@ -17,7 +15,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -88,23 +85,5 @@ public class UserV1Controller {
       security = {@SecurityRequirement(name = "X-Auth-Token")})
   public Result<UserView> profile(@PathVariable("id") Long id) {
     return Result.ok(userService.getProfile(id));
-  }
-
-  @PutMapping("/users/me")
-  @Operation(
-      summary = "Update current user's profile (name/timezone)",
-      security = {@SecurityRequirement(name = "X-Auth-Token")})
-  public Result<Void> updateMe(@Valid @RequestBody UpdateProfileRequest req) {
-    userService.updateMe(req);
-    return Result.ok();
-  }
-
-  @PostMapping("/users/me/change-password")
-  @Operation(
-      summary = "Change password (requires oldPassword + newPassword)",
-      security = {@SecurityRequirement(name = "X-Auth-Token")})
-  public Result<Void> changePassword(@Valid @RequestBody ChangePasswordRequest req) {
-    userService.changePassword(req);
-    return Result.ok();
   }
 }

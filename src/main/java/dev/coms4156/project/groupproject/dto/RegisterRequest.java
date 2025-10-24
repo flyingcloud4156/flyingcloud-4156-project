@@ -14,7 +14,6 @@ public class RegisterRequest {
   @Schema(example = "user@gmail.com")
   private String email;
 
-  @NotBlank
   @Size(min = 1, max = 80)
   @Schema(example = "testU")
   private String name;

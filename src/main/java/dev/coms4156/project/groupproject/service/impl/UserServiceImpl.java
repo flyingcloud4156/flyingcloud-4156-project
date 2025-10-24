@@ -2,11 +2,9 @@ package dev.coms4156.project.groupproject.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import dev.coms4156.project.groupproject.dto.ChangePasswordRequest;
 import dev.coms4156.project.groupproject.dto.LoginRequest;
 import dev.coms4156.project.groupproject.dto.RegisterRequest;
 import dev.coms4156.project.groupproject.dto.TokenPair;
-import dev.coms4156.project.groupproject.dto.UpdateProfileRequest;
 import dev.coms4156.project.groupproject.dto.UserLookupResponse;
 import dev.coms4156.project.groupproject.dto.UserView;
 import dev.coms4156.project.groupproject.entity.User;
@@ -19,7 +17,6 @@ import dev.coms4156.project.groupproject.utils.RedisKeys;
 import dev.coms4156.project.groupproject.utils.SystemConstants;
 import dev.coms4156.project.groupproject.utils.TokenUtil;
 import java.time.Duration;
-import java.util.Objects;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -141,56 +138,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     return new UserView(user.getId(), user.getName());
-  }
-
-  @Override
-  @Transactional
-  public void updateMe(UpdateProfileRequest req) {
-
-    UserView uv = currentUser();
-
-    User user = getById(uv.getId());
-
-    if (user == null) {
-
-      throw new RuntimeException("User not found");
-    }
-
-    if (StringUtils.hasText(req.getName())) {
-
-      user.setName(req.getName());
-    }
-
-    if (StringUtils.hasText(req.getTimezone())) {
-
-      user.setTimezone(req.getTimezone());
-    }
-
-    updateById(user);
-  }
-
-  @Override
-  @Transactional
-  public void changePassword(ChangePasswordRequest req) {
-    if (Objects.equals(req.getOldPassword(), req.getNewPassword())) {
-      throw new RuntimeException("New password must be different");
-    }
-
-    UserView uv = currentUser();
-
-    User user = getById(uv.getId());
-
-    if (user == null) {
-      throw new RuntimeException("User not found");
-    }
-
-    if (!PasswordUtil.verifyPassword(req.getOldPassword(), user.getPasswordHash())) {
-      throw new RuntimeException("Wrong old password");
-    }
-
-    user.setPasswordHash(PasswordUtil.hashPassword(req.getNewPassword()));
-
-    updateById(user);
   }
 
   private TokenPair issueTokens(User user) {
