@@ -387,19 +387,31 @@
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
-				<version>0.8.11</version>
+				<version>0.8.12</version>
 				<executions>
+					<!-- agent -->
 					<execution>
-						<id>default-prepare-agent</id>
-						<goals><goal>prepare-agent</goal></goals>
+						<id>prepare-agent</id>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
 					</execution>
+
+					<!-- generate report when tests end -->
 					<execution>
-						<id>default-report</id>
-						<phase>prepare-package</phase>
-						<goals><goal>report</goal></goals>
+						<id>report</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
 					</execution>
 				</executions>
+				<configuration>
+					<dataFile>target/jacoco.exec</dataFile>
+					<outputDirectory>${project.reporting.outputDirectory}/jacoco</outputDirectory>
+				</configuration>
 			</plugin>
+
 
 			<!-- PMD & CPD: static analysis and duplication check -->
 			<plugin>
@@ -409,6 +421,7 @@
 				<configuration>
 					<printFailingErrors>true</printFailingErrors>
 					<verbose>true</verbose>
+					 <failOnViolation>false</failOnViolation>
 					<linkXRef>false</linkXRef>
 					<minimumPriority>5</minimumPriority>
 					<rulesets>

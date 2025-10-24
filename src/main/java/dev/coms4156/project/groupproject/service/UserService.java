@@ -1,11 +1,9 @@
 package dev.coms4156.project.groupproject.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import dev.coms4156.project.groupproject.dto.ChangePasswordRequest;
 import dev.coms4156.project.groupproject.dto.LoginRequest;
 import dev.coms4156.project.groupproject.dto.RegisterRequest;
 import dev.coms4156.project.groupproject.dto.TokenPair;
-import dev.coms4156.project.groupproject.dto.UpdateProfileRequest;
 import dev.coms4156.project.groupproject.dto.UserLookupResponse;
 import dev.coms4156.project.groupproject.dto.UserView;
 import dev.coms4156.project.groupproject.entity.User;
@@ -25,8 +23,4 @@ public interface UserService extends IService<User> {
   UserView currentUser();
 
   UserView getProfile(Long userId);
-
-  void updateMe(UpdateProfileRequest req);
-
-  void changePassword(ChangePasswordRequest req);
 }
