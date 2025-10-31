@@ -100,6 +100,41 @@ api_post() {
   fi
   echo "$response"
 }
+
+# Wrapper for curl GET requests with verbose output
+api_get() {
+  local path="$1"; local token="${2:-}"
+  echo_api_call; echo_request_details "GET" "$path" "" "$token"
+  local headers=(-H "Content-Type: application/json")
+  [[ -n "$token" ]] && headers+=(-H "X-Auth-Token: $token")
+  echo "Sending request..." >&2
+  local response
+  response=$(curl -sS -X GET "$HOST$path" "${headers[@]}" 2>&1)
+  echo "[OK] Response received (RAW):" >&2
+  echo "$response" >&2
+  echo "" >&2
+  if echo "$response" | jq '.' >/dev/null 2>&1; then
+    echo "📋 Response (formatted):" >&2
+    echo "$response" | jq '.' >&2
+  else
+    echo "⚠️  Response is not valid JSON (network error or server error?)" >&2
+  fi
+  echo "$response"
+}
+
+# Function to get user ID by email using the API
+get_user_id_by_email() {
+  local email="$1"; local token="$2"
+  echo "🔍 Looking up user ID for email: $email" >&2
+  local response
+  response=$(api_get "/api/v1/users:lookup?email=${email}" "$token")
+  fail_if_false "$response"
+  local user_id
+  user_id=$(echo "$response" | jq -r '.data.user_id')
+  assert_not_null "user_id for $email" "$user_id"
+  echo "✅ Found user ID $user_id for email $email" >&2
+  echo "$user_id"
+}
 assert_not_null() {
   if [[ -z "${2:-""}" || "${2:-""}" == "null" ]]; then
     echo "[ERROR] Expected '$1' to be non-empty, but it was null/empty."
@@ -181,9 +216,10 @@ login_resp=$(api_post "/api/v1/auth/login" '{"email":"alice@test.com","password"
 fail_if_false "$login_resp"
 ALICE_TOKEN=$(echo "$login_resp" | jq -r '.data.access_token'); assert_not_null "ALICE_TOKEN" "$ALICE_TOKEN"
 
-ALICE_ID=$(mysql_exec -N -D ledger -e "SELECT id FROM users WHERE email='alice@test.com';")
-BOB_ID=$(mysql_exec   -N -D ledger -e "SELECT id FROM users WHERE email='bob@test.com';")
-CHARLIE_ID=$(mysql_exec -N -D ledger -e "SELECT id FROM users WHERE email='charlie@test.com';")
+# Get user IDs using the API lookup endpoint
+ALICE_ID=$(get_user_id_by_email "alice@test.com" "$ALICE_TOKEN")
+BOB_ID=$(get_user_id_by_email "bob@test.com" "$ALICE_TOKEN")
+CHARLIE_ID=$(get_user_id_by_email "charlie@test.com" "$ALICE_TOKEN")
 assert_not_null "ALICE_ID" "$ALICE_ID"
 assert_not_null "BOB_ID" "$BOB_ID"
 assert_not_null "CHARLIE_ID" "$CHARLIE_ID"
