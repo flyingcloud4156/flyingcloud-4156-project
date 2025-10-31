@@ -22,8 +22,18 @@ IFS=$'\n\t'
 
 # --- Configuration ---
 HOST="http://localhost:8081"
-DB_SCHEMA_FILE="/Users/Shared/BackendProject/flyingcloud-4156-project/ops/sql/ledger_flow.sql"
-DB_SEED_FILE="/Users/Shared/BackendProject/flyingcloud-4156-project/ops/sql/backup/ledger.sql"
+# Dynamically set paths based on script location
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
+PROJECT_ROOT=$(cd "${SCRIPT_DIR}/.." && pwd)
+DB_SCHEMA_FILE="${PROJECT_ROOT}/ops/sql/ledger_flow.sql"
+DB_SEED_FILE="${PROJECT_ROOT}/ops/sql/backup/ledger.sql"
+
+# --- MySQL Command Helper ---
+# Function to execute mysql commands inside the running docker container
+mysql_exec() {
+    # -i is required to pass stdin for file redirection
+    docker exec -i mysql mysql -uroot -proot "$@"
+}
 
 # --- Helper Functions ---
 
@@ -84,16 +94,16 @@ LEDGER_ID=""
 echo_title "0. RESETTING DATABASE TO CLEAN STATE"
 
 echo "🔄 Dropping existing database..."
-mysql -u root -e "DROP DATABASE IF EXISTS ledger;" 2>/dev/null || true
+mysql_exec -e "DROP DATABASE IF EXISTS ledger;" 2>/dev/null || true
 
 echo "🔄 Creating new database..."
-mysql -u root -e "CREATE DATABASE ledger;"
+mysql_exec -e "CREATE DATABASE ledger;"
 
 echo "🔄 Loading schema..."
-mysql -u root ledger < "$DB_SCHEMA_FILE"
+mysql_exec ledger < "$DB_SCHEMA_FILE"
 
 echo "🔄 Loading seed data..."
-mysql -u root ledger < "$DB_SEED_FILE"
+mysql_exec ledger < "$DB_SEED_FILE"
 
 echo "✅ Database reset successfully!"
 
@@ -118,9 +128,9 @@ assert_not_null "ALICE_TOKEN" "$ALICE_TOKEN"
 echo "✅ Alice logged in successfully. Token retrieved."
 
 # Get user IDs from the database (simplifies lookup)
-ALICE_ID=$(mysql -u root -D ledger -ss -e "SELECT id FROM users WHERE email='alice@test.com';")
-BOB_ID=$(mysql -u root -D ledger -ss -e "SELECT id FROM users WHERE email='bob@test.com';")
-CHARLIE_ID=$(mysql -u root -D ledger -ss -e "SELECT id FROM users WHERE email='charlie@test.com';")
+ALICE_ID=$(mysql_exec -D ledger -ss -e "SELECT id FROM users WHERE email='alice@test.com';")
+BOB_ID=$(mysql_exec -D ledger -ss -e "SELECT id FROM users WHERE email='bob@test.com';")
+CHARLIE_ID=$(mysql_exec -D ledger -ss -e "SELECT id FROM users WHERE email='charlie@test.com';")
 assert_not_null "ALICE_ID" "$ALICE_ID"
 assert_not_null "BOB_ID" "$BOB_ID"
 assert_not_null "CHARLIE_ID" "$CHARLIE_ID"
@@ -158,7 +168,7 @@ payload=$(jq -n \
     --argjson alice_id "$ALICE_ID" \
     --argjson bob_id "$BOB_ID" \
     --argjson charlie_id "$CHARLIE_ID" \
-    '{
+    '{ 
         "txn_at": "2025-10-22T20:00:00",
         "type": $type,
         "payer_id": $payer_id,
@@ -190,16 +200,16 @@ echo_title "3. VERIFYING DATABASE STATE"
 
 # Verify Transaction
 echo_subtitle "3.1 Verifying 'transactions' table"
-mysql -u root -D ledger -e "SELECT id, ledger_id, type, payer_id, amount_total, note FROM transactions WHERE id = $TXN_ID;" --table
+mysql_exec -D ledger -e "SELECT id, ledger_id, type, payer_id, amount_total, note FROM transactions WHERE id = $TXN_ID;" --table
 
 # Verify Splits
 echo_subtitle "3.2 Verifying 'transaction_splits' table"
-mysql -u root -D ledger -e "SELECT transaction_id, user_id, split_method, share_value, computed_amount FROM transaction_splits WHERE transaction_id = $TXN_ID ORDER BY user_id;" --table
+mysql_exec -D ledger -e "SELECT transaction_id, user_id, split_method, share_value, computed_amount FROM transaction_splits WHERE transaction_id = $TXN_ID ORDER BY user_id;" --table
 
 # Verify Debt Edges
 echo_subtitle "3.3 Verifying 'debt_edges' table"
 echo "Expected: Bob -> owes Alice, Charlie -> owes Alice"
-mysql -u root -D ledger -e "SELECT transaction_id, from_user_id as creditor_id, to_user_id as debtor_id, amount FROM debt_edges WHERE transaction_id = $TXN_ID ORDER BY debtor_id;" --table
+mysql_exec -D ledger -e "SELECT transaction_id, from_user_id as creditor_id, to_user_id as debtor_id, amount FROM debt_edges WHERE transaction_id = $TXN_ID ORDER BY debtor_id;" --table
 
 echo ""
 echo "🎉 TEST COMPLETED SUCCESSFULLY! 🎉"
