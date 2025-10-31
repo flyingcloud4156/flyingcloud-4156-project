@@ -30,7 +30,7 @@
 #   - Schema and seed SQL exist at: ops/sql/ledger_flow.sql and ops/sql/backup/ledger.sql
 #   - jq and curl are installed.
 # =======================================================================================
-
+#cd ~/code/flyingcloud-4156-project/Google_cloud_iteration_demo
 set -euo pipefail
 IFS=$'\n\t'
 
