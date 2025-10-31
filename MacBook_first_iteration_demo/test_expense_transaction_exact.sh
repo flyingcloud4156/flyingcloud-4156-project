@@ -24,8 +24,12 @@ IFS=$'\n\t'
 
 # --- Configuration ---
 HOST="http://localhost:8081"
-DB_SCHEMA_FILE="/Users/jinyiwang/Desktop/4156project/flyingcloud-4156-project/ops/sql/ledger_flow.sql"
-DB_SEED_FILE="/Users/jinyiwang/Desktop/4156project/flyingcloud-4156-project/ops/sql/backup/ledger.sql"
+
+# Dynamically set paths based on script location
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
+PROJECT_ROOT=$(cd "${SCRIPT_DIR}/.." && pwd)
+DB_SCHEMA_FILE="${PROJECT_ROOT}/ops/sql/ledger_flow.sql"
+DB_SEED_FILE="${PROJECT_ROOT}/ops/sql/backup/ledger.sql"
 
 # --- Helper Functions ---
 

@@ -222,6 +222,8 @@ curl -s http://localhost:8081 > /dev/null && echo "Spring Boot is running" || ec
 **Run the Spring Boot application:**
 
 ```bash
+cd ~/code/flyingcloud-4156-project/
+
 ./mvnw spring-boot:run
 ```
 
@@ -243,9 +245,31 @@ curl -s http://localhost:8081 > /dev/null && echo "Spring Boot is running" || ec
 
 You can run bash scripts in **flyingcloud4156/MacBook_first_iteration_demo** and see results in terminal.
 
-You can also install test tools plugins in IDEA like Postman or Apipost to test entry points.
+```
 
+cd ~/code/flyingcloud-4156-project/MacBook_first_iteration_demo
 
+LOGDIR="logs"
+mkdir -p "$LOGDIR"
+LOGFILE="$LOGDIR/all_tests_$(date +%Y%m%d_%H%M%S).log"
+
+chmod +x -- ./*.sh(N)
+
+for f in \
+  test_income_transaction_equal.sh \
+  test_expense_transaction_exact.sh \
+  test_expense_transaction_percent.sh \
+  test_expense_transaction_weight.sh
+do
+    echo ">>> Running $f" | tee -a "$LOGFILE"
+    bash "$f" 2>&1 | tee -a "$LOGFILE"
+    echo ">>> Finished $f" | tee -a "$LOGFILE"
+    echo "----------------------------------------" | tee -a "$LOGFILE"
+done
+
+echo "All done. Log saved to: $LOGFILE"
+
+```
 
 
 
