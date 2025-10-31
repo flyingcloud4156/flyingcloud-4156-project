@@ -9,8 +9,8 @@ IFS=$'\n\t'
 
 # --- Configuration ---
 HOST="http://localhost:8081/api/v1"
-DB_SCHEMA_FILE="/Users/jinyiwang/Desktop/4156project/flyingcloud-4156-project/ops/sql/ledger_flow.sql"
-DB_SEED_FILE="/Users/jinyiwang/Desktop/4156project/flyingcloud-4156-project/ops/sql/backup/ledger.sql"
+DB_SCHEMA_FILE="/Users/fanzhelin/Documents/my projects/4156 ASE/flyingcloud4156/ops/sql/ledger_flow.sql"
+DB_SEED_FILE="/Users/fanzhelin/Documents/my projects/4156 ASE/flyingcloud4156/ops/sql/backup/ledger.sql"
 
 # --- Helper Functions ---
 echo_title() {
