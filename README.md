@@ -22,7 +22,12 @@ After you download on your local machine, you can open IntelliJ IDEA to clone th
    <code>mvn compile</code>
    
    <code>mvn spring-boot:run</code>
-   
+
+
+## Running a Macbook Based Instance (Iteration 1)
+please read
+[run_local_guide.md](MacBook_first_iteration_demo/run_local_guide.md)
+
 ## Running a Cloud Based Instance (Iteration 2)
 You can reach our service through cloud.
 
