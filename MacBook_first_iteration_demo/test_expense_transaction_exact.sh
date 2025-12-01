@@ -243,9 +243,11 @@ payload=$(jq -n \
     --argjson alice_id "$ALICE_ID" \
     --argjson bob_id "$BOB_ID" \
     --argjson charlie_id "$CHARLIE_ID" \
+    --argjson category_id "null" \
     '{
         "txn_at": "2025-10-22T08:00:00",
         "type": $type,
+        "category_id": $category_id,
         "payer_id": $payer_id,
         "amount_total": $amount_total,
         "currency": "USD",
