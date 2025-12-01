@@ -22,6 +22,7 @@ public class Transaction {
   private Long createdBy;
   private LocalDateTime txnAt;
   private String type;
+  private Long categoryId;
   private Long payerId;
   private BigDecimal amountTotal;
   private String currency;

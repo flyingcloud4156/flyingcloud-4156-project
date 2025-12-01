@@ -42,6 +42,9 @@ public class CreateTransactionRequest {
   @Schema(description = "Total transaction amount", example = "120.00", required = true)
   private BigDecimal amountTotal;
 
+  @Schema(description = "Category ID", example = "1")
+  private Long categoryId;
+
   @Size(max = 500, message = "Note cannot exceed 500 characters")
   @Schema(description = "Transaction note", example = "Dinner", maxLength = 500)
   private String note;

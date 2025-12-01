@@ -7,7 +7,6 @@
 -- Reset existing tables if they exist
 -- ------------------------------------------
 
-
 -- 如果数据库不存在就建一个
 CREATE DATABASE IF NOT EXISTS ledger
   DEFAULT CHARACTER SET utf8mb4
@@ -15,6 +14,7 @@ CREATE DATABASE IF NOT EXISTS ledger
 USE ledger;
 
 DROP TABLE IF EXISTS
+    budgets,
     attachments,
     settlements,
     ledger_user_balances,
@@ -69,11 +69,11 @@ CREATE TABLE ledgers (
                          name            VARCHAR(120) NOT NULL COMMENT 'Ledger name (e.g., Family 2025, Trip to Japan).',
                          owner_id        BIGINT UNSIGNED NOT NULL COMMENT 'Primary owner; also a member with OWNER role.',
                          ledger_type     ENUM('SINGLE','GROUP_BALANCE','DEBT_NETWORK') NOT NULL DEFAULT 'GROUP_BALANCE'
-                    COMMENT 'Modes: SINGLE (solo), GROUP_BALANCE (family-style net), DEBT_NETWORK (explicit A->B loans).',
+                      COMMENT 'Modes: SINGLE (solo), GROUP_BALANCE (family-style net), DEBT_NETWORK (explicit A->B loans).',
                          base_currency   CHAR(3) NOT NULL DEFAULT 'USD'
                              COMMENT 'Ledger’s accounting currency. All balances reported in this.',
                          share_start_date DATE NULL
-                    COMMENT 'Only records on/after this date are visible to members (privacy boundary).',
+                      COMMENT 'Only records on/after this date are visible to members (privacy boundary).',
                          created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                          updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                          CONSTRAINT fk_ledgers_owner FOREIGN KEY (owner_id) REFERENCES users(id),
@@ -88,7 +88,7 @@ CREATE TABLE ledger_members (
                                 ledger_id       BIGINT UNSIGNED NOT NULL,
                                 user_id         BIGINT UNSIGNED NOT NULL,
                                 role            ENUM('OWNER','ADMIN','EDITOR','VIEWER') NOT NULL DEFAULT 'EDITOR'
-                    COMMENT 'OWNER has full control; ADMIN manages members; EDITOR can add/modify own records; VIEWER is read-only.',
+                      COMMENT 'OWNER has full control; ADMIN manages members; EDITOR can add/modify own records; VIEWER is read-only.',
                                 joined_at       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                 PRIMARY KEY (ledger_id, user_id),
                                 CONSTRAINT fk_members_ledger FOREIGN KEY (ledger_id) REFERENCES ledgers(id) ON DELETE CASCADE,
@@ -104,7 +104,7 @@ CREATE TABLE categories (
                             ledger_id       BIGINT UNSIGNED NOT NULL,
                             name            VARCHAR(80) NOT NULL,
                             kind            ENUM('EXPENSE','INCOME','TRANSFER') NOT NULL DEFAULT 'EXPENSE'
-                    COMMENT 'Used for basic grouping; transactions still carry their own type.',
+                      COMMENT 'Used for basic grouping; transactions still carry their own type.',
                             is_active       BOOLEAN NOT NULL DEFAULT TRUE,
                             sort_order      INT NOT NULL DEFAULT 0,
                             UNIQUE KEY uk_ledger_name (ledger_id, name),
@@ -121,10 +121,10 @@ CREATE TABLE transactions (
                               created_by      BIGINT UNSIGNED NOT NULL COMMENT 'User who created the record.',
                               txn_at          DATETIME NOT NULL COMMENT 'When the transaction happened.',
                               type            ENUM('EXPENSE','INCOME','TRANSFER','LOAN') NOT NULL DEFAULT 'EXPENSE'
-                    COMMENT 'EXPENSE/INCOME for regular flow; TRANSFER for internal moves; LOAN for A->B lending.',
+                      COMMENT 'EXPENSE/INCOME for regular flow; TRANSFER for internal moves; LOAN for A->B lending.',
                               category_id     BIGINT UNSIGNED NULL,
                               payer_id        BIGINT UNSIGNED NULL
-                    COMMENT 'Who paid upfront (for shared bills / reimbursements). May be NULL for imported entries.',
+                      COMMENT 'Who paid upfront (for shared bills / reimbursements). May be NULL for imported entries.',
                               amount_total    DECIMAL(20,8) NOT NULL
                                   COMMENT 'Transaction gross amount in its native currency.',
                               currency        CHAR(3) NOT NULL DEFAULT 'USD',
@@ -132,12 +132,11 @@ CREATE TABLE transactions (
                               is_private      BOOLEAN NOT NULL DEFAULT FALSE
                                   COMMENT 'If TRUE, visible only to creator until/unless ownership rules override.',
                               rounding_strategy ENUM('NONE','ROUND_HALF_UP','TRIM_TO_UNIT') NOT NULL DEFAULT 'ROUND_HALF_UP'
-                    COMMENT 'How to round per-participant shares.',
+                      COMMENT 'How to round per-participant shares.',
                               tail_allocation ENUM('PAYER','LARGEST_SHARE','CREATOR') NOT NULL DEFAULT 'PAYER'
-                    COMMENT 'Who absorbs the rounding remainder.',
+                      COMMENT 'Who absorbs the rounding remainder.',
                               created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                               updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-
                               CONSTRAINT fk_txn_ledger FOREIGN KEY (ledger_id) REFERENCES ledgers(id) ON DELETE CASCADE,
                               CONSTRAINT fk_txn_creator FOREIGN KEY (created_by) REFERENCES users(id),
                               CONSTRAINT fk_txn_category FOREIGN KEY (category_id) REFERENCES categories(id),
@@ -156,13 +155,13 @@ CREATE TABLE transaction_splits (
                                     transaction_id  BIGINT UNSIGNED NOT NULL,
                                     user_id         BIGINT UNSIGNED NOT NULL,
                                     split_method    ENUM('EQUAL','PERCENT','WEIGHT','EXACT') NOT NULL
-                    COMMENT 'EQUAL: all equal parts; PERCENT: share_value is percent (0-100); WEIGHT: relative weight; EXACT: share_value is absolute amount.',
+                      COMMENT 'EQUAL: all equal parts; PERCENT: share_value is percent (0-100); WEIGHT: relative weight; EXACT: share_value is absolute amount.',
                                     share_value     DECIMAL(20,8) NOT NULL DEFAULT 0
                                         COMMENT 'Meaning depends on split_method. For EXACT it is the final amount in transaction currency.',
                                     included        BOOLEAN NOT NULL DEFAULT TRUE
                                         COMMENT 'FALSE means explicitly excluded from this transaction.',
                                     computed_amount DECIMAL(20,8) NULL
-                    COMMENT 'Optional: materialize final per-user amount in transaction currency after rounding.',
+                      COMMENT 'Optional: materialize final per-user amount in transaction currency after rounding.',
                                     UNIQUE KEY uk_split_txn_user (transaction_id, user_id),
                                     CONSTRAINT fk_splits_txn FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE CASCADE,
                                     CONSTRAINT fk_splits_user FOREIGN KEY (user_id) REFERENCES users(id),
@@ -171,18 +170,17 @@ CREATE TABLE transaction_splits (
 COMMENT='Participant-level shares for a transaction. Supports equal, percentage, weight, or exact allocations.';
 
 -- ------------------------------------------------------------
--- Debt edges (direct "A owes B" relations) for DEBT_NETWORK and
--- for materialized results of shared bill calculations
+-- Debt edges (direct "A owes B" relations)
 -- ------------------------------------------------------------
 CREATE TABLE debt_edges (
                             id              BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
                             ledger_id       BIGINT UNSIGNED NOT NULL,
                             transaction_id  BIGINT UNSIGNED NULL
-                    COMMENT 'If generated from a transaction, reference it; NULL for ad-hoc/loan entries.',
+                      COMMENT 'If generated from a transaction, reference it; NULL for ad-hoc/loan entries.',
                             from_user_id    BIGINT UNSIGNED NOT NULL
-                    COMMENT 'Creditor (the one who is owed money).',
+                      COMMENT 'Creditor (the one who is owed money).',
                             to_user_id      BIGINT UNSIGNED NOT NULL
-                    COMMENT 'Debtor (the one who owes).',
+                      COMMENT 'Debtor (the one who owes).',
                             amount          DECIMAL(20,8) NOT NULL
                                 COMMENT 'Positive amount in edge_currency.',
                             edge_currency   CHAR(3) NOT NULL DEFAULT 'USD',
@@ -227,7 +225,7 @@ CREATE TABLE settlements (
                              settled_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                              note            VARCHAR(500) NULL,
                              plan_batch_id   BIGINT UNSIGNED NULL
-                    COMMENT 'Optional: link multiple settlement rows that were executed together.',
+                      COMMENT 'Optional: link multiple settlement rows that were executed together.',
                              CONSTRAINT fk_settle_ledger FOREIGN KEY (ledger_id) REFERENCES ledgers(id) ON DELETE CASCADE,
                              CONSTRAINT fk_settle_from FOREIGN KEY (from_user_id) REFERENCES users(id),
                              CONSTRAINT fk_settle_to FOREIGN KEY (to_user_id) REFERENCES users(id),
@@ -254,7 +252,6 @@ COMMENT='Linked files for transactions. OCR text is kept simple for AI-assisted 
 
 -- ------------------------------------------------------------
 -- Optional: lightweight import jobs (for “AI / OCR” pipeline)
--- Keep minimal; tie to a user and, if known, a ledger.
 -- ------------------------------------------------------------
 CREATE TABLE import_jobs (
                              id              BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
@@ -273,6 +270,24 @@ CREATE TABLE import_jobs (
 COMMENT='Minimal ingestion records for AI/OCR/CSV-assisted bookkeeping.';
 
 -- ------------------------------------------------------------
+-- Budgets (new) - monthly / category budgets per ledger
+-- ------------------------------------------------------------
+CREATE TABLE budgets (
+                         id           BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+                         ledger_id    BIGINT UNSIGNED NOT NULL,
+                         category_id  BIGINT UNSIGNED NULL COMMENT 'NULL = whole-ledger budget; non-NULL = per-category budget',
+                         year         INT NOT NULL,
+                         month        TINYINT NOT NULL,
+                         limit_amount DECIMAL(20,8) NOT NULL,
+                         created_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                         updated_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                         UNIQUE KEY uk_budget_scope (ledger_id, category_id, year, month),
+                         CONSTRAINT fk_budget_ledger FOREIGN KEY (ledger_id) REFERENCES ledgers(id) ON DELETE CASCADE,
+                         CONSTRAINT fk_budget_category FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+COMMENT='Monthly budgets per ledger/category. Used only for budget checks; settlements do not change budgets.';
+
+-- ------------------------------------------------------------
 -- Practical indexes for analytics
 -- ------------------------------------------------------------
 CREATE INDEX idx_txn_ledger_category_time ON transactions (ledger_id, category_id, txn_at);
@@ -284,9 +299,10 @@ CREATE INDEX idx_txn_creator_time ON transactions (created_by, txn_at);
 -- - For GROUP_BALANCE, compute debt_edges from transaction_splits (payer vs. participants),
 --   then net per-user into ledger_user_balances. Settlement suggestions (min transfer)
 --   are computed in code, but recorded in settlements when executed.
--- - For DEBT_NETWORK, you can write edges directly (type=LOAN with corresponding debt_edges).
+-- - Budgets use ledger.base_currency implicitly; do NOT double-count settlements in budget.
 -- - Visibility:
 --     * transactions.is_private hides the record except creator (and owner/admin if you choose).
 --     * ledgers.share_start_date hides older data from non-owners.
 -- - Default currency is USD across ledgers and transactions; multi-currency is supported
 --   via currency table and per-row currency fields.
+

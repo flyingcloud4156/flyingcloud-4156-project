@@ -7,6 +7,7 @@ import dev.coms4156.project.groupproject.dto.LedgerResponse;
 import dev.coms4156.project.groupproject.dto.ListLedgerMembersResponse;
 import dev.coms4156.project.groupproject.dto.MyLedgersResponse;
 import dev.coms4156.project.groupproject.dto.Result;
+import dev.coms4156.project.groupproject.dto.SettlementPlanResponse;
 import dev.coms4156.project.groupproject.service.LedgerService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;

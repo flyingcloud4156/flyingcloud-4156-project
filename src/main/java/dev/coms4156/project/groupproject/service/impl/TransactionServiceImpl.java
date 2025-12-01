@@ -105,6 +105,7 @@ public class TransactionServiceImpl implements TransactionService {
     transaction.setCreatedBy(currentUser.getId());
     transaction.setTxnAt(request.getTxnAt());
     transaction.setType(request.getType());
+    transaction.setCategoryId(request.getCategoryId());
     transaction.setPayerId(request.getPayerId());
     transaction.setAmountTotal(request.getAmountTotal());
     transaction.setCurrency(request.getCurrency());
@@ -550,6 +551,7 @@ public class TransactionServiceImpl implements TransactionService {
     response.setLedgerId(transaction.getLedgerId());
     response.setTxnAt(transaction.getTxnAt());
     response.setType(transaction.getType());
+    response.setCategoryId(transaction.getCategoryId());
     response.setCurrency(transaction.getCurrency());
     response.setAmountTotal(transaction.getAmountTotal());
     response.setNote(transaction.getNote());
