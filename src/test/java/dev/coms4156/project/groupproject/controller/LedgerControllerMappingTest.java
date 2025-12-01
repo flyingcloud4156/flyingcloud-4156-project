@@ -1,6 +1,7 @@
 package dev.coms4156.project.groupproject.controller;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.lang.reflect.Method;
 import org.junit.jupiter.api.Test;

@@ -1,7 +1,12 @@
 package dev.coms4156.project.groupproject.controller;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 import dev.coms4156.project.groupproject.dto.Result;
 import dev.coms4156.project.groupproject.dto.analytics.LedgerAnalyticsOverview;
@@ -26,13 +31,13 @@ class AnalyticsControllerUnitTest {
   @Test
   void givenMonthsProvided_whenOverview_thenDelegatesWithSameMonths() {
     AnalyticsService svc = mock(AnalyticsService.class);
-    AnalyticsController controller = new AnalyticsController(svc);
 
     LedgerAnalyticsOverview out = new LedgerAnalyticsOverview();
     out.setCurrency("USD");
     out.setTotalExpense(new BigDecimal("123.45"));
     when(svc.overview(7L, 9)).thenReturn(out);
 
+    AnalyticsController controller = new AnalyticsController(svc);
     Result<LedgerAnalyticsOverview> resp = controller.overview(7L, 9);
 
     assertTrue(resp.isSuccess());

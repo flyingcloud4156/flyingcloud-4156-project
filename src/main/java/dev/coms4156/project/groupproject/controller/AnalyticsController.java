@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+/** Controller for analytics operations. */
 @RestController
 @RequestMapping("/api/v1/ledgers/{ledgerId}/analytics")
 @Tag(name = "Analytics APIs")
@@ -28,7 +29,8 @@ public class AnalyticsController {
   @Operation(
       summary = "Ledger analytics overview",
       description =
-          "Provides a comprehensive overview including income/expense, trend, category breakdown, AR/AP, top merchants, and recommendations.")
+          "Provides comprehensive overview including income/expense, trend, "
+              + "category breakdown, AR/AP, merchants, and recommendations.")
   public Result<LedgerAnalyticsOverview> overview(
       @PathVariable Long ledgerId,
       @RequestParam(value = "months", required = false, defaultValue = "3") Integer months) {

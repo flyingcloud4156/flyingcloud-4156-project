@@ -794,7 +794,8 @@ class BudgetServiceImplTest {
 
   @Test
   @DisplayName(
-      "checkBudgetAfterTransaction: categoryId provided, category budget exists and NEAR_LIMIT -> category alert")
+      "checkBudgetAfterTransaction: categoryId provided, "
+          + "category budget exists and NEAR_LIMIT -> category alert")
   void checkBudgetAfterTransaction_categoryNearLimit_returnsCategoryAlert() {
     Budget categoryBudget = new Budget();
     categoryBudget.setId(50L);
@@ -822,7 +823,8 @@ class BudgetServiceImplTest {
 
   @Test
   @DisplayName(
-      "checkBudgetAfterTransaction: categoryId provided, category budget exists and EXCEEDED -> category alert")
+      "checkBudgetAfterTransaction: categoryId provided, "
+          + "category budget exists and EXCEEDED -> category alert")
   void checkBudgetAfterTransaction_categoryExceeded_returnsCategoryAlert() {
     Budget categoryBudget = new Budget();
     categoryBudget.setId(51L);
@@ -849,7 +851,8 @@ class BudgetServiceImplTest {
 
   @Test
   @DisplayName(
-      "checkBudgetAfterTransaction: categoryId provided, category budget OK -> returns null (does not check ledger)")
+      "checkBudgetAfterTransaction: categoryId provided, "
+          + "category budget OK -> returns null (does not check ledger)")
   void checkBudgetAfterTransaction_categoryOk_returnsNull() {
     Budget categoryBudget = new Budget();
     categoryBudget.setId(52L);
@@ -875,7 +878,8 @@ class BudgetServiceImplTest {
 
   @Test
   @DisplayName(
-      "checkBudgetAfterTransaction: categoryId provided, no category budget, ledger budget EXCEEDED -> ledger alert")
+      "checkBudgetAfterTransaction: categoryId provided, "
+          + "no category budget, ledger budget EXCEEDED -> ledger alert")
   void checkBudgetAfterTransaction_noCategoryBudget_ledgerExceeded_returnsLedgerAlert() {
     Budget ledgerBudget = new Budget();
     ledgerBudget.setId(60L);
@@ -903,7 +907,8 @@ class BudgetServiceImplTest {
 
   @Test
   @DisplayName(
-      "checkBudgetAfterTransaction: categoryId provided, no matching category budget, no ledger budget -> null")
+      "checkBudgetAfterTransaction: categoryId provided, "
+          + "no matching category budget, no ledger budget -> null")
   void checkBudgetAfterTransaction_noMatchingBudgets_returnsNull() {
     Budget otherCategoryBudget = new Budget();
     otherCategoryBudget.setId(70L);
@@ -925,7 +930,8 @@ class BudgetServiceImplTest {
 
   @Test
   @DisplayName(
-      "checkBudgetAfterTransaction: both category and ledger EXCEEDED -> returns category alert (priority)")
+      "checkBudgetAfterTransaction: both category and ledger EXCEEDED "
+          + "-> returns category alert (priority)")
   void checkBudgetAfterTransaction_bothExceeded_returnsCategoryAlert() {
     Budget categoryBudget = new Budget();
     categoryBudget.setId(80L);

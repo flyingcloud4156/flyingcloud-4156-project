@@ -50,7 +50,8 @@ public class AccessLogInterceptor implements HandlerInterceptor {
       String params = sanitizeParameters(request.getParameterMap());
 
       log.info(
-          "event=ACCESS requestId={} method={} uri={} params={} handler={} status={} durationMs={} user={} exception={}",
+          "event=ACCESS requestId={} method={} uri={} params={} handler={} status={} "
+              + "durationMs={} user={} exception={}",
           requestId,
           request.getMethod(),
           request.getRequestURI(),

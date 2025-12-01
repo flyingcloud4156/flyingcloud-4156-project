@@ -33,6 +33,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
+/** Implementation of AnalyticsService. */
 @Service
 public class AnalyticsServiceImpl implements AnalyticsService {
 
@@ -41,6 +42,14 @@ public class AnalyticsServiceImpl implements AnalyticsService {
   private final LedgerMemberMapper ledgerMemberMapper;
   private final UserMapper userMapper;
 
+  /**
+   * Constructor for AnalyticsServiceImpl.
+   *
+   * @param aggMapper analytics aggregation mapper
+   * @param ledgerMapper ledger mapper
+   * @param ledgerMemberMapper ledger member mapper
+   * @param userMapper user mapper
+   */
   public AnalyticsServiceImpl(
       AnalyticsAggMapper aggMapper,
       LedgerMapper ledgerMapper,
@@ -83,15 +92,27 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     AggRows.IncomeExpenseRow totals = aggMapper.sumIncomeExpense(ledgerId, start, end, uid);
     BigDecimal totalIncome = nz(totals.getTotalIncome());
     BigDecimal totalExpense = nz(totals.getTotalExpense());
+
+    LedgerAnalyticsOverview out = new LedgerAnalyticsOverview();
+    out.setCurrency(ledger.getBaseCurrency());
+    out.setRangeStart(start);
+    out.setRangeEnd(end);
+    out.setTotalIncome(totalIncome);
+    out.setTotalExpense(totalExpense);
+
     BigDecimal net = totalIncome.subtract(totalExpense);
+    out.setNetBalance(net);
 
     List<PeriodStat> trend =
         buildContinuousTrend(startYm, endYm, aggMapper.monthlyStats(ledgerId, start, end, uid));
+    out.setTrend(trend);
 
     List<CategoryStat> byCategory =
         buildCategoryStats(totalExpense, aggMapper.categoryStats(ledgerId, start, end, uid));
+    out.setByCategory(byCategory);
 
     List<UserArAp> arap = buildArAp(ledgerId, uid);
+    out.setArap(arap);
 
     List<MerchantStat> topMerchants =
         aggMapper.topMerchants(ledgerId, start, end, 5, uid).stream()
@@ -103,6 +124,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                   return ms;
                 })
             .collect(Collectors.toList());
+    out.setTopMerchants(topMerchants);
 
     List<RecommendationItem> recs = new ArrayList<>();
     if (totalExpense.compareTo(totalIncome) > 0) {
@@ -113,18 +135,6 @@ public class AnalyticsServiceImpl implements AnalyticsService {
       item.setSeverity("WARNING");
       recs.add(item);
     }
-
-    LedgerAnalyticsOverview out = new LedgerAnalyticsOverview();
-    out.setCurrency(ledger.getBaseCurrency());
-    out.setRangeStart(start);
-    out.setRangeEnd(end);
-    out.setTotalIncome(totalIncome);
-    out.setTotalExpense(totalExpense);
-    out.setNetBalance(net);
-    out.setTrend(trend);
-    out.setByCategory(byCategory);
-    out.setArap(arap);
-    out.setTopMerchants(topMerchants);
     out.setRecommendations(recs);
     return out;
   }

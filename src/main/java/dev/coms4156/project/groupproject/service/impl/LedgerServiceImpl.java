@@ -40,6 +40,13 @@ public class LedgerServiceImpl extends ServiceImpl<LedgerMapper, Ledger> impleme
   private final UserMapper userMapper;
   private final DebtEdgeMapper debtEdgeMapper;
 
+  /**
+   * Constructor for LedgerServiceImpl.
+   *
+   * @param ledgerMemberMapper ledger member mapper
+   * @param userMapper user mapper
+   * @param debtEdgeMapper debt edge mapper
+   */
   @Autowired
   public LedgerServiceImpl(
       LedgerMemberMapper ledgerMemberMapper, UserMapper userMapper, DebtEdgeMapper debtEdgeMapper) {

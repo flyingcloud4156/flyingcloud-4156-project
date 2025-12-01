@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import lombok.Data;
 
+/** Comprehensive analytics overview for a ledger. */
 @Data
 public class LedgerAnalyticsOverview {
   private String currency;
