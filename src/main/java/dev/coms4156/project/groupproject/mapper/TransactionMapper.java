@@ -57,6 +57,6 @@ public interface TransactionMapper extends BaseMapper<Transaction> {
   java.math.BigDecimal sumExpenseByTimeRange(
       @Param("ledgerId") Long ledgerId,
       @Param("categoryId") Long categoryId,
-      @Param("start") java.time.LocalDateTime start,
-      @Param("end") java.time.LocalDateTime end);
+      @Param("start") LocalDateTime start,
+      @Param("end") LocalDateTime end);
 }

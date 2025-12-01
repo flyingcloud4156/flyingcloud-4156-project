@@ -132,26 +132,22 @@ public class AnalyticsServiceImpl implements AnalyticsService {
   private List<PeriodStat> buildContinuousTrend(
       YearMonth startYm, YearMonth endYm, List<AggRows.MonthlyRow> rows) {
 
-    Map<String, AggRows.MonthlyRow> map = new HashMap<>();
-    for (AggRows.MonthlyRow r : rows) {
-      map.put(r.getPeriod(), r);
-    }
+    Map<String, AggRows.MonthlyRow> map =
+        rows.stream().collect(Collectors.toMap(AggRows.MonthlyRow::getPeriod, r -> r));
 
-    List<PeriodStat> out = new ArrayList<>();
-    YearMonth cur = startYm;
-    while (!cur.isAfter(endYm)) {
-      String key = cur.toString();
-      AggRows.MonthlyRow r = map.get(key);
-
-      PeriodStat ps = new PeriodStat();
-      ps.setPeriod(key);
-      ps.setIncome(r == null ? BigDecimal.ZERO : nz(r.getIncome()));
-      ps.setExpense(r == null ? BigDecimal.ZERO : nz(r.getExpense()));
-      out.add(ps);
-
-      cur = cur.plusMonths(1);
-    }
-    return out;
+    return java.util.stream.Stream.iterate(
+            startYm, ym -> !ym.isAfter(endYm), ym -> ym.plusMonths(1))
+        .map(
+            ym -> {
+              String key = ym.toString();
+              AggRows.MonthlyRow r = map.get(key);
+              PeriodStat ps = new PeriodStat();
+              ps.setPeriod(key);
+              ps.setIncome(r == null ? BigDecimal.ZERO : nz(r.getIncome()));
+              ps.setExpense(r == null ? BigDecimal.ZERO : nz(r.getExpense()));
+              return ps;
+            })
+        .collect(Collectors.toList());
   }
 
   private List<CategoryStat> buildCategoryStats(
@@ -207,15 +203,18 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     Map<Long, String> nameMap =
         users.stream().collect(Collectors.toMap(User::getId, User::getName, (a, b) -> a));
 
-    List<UserArAp> out = new ArrayList<>();
-    for (Long uid : allUserIds) {
-      UserArAp u = new UserArAp();
-      u.setUserId(uid);
-      u.setUserName(nameMap.getOrDefault(uid, "user_" + uid));
-      u.setAr(arMap.getOrDefault(uid, BigDecimal.ZERO));
-      u.setAp(apMap.getOrDefault(uid, BigDecimal.ZERO));
-      out.add(u);
-    }
+    List<UserArAp> out =
+        allUserIds.stream()
+            .map(
+                uid -> {
+                  UserArAp u = new UserArAp();
+                  u.setUserId(uid);
+                  u.setUserName(nameMap.getOrDefault(uid, "user_" + uid));
+                  u.setAr(arMap.getOrDefault(uid, BigDecimal.ZERO));
+                  u.setAp(apMap.getOrDefault(uid, BigDecimal.ZERO));
+                  return u;
+                })
+            .collect(Collectors.toList());
 
     out.sort(
         (x, y) -> {

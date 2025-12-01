@@ -128,7 +128,6 @@ public class TransactionServiceImpl implements TransactionService {
     // Handle EXPENSE/INCOME with splits
     handleSplitTransaction(ledgerId, transactionId, request, ledger);
 
-    // Check budget status and generate alert if needed
     String budgetAlert = null;
     if ("EXPENSE".equals(request.getType())) {
       try {
@@ -136,8 +135,7 @@ public class TransactionServiceImpl implements TransactionService {
             budgetService.checkBudgetAfterTransaction(
                 ledgerId, request.getCategoryId(), request.getTxnAt());
       } catch (Exception e) {
-        // Log warning but do not fail the transaction
-        // Budget check is a non-critical operation
+        budgetAlert = null;
       }
     }
 
