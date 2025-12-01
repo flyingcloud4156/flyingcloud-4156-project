@@ -15,14 +15,19 @@ import dev.coms4156.project.groupproject.dto.LedgerMemberResponse;
 import dev.coms4156.project.groupproject.dto.LedgerResponse;
 import dev.coms4156.project.groupproject.dto.ListLedgerMembersResponse;
 import dev.coms4156.project.groupproject.dto.MyLedgersResponse;
+import dev.coms4156.project.groupproject.dto.NetBalanceResponse;
 import dev.coms4156.project.groupproject.dto.UserView;
+import dev.coms4156.project.groupproject.entity.DebtEdge;
 import dev.coms4156.project.groupproject.entity.Ledger;
 import dev.coms4156.project.groupproject.entity.LedgerMember;
 import dev.coms4156.project.groupproject.entity.User;
+import dev.coms4156.project.groupproject.mapper.DebtEdgeMapper;
 import dev.coms4156.project.groupproject.mapper.LedgerMemberMapper;
 import dev.coms4156.project.groupproject.mapper.UserMapper;
 import dev.coms4156.project.groupproject.utils.CurrentUserContext;
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import org.junit.jupiter.api.AfterEach;
@@ -46,6 +51,7 @@ class LedgerServiceImplTest {
 
   @Mock private LedgerMemberMapper ledgerMemberMapper;
   @Mock private UserMapper userMapper;
+  @Mock private DebtEdgeMapper debtEdgeMapper;
 
   @Spy @InjectMocks private LedgerServiceImpl service;
 
@@ -428,5 +434,219 @@ class LedgerServiceImplTest {
   void removeMember_notLoggedIn() {
     CurrentUserContext.clear();
     assertThrows(RuntimeException.class, () -> service.removeMember(10L, 2L));
+  }
+
+  private static DebtEdge debtEdge(
+      long ledgerId, long transactionId, long fromUserId, long toUserId, BigDecimal amount) {
+    DebtEdge edge = new DebtEdge();
+    edge.setLedgerId(ledgerId);
+    edge.setTransactionId(transactionId);
+    edge.setFromUserId(fromUserId);
+    edge.setToUserId(toUserId);
+    edge.setAmount(amount);
+    edge.setEdgeCurrency("USD");
+    edge.setCreatedAt(LocalDateTime.now());
+    return edge;
+  }
+
+  private static User user(long id, String name) {
+    User u = new User();
+    u.setId(id);
+    u.setName(name);
+    return u;
+  }
+
+  @Test
+  @DisplayName("getNetBalance: typical with single debt -> returns net balance")
+  void getNetBalance_typicalSingleDebt() {
+    CurrentUserContext.set(new UserView(1L, "Alice"));
+
+    doReturn(ledger(10L, "Family")).when(service).getById(10L);
+    doReturn(member(10L, 1L, "OWNER"))
+        .when(ledgerMemberMapper)
+        .selectOne(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
+
+    DebtEdge edge1 = debtEdge(10L, 1L, 1L, 2L, new BigDecimal("25.00"));
+    doReturn(Arrays.asList(edge1)).when(debtEdgeMapper).findByLedgerId(10L);
+
+    User alice = user(1L, "Alice");
+    User bob = user(2L, "Bob");
+    doReturn(alice).when(userMapper).selectById(1L);
+    doReturn(bob).when(userMapper).selectById(2L);
+
+    NetBalanceResponse resp = service.getNetBalance(10L);
+
+    assertNotNull(resp);
+    assertEquals(10L, resp.getLedgerId());
+    assertEquals("USD", resp.getCurrency());
+    assertEquals(1, resp.getBalances().size());
+    assertEquals(1L, resp.getBalances().get(0).getCreditorId());
+    assertEquals("Alice", resp.getBalances().get(0).getCreditorName());
+    assertEquals(2L, resp.getBalances().get(0).getDebtorId());
+    assertEquals("Bob", resp.getBalances().get(0).getDebtorName());
+    assertEquals(new BigDecimal("25.00"), resp.getBalances().get(0).getAmount());
+  }
+
+  @Test
+  @DisplayName("getNetBalance: bidirectional debts with netting -> returns net amount")
+  void getNetBalance_bidirectionalNetting() {
+    CurrentUserContext.set(new UserView(1L, "Alice"));
+
+    doReturn(ledger(10L, "Family")).when(service).getById(10L);
+    doReturn(member(10L, 1L, "OWNER"))
+        .when(ledgerMemberMapper)
+        .selectOne(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
+
+    DebtEdge edge1 = debtEdge(10L, 1L, 1L, 2L, new BigDecimal("25.00"));
+    DebtEdge edge2 = debtEdge(10L, 2L, 2L, 1L, new BigDecimal("10.00"));
+    doReturn(Arrays.asList(edge1, edge2)).when(debtEdgeMapper).findByLedgerId(10L);
+
+    User alice = user(1L, "Alice");
+    User bob = user(2L, "Bob");
+    doReturn(alice).when(userMapper).selectById(1L);
+    doReturn(bob).when(userMapper).selectById(2L);
+
+    NetBalanceResponse resp = service.getNetBalance(10L);
+
+    assertNotNull(resp);
+    assertEquals(1, resp.getBalances().size());
+    assertEquals(1L, resp.getBalances().get(0).getCreditorId());
+    assertEquals("Alice", resp.getBalances().get(0).getCreditorName());
+    assertEquals(2L, resp.getBalances().get(0).getDebtorId());
+    assertEquals("Bob", resp.getBalances().get(0).getDebtorName());
+    assertEquals(new BigDecimal("15.00"), resp.getBalances().get(0).getAmount());
+  }
+
+  @Test
+  @DisplayName("getNetBalance: multiple transactions with aggregation -> returns aggregated net")
+  void getNetBalance_multipleTransactions() {
+    CurrentUserContext.set(new UserView(1L, "Alice"));
+
+    doReturn(ledger(10L, "Family")).when(service).getById(10L);
+    doReturn(member(10L, 1L, "OWNER"))
+        .when(ledgerMemberMapper)
+        .selectOne(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
+
+    DebtEdge edge1 = debtEdge(10L, 1L, 1L, 2L, new BigDecimal("25.00"));
+    DebtEdge edge2 = debtEdge(10L, 2L, 1L, 2L, new BigDecimal("15.00"));
+    DebtEdge edge3 = debtEdge(10L, 3L, 1L, 3L, new BigDecimal("30.00"));
+    doReturn(Arrays.asList(edge1, edge2, edge3)).when(debtEdgeMapper).findByLedgerId(10L);
+
+    User alice = user(1L, "Alice");
+    User bob = user(2L, "Bob");
+    User charlie = user(3L, "Charlie");
+    doReturn(alice).when(userMapper).selectById(1L);
+    doReturn(bob).when(userMapper).selectById(2L);
+    doReturn(charlie).when(userMapper).selectById(3L);
+
+    NetBalanceResponse resp = service.getNetBalance(10L);
+
+    assertNotNull(resp);
+    assertEquals(2, resp.getBalances().size());
+    assertEquals(1L, resp.getBalances().get(0).getCreditorId());
+    assertEquals(2L, resp.getBalances().get(0).getDebtorId());
+    assertEquals(new BigDecimal("40.00"), resp.getBalances().get(0).getAmount());
+    assertEquals(1L, resp.getBalances().get(1).getCreditorId());
+    assertEquals(3L, resp.getBalances().get(1).getDebtorId());
+    assertEquals(new BigDecimal("30.00"), resp.getBalances().get(1).getAmount());
+  }
+
+  @Test
+  @DisplayName("getNetBalance: no debt edges -> returns empty list")
+  void getNetBalance_noDebtEdges() {
+    CurrentUserContext.set(new UserView(1L, "Alice"));
+
+    doReturn(ledger(10L, "Family")).when(service).getById(10L);
+    doReturn(member(10L, 1L, "OWNER"))
+        .when(ledgerMemberMapper)
+        .selectOne(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
+
+    doReturn(Collections.emptyList()).when(debtEdgeMapper).findByLedgerId(10L);
+
+    NetBalanceResponse resp = service.getNetBalance(10L);
+
+    assertNotNull(resp);
+    assertEquals(10L, resp.getLedgerId());
+    assertEquals("USD", resp.getCurrency());
+    assertEquals(0, resp.getBalances().size());
+  }
+
+  @Test
+  @DisplayName("getNetBalance: fully offset debts -> returns empty list")
+  void getNetBalance_fullyOffset() {
+    CurrentUserContext.set(new UserView(1L, "Alice"));
+
+    doReturn(ledger(10L, "Family")).when(service).getById(10L);
+    doReturn(member(10L, 1L, "OWNER"))
+        .when(ledgerMemberMapper)
+        .selectOne(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
+
+    DebtEdge edge1 = debtEdge(10L, 1L, 1L, 2L, new BigDecimal("25.00"));
+    DebtEdge edge2 = debtEdge(10L, 2L, 2L, 1L, new BigDecimal("25.00"));
+    doReturn(Arrays.asList(edge1, edge2)).when(debtEdgeMapper).findByLedgerId(10L);
+
+    NetBalanceResponse resp = service.getNetBalance(10L);
+
+    assertNotNull(resp);
+    assertEquals(0, resp.getBalances().size());
+  }
+
+  @Test
+  @DisplayName("getNetBalance: not logged in -> throws")
+  void getNetBalance_notLoggedIn() {
+    CurrentUserContext.clear();
+    assertThrows(RuntimeException.class, () -> service.getNetBalance(10L));
+  }
+
+  @Test
+  @DisplayName("getNetBalance: ledger not found -> throws")
+  void getNetBalance_ledgerNotFound() {
+    CurrentUserContext.set(new UserView(1L, "Alice"));
+    doReturn(null).when(service).getById(999L);
+
+    assertThrows(RuntimeException.class, () -> service.getNetBalance(999L));
+  }
+
+  @Test
+  @DisplayName("getNetBalance: not member -> throws")
+  void getNetBalance_notMember() {
+    CurrentUserContext.set(new UserView(1L, "Alice"));
+    doReturn(ledger(10L, "Family")).when(service).getById(10L);
+    doReturn(null)
+        .when(ledgerMemberMapper)
+        .selectOne(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
+
+    assertThrows(RuntimeException.class, () -> service.getNetBalance(10L));
+  }
+
+  @Test
+  @DisplayName(
+      "getNetBalance: reverse netting (debtor becomes creditor) -> returns correct direction")
+  void getNetBalance_reverseNetting() {
+    CurrentUserContext.set(new UserView(1L, "Alice"));
+
+    doReturn(ledger(10L, "Family")).when(service).getById(10L);
+    doReturn(member(10L, 1L, "OWNER"))
+        .when(ledgerMemberMapper)
+        .selectOne(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
+
+    DebtEdge edge1 = debtEdge(10L, 1L, 1L, 2L, new BigDecimal("10.00"));
+    DebtEdge edge2 = debtEdge(10L, 2L, 2L, 1L, new BigDecimal("25.00"));
+    doReturn(Arrays.asList(edge1, edge2)).when(debtEdgeMapper).findByLedgerId(10L);
+
+    User alice = user(1L, "Alice");
+    User bob = user(2L, "Bob");
+    doReturn(alice).when(userMapper).selectById(1L);
+    doReturn(bob).when(userMapper).selectById(2L);
+
+    NetBalanceResponse resp = service.getNetBalance(10L);
+
+    assertNotNull(resp);
+    assertEquals(1, resp.getBalances().size());
+    assertEquals(2L, resp.getBalances().get(0).getCreditorId());
+    assertEquals("Bob", resp.getBalances().get(0).getCreditorName());
+    assertEquals(1L, resp.getBalances().get(0).getDebtorId());
+    assertEquals("Alice", resp.getBalances().get(0).getDebtorName());
+    assertEquals(new BigDecimal("15.00"), resp.getBalances().get(0).getAmount());
   }
 }

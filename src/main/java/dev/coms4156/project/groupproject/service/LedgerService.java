@@ -7,6 +7,7 @@ import dev.coms4156.project.groupproject.dto.LedgerMemberResponse;
 import dev.coms4156.project.groupproject.dto.LedgerResponse;
 import dev.coms4156.project.groupproject.dto.ListLedgerMembersResponse;
 import dev.coms4156.project.groupproject.dto.MyLedgersResponse;
+import dev.coms4156.project.groupproject.dto.NetBalanceResponse;
 import dev.coms4156.project.groupproject.entity.Ledger;
 
 /** Service for ledger-related operations. */
@@ -22,4 +23,6 @@ public interface LedgerService extends IService<Ledger> {
   ListLedgerMembersResponse listMembers(Long ledgerId);
 
   void removeMember(Long ledgerId, Long userId);
+
+  NetBalanceResponse getNetBalance(Long ledgerId);
 }

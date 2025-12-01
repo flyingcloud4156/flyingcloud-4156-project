@@ -6,6 +6,7 @@ import dev.coms4156.project.groupproject.dto.LedgerMemberResponse;
 import dev.coms4156.project.groupproject.dto.LedgerResponse;
 import dev.coms4156.project.groupproject.dto.ListLedgerMembersResponse;
 import dev.coms4156.project.groupproject.dto.MyLedgersResponse;
+import dev.coms4156.project.groupproject.dto.NetBalanceResponse;
 import dev.coms4156.project.groupproject.dto.Result;
 import dev.coms4156.project.groupproject.service.LedgerService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -76,5 +77,11 @@ public class LedgerController {
   public Result<Void> removeMember(@PathVariable Long ledgerId, @PathVariable Long userId) {
     ledgerService.removeMember(ledgerId, userId);
     return Result.ok();
+  }
+
+  @GetMapping("/{ledgerId}/net-balance")
+  @Operation(summary = "Get net balance across all transactions")
+  public Result<NetBalanceResponse> getNetBalance(@PathVariable Long ledgerId) {
+    return Result.ok(ledgerService.getNetBalance(ledgerId));
   }
 }
