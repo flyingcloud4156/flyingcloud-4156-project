@@ -45,7 +45,7 @@ async function login() {
 }
 
 async function loadLedgers() {
-  const data = await api("/api/v1/ledgers:mine");
+  const data = await api("/api/v1/ledgers/mine");
   const items = data.items || [];
   const sel = $("ledgerSelect");
   sel.innerHTML = "";

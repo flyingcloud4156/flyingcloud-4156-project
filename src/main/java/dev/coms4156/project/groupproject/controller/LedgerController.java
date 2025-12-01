@@ -45,7 +45,7 @@ public class LedgerController {
     return Result.ok(ledgerService.createLedger(req));
   }
 
-  @GetMapping(":mine")
+  @GetMapping("/mine")
   @Operation(summary = "Get my ledgers")
   public Result<MyLedgersResponse> getMyLedgers() {
     return Result.ok(ledgerService.getMyLedgers());
