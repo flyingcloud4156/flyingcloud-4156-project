@@ -24,6 +24,7 @@ import dev.coms4156.project.groupproject.mapper.LedgerMapper;
 import dev.coms4156.project.groupproject.mapper.LedgerMemberMapper;
 import dev.coms4156.project.groupproject.mapper.TransactionMapper;
 import dev.coms4156.project.groupproject.mapper.TransactionSplitMapper;
+import dev.coms4156.project.groupproject.service.BudgetService;
 import dev.coms4156.project.groupproject.service.TransactionService;
 import dev.coms4156.project.groupproject.utils.CurrentUserContext;
 import java.math.BigDecimal;
@@ -54,6 +55,7 @@ public class TransactionServiceImpl implements TransactionService {
   private final LedgerMapper ledgerMapper;
   private final LedgerMemberMapper ledgerMemberMapper;
   private final CurrencyMapper currencyMapper;
+  private final BudgetService budgetService;
 
   /**
    * Constructor for TransactionServiceImpl.
@@ -64,6 +66,7 @@ public class TransactionServiceImpl implements TransactionService {
    * @param ledgerMapper mapper for ledger operations
    * @param ledgerMemberMapper mapper for ledger member operations
    * @param currencyMapper mapper for currency operations
+   * @param budgetService service for budget operations
    */
   @Autowired
   public TransactionServiceImpl(
@@ -72,13 +75,15 @@ public class TransactionServiceImpl implements TransactionService {
       DebtEdgeMapper debtEdgeMapper,
       LedgerMapper ledgerMapper,
       LedgerMemberMapper ledgerMemberMapper,
-      CurrencyMapper currencyMapper) {
+      CurrencyMapper currencyMapper,
+      BudgetService budgetService) {
     this.transactionMapper = transactionMapper;
     this.transactionSplitMapper = transactionSplitMapper;
     this.debtEdgeMapper = debtEdgeMapper;
     this.ledgerMapper = ledgerMapper;
     this.ledgerMemberMapper = ledgerMemberMapper;
     this.currencyMapper = currencyMapper;
+    this.budgetService = budgetService;
   }
 
   @Override
@@ -123,8 +128,22 @@ public class TransactionServiceImpl implements TransactionService {
     // Handle EXPENSE/INCOME with splits
     handleSplitTransaction(ledgerId, transactionId, request, ledger);
 
+    // Check budget status and generate alert if needed
+    String budgetAlert = null;
+    if ("EXPENSE".equals(request.getType())) {
+      try {
+        budgetAlert =
+            budgetService.checkBudgetAfterTransaction(
+                ledgerId, request.getCategoryId(), request.getTxnAt());
+      } catch (Exception e) {
+        // Log warning but do not fail the transaction
+        // Budget check is a non-critical operation
+      }
+    }
+
     CreateTransactionResponse response = new CreateTransactionResponse();
     response.setTransactionId(transactionId);
+    response.setBudgetAlert(budgetAlert);
     return response;
   }
 

@@ -57,6 +57,7 @@ class TransactionServiceImplTest {
   @Mock private LedgerMapper ledgerMapper;
   @Mock private LedgerMemberMapper ledgerMemberMapper;
   @Mock private CurrencyMapper currencyMapper;
+  @Mock private dev.coms4156.project.groupproject.service.BudgetService budgetService;
 
   @InjectMocks private TransactionServiceImpl service;
 

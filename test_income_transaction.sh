@@ -22,8 +22,8 @@ IFS=$'\n\t'
 
 # --- Configuration ---
 HOST="http://localhost:8081"
-DB_SCHEMA_FILE="/Users/Shared/BackendProject/flyingcloud-4156-project/ops/sql/ledger_flow.sql"
-DB_SEED_FILE="/Users/Shared/BackendProject/flyingcloud-4156-project/ops/sql/backup/ledger.sql"
+DB_SCHEMA_FILE="/Users/jinyiwang/Desktop/4156project-final/flyingcloud-4156-project/ops/sql/ledger_flow.sql"
+DB_SEED_FILE="/Users/jinyiwang/Desktop/4156project-final/flyingcloud-4156-project/ops/sql/backup/ledger.sql"
 
 # --- Helper Functions ---
 echo_title() {
@@ -168,9 +168,9 @@ payload=$(jq -n \
         "rounding_strategy": "ROUND_HALF_UP",
         "tail_allocation": "PAYER",
         "splits": [
-            {"userId": $alice_id, "splitMethod": "EQUAL", "shareValue": null, "included": true},
-            {"userId": $bob_id, "splitMethod": "EQUAL", "shareValue": null, "included": true},
-            {"userId": $charlie_id, "splitMethod": "EQUAL", "shareValue": null, "included": true}
+            {"user_id": $alice_id, "split_method": "EQUAL", "share_value": null, "included": true},
+            {"user_id": $bob_id, "split_method": "EQUAL", "share_value": null, "included": true},
+            {"user_id": $charlie_id, "split_method": "EQUAL", "share_value": null, "included": true}
         ]
     }')
 

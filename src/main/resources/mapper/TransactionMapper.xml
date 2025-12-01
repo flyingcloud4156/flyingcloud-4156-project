@@ -63,4 +63,15 @@
       )
   </select>
 
+  <!-- Sum expense amounts by time range and optional category -->
+  <select id="sumExpenseByTimeRange" resultType="java.math.BigDecimal">
+    SELECT COALESCE(SUM(amount_total), 0)
+    FROM transactions
+    WHERE ledger_id = #{ledgerId}
+      AND type = 'EXPENSE'
+      AND txn_at >= #{start}
+      AND txn_at &lt; #{end}
+      AND (#{categoryId} IS NULL OR category_id = #{categoryId})
+  </select>
+
 </mapper>
