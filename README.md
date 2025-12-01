@@ -177,7 +177,10 @@ This section describes the endpoints provided by this project, along with their 
   * totalAmount (decimal): total amount of the transaction
   * splits (list): list of participant split details
   * createdBy (long): ID of the user who created the transaction
-* Expected Output: A JSON object (CreateTransactionResponse) containing created transaction details
+  * categoryId (long, optional): category ID for expense categorization
+* Expected Output: A JSON object (CreateTransactionResponse) containing:
+  * transactionId (long): ID of the created transaction
+  * budgetAlert (string, optional): budget warning/alert message if spending approaches or exceeds budget limit (only for EXPENSE transactions)
 * Upon Success: HTTP 201 Status Code returned along with transaction object in JSON
 * Upon Failure:
   * HTTP 400 Status Code with "Invalid input."
@@ -208,6 +211,40 @@ This section describes the endpoints provided by this project, along with their 
 * Upon Failure:
   * HTTP 404 Status Code with "Ledger not found."
   * HTTP 500 Status Code with "Error occurred while listing transactions."
+
+#### POST /api/v1/ledgers/{ledgerId}/budgets
+* Expected Input Parameters: JSON object (SetBudgetRequest) containing the following fields
+  * categoryId (long, optional): category ID for category-specific budget (null for ledger-level budget)
+  * year (integer): budget year (2020-2100)
+  * month (integer): budget month (1-12)
+  * limitAmount (decimal): budget limit amount (minimum 0.01)
+* Expected Output: A JSON object (Result<Void>) indicating budget creation/update success
+* Upon Success: HTTP 200 Status Code returned with success message in JSON
+* Upon Failure:
+  * HTTP 400 Status Code with "Invalid input."
+  * HTTP 401 Status Code with "Not logged in."
+  * HTTP 403 Status Code with "Insufficient permissions. Only OWNER or ADMIN can set budgets."
+  * HTTP 404 Status Code with "Ledger not found."
+  * HTTP 500 Status Code with "Error occurred while setting budget."
+
+#### GET /api/v1/ledgers/{ledgerId}/budgets/status
+* Expected Input Parameters:
+  * ledgerId (long): the unique identifier of the ledger
+  * year (integer): budget year to query
+  * month (integer): budget month to query (1-12)
+* Expected Output: A JSON object (BudgetStatusResponse) containing a list of budget status items, each with:
+  * budgetId (long): unique budget ID
+  * categoryId (long, optional): category ID (null for ledger-level budget)
+  * categoryName (string): category display name or "Total Budget"
+  * limitAmount (decimal): budget limit amount
+  * spentAmount (decimal): total spent amount
+  * ratio (string): usage ratio as decimal string (e.g., "0.8500" for 85%)
+  * status (string): budget status - "OK" (< 80%), "NEAR_LIMIT" (80-99%), or "EXCEEDED" (≥ 100%)
+* Upon Success: HTTP 200 Status Code returned with budget status list in JSON
+* Upon Failure:
+  * HTTP 401 Status Code with "Not logged in."
+  * HTTP 403 Status Code with "Not a member of this ledger."
+  * HTTP 500 Status Code with "Error occurred while retrieving budget status."
 
 
 ## Unit Testing
