@@ -15,16 +15,22 @@ import dev.coms4156.project.groupproject.dto.LedgerMemberResponse;
 import dev.coms4156.project.groupproject.dto.LedgerResponse;
 import dev.coms4156.project.groupproject.dto.ListLedgerMembersResponse;
 import dev.coms4156.project.groupproject.dto.MyLedgersResponse;
+import dev.coms4156.project.groupproject.dto.SettlementPlanResponse;
 import dev.coms4156.project.groupproject.dto.UserView;
+import dev.coms4156.project.groupproject.entity.DebtEdge;
 import dev.coms4156.project.groupproject.entity.Ledger;
 import dev.coms4156.project.groupproject.entity.LedgerMember;
 import dev.coms4156.project.groupproject.entity.User;
+import dev.coms4156.project.groupproject.mapper.DebtEdgeMapper;
 import dev.coms4156.project.groupproject.mapper.LedgerMemberMapper;
 import dev.coms4156.project.groupproject.mapper.UserMapper;
 import dev.coms4156.project.groupproject.utils.CurrentUserContext;
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -46,6 +52,7 @@ class LedgerServiceImplTest {
 
   @Mock private LedgerMemberMapper ledgerMemberMapper;
   @Mock private UserMapper userMapper;
+  @Mock private DebtEdgeMapper debtEdgeMapper;
 
   @Spy @InjectMocks private LedgerServiceImpl service;
 
@@ -428,5 +435,260 @@ class LedgerServiceImplTest {
   void removeMember_notLoggedIn() {
     CurrentUserContext.clear();
     assertThrows(RuntimeException.class, () -> service.removeMember(10L, 2L));
+  }
+
+  private static DebtEdge debtEdge(
+      long ledgerId, long transactionId, long fromUserId, long toUserId, BigDecimal amount) {
+    DebtEdge edge = new DebtEdge();
+    edge.setLedgerId(ledgerId);
+    edge.setTransactionId(transactionId);
+    edge.setFromUserId(fromUserId);
+    edge.setToUserId(toUserId);
+    edge.setAmount(amount);
+    edge.setEdgeCurrency("USD");
+    edge.setCreatedAt(LocalDateTime.now());
+    return edge;
+  }
+
+  private static User user(long id, String name) {
+    User u = new User();
+    u.setId(id);
+    u.setName(name);
+    return u;
+  }
+
+  @Test
+  @DisplayName("getSettlementPlan: typical single debt -> returns one transfer")
+  void getSettlementPlan_typicalSingleDebt() {
+    CurrentUserContext.set(new UserView(1L, "Alice"));
+
+    doReturn(ledger(10L, "Family")).when(service).getById(10L);
+    doReturn(member(10L, 1L, "OWNER"))
+        .when(ledgerMemberMapper)
+        .selectOne(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
+
+    DebtEdge edge1 = debtEdge(10L, 1L, 1L, 2L, new BigDecimal("25.00"));
+    doReturn(Arrays.asList(edge1)).when(debtEdgeMapper).findByLedgerId(10L);
+
+    User alice = user(1L, "Alice");
+    User bob = user(2L, "Bob");
+    doReturn(alice).when(userMapper).selectById(1L);
+    doReturn(bob).when(userMapper).selectById(2L);
+
+    SettlementPlanResponse resp = service.getSettlementPlan(10L);
+
+    assertNotNull(resp);
+    assertEquals(10L, resp.getLedgerId());
+    assertEquals("USD", resp.getCurrency());
+    assertEquals(1, resp.getTransferCount());
+    assertEquals(1, resp.getTransfers().size());
+    assertEquals(2L, resp.getTransfers().get(0).getFromUserId());
+    assertEquals("Bob", resp.getTransfers().get(0).getFromUserName());
+    assertEquals(1L, resp.getTransfers().get(0).getToUserId());
+    assertEquals("Alice", resp.getTransfers().get(0).getToUserName());
+    assertEquals(new BigDecimal("25.00"), resp.getTransfers().get(0).getAmount());
+  }
+
+  @Test
+  @DisplayName("getSettlementPlan: handles symmetry - bidirectional debts netted correctly")
+  void getSettlementPlan_bidirectionalNetting() {
+    CurrentUserContext.set(new UserView(1L, "Alice"));
+
+    doReturn(ledger(10L, "Family")).when(service).getById(10L);
+    doReturn(member(10L, 1L, "OWNER"))
+        .when(ledgerMemberMapper)
+        .selectOne(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
+
+    DebtEdge edge1 = debtEdge(10L, 1L, 1L, 2L, new BigDecimal("20.00"));
+    DebtEdge edge2 = debtEdge(10L, 2L, 2L, 1L, new BigDecimal("40.00"));
+    doReturn(Arrays.asList(edge1, edge2)).when(debtEdgeMapper).findByLedgerId(10L);
+
+    User alice = user(1L, "Alice");
+    User bob = user(2L, "Bob");
+    doReturn(alice).when(userMapper).selectById(1L);
+    doReturn(bob).when(userMapper).selectById(2L);
+
+    SettlementPlanResponse resp = service.getSettlementPlan(10L);
+
+    assertNotNull(resp);
+    assertEquals(1, resp.getTransferCount());
+    assertEquals(1L, resp.getTransfers().get(0).getFromUserId());
+    assertEquals("Alice", resp.getTransfers().get(0).getFromUserName());
+    assertEquals(2L, resp.getTransfers().get(0).getToUserId());
+    assertEquals("Bob", resp.getTransfers().get(0).getToUserName());
+    assertEquals(new BigDecimal("20.00"), resp.getTransfers().get(0).getAmount());
+  }
+
+  @Test
+  @DisplayName("getSettlementPlan: multiple members with minimal transfers")
+  void getSettlementPlan_multipleMembers() {
+    CurrentUserContext.set(new UserView(1L, "Alice"));
+
+    doReturn(ledger(10L, "Family")).when(service).getById(10L);
+    doReturn(member(10L, 1L, "OWNER"))
+        .when(ledgerMemberMapper)
+        .selectOne(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
+
+    DebtEdge edge1 = debtEdge(10L, 1L, 1L, 2L, new BigDecimal("25.00"));
+    DebtEdge edge2 = debtEdge(10L, 2L, 1L, 3L, new BigDecimal("30.00"));
+    DebtEdge edge3 = debtEdge(10L, 3L, 2L, 3L, new BigDecimal("20.00"));
+    doReturn(Arrays.asList(edge1, edge2, edge3)).when(debtEdgeMapper).findByLedgerId(10L);
+
+    User alice = user(1L, "Alice");
+    User bob = user(2L, "Bob");
+    User charlie = user(3L, "Charlie");
+    doReturn(alice).when(userMapper).selectById(1L);
+    doReturn(bob).when(userMapper).selectById(2L);
+    doReturn(charlie).when(userMapper).selectById(3L);
+
+    SettlementPlanResponse resp = service.getSettlementPlan(10L);
+
+    assertNotNull(resp);
+    assertEquals("USD", resp.getCurrency());
+    assertNotNull(resp.getTransfers());
+    BigDecimal totalTransferred =
+        resp.getTransfers().stream()
+            .map(SettlementPlanResponse.TransferItem::getAmount)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+    assertEquals(new BigDecimal("55.00"), totalTransferred);
+  }
+
+  @Test
+  @DisplayName("getSettlementPlan: no debt edges -> returns empty transfer list")
+  void getSettlementPlan_noDebtEdges() {
+    CurrentUserContext.set(new UserView(1L, "Alice"));
+
+    doReturn(ledger(10L, "Family")).when(service).getById(10L);
+    doReturn(member(10L, 1L, "OWNER"))
+        .when(ledgerMemberMapper)
+        .selectOne(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
+
+    doReturn(Collections.emptyList()).when(debtEdgeMapper).findByLedgerId(10L);
+
+    SettlementPlanResponse resp = service.getSettlementPlan(10L);
+
+    assertNotNull(resp);
+    assertEquals(10L, resp.getLedgerId());
+    assertEquals("USD", resp.getCurrency());
+    assertEquals(0, resp.getTransferCount());
+    assertEquals(0, resp.getTransfers().size());
+  }
+
+  @Test
+  @DisplayName("getSettlementPlan: fully offset debts -> returns empty transfer list")
+  void getSettlementPlan_fullyOffset() {
+    CurrentUserContext.set(new UserView(1L, "Alice"));
+
+    doReturn(ledger(10L, "Family")).when(service).getById(10L);
+    doReturn(member(10L, 1L, "OWNER"))
+        .when(ledgerMemberMapper)
+        .selectOne(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
+
+    DebtEdge edge1 = debtEdge(10L, 1L, 1L, 2L, new BigDecimal("25.00"));
+    DebtEdge edge2 = debtEdge(10L, 2L, 2L, 1L, new BigDecimal("25.00"));
+    doReturn(Arrays.asList(edge1, edge2)).when(debtEdgeMapper).findByLedgerId(10L);
+
+    SettlementPlanResponse resp = service.getSettlementPlan(10L);
+
+    assertNotNull(resp);
+    assertEquals(0, resp.getTransferCount());
+    assertEquals(0, resp.getTransfers().size());
+  }
+
+  @Test
+  @DisplayName("getSettlementPlan: minimal transfers - heap-greedy optimization")
+  void getSettlementPlan_minimalTransfers() {
+    CurrentUserContext.set(new UserView(1L, "Alice"));
+
+    doReturn(ledger(10L, "Family")).when(service).getById(10L);
+    doReturn(member(10L, 1L, "OWNER"))
+        .when(ledgerMemberMapper)
+        .selectOne(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
+
+    DebtEdge edge1 = debtEdge(10L, 1L, 1L, 2L, new BigDecimal("10.00"));
+    DebtEdge edge2 = debtEdge(10L, 2L, 1L, 3L, new BigDecimal("10.00"));
+    DebtEdge edge3 = debtEdge(10L, 3L, 2L, 3L, new BigDecimal("10.00"));
+    doReturn(Arrays.asList(edge1, edge2, edge3)).when(debtEdgeMapper).findByLedgerId(10L);
+
+    User alice = user(1L, "Alice");
+    User charlie = user(3L, "Charlie");
+    doReturn(alice).when(userMapper).selectById(1L);
+    doReturn(charlie).when(userMapper).selectById(3L);
+
+    SettlementPlanResponse resp = service.getSettlementPlan(10L);
+
+    assertNotNull(resp);
+    assertNotNull(resp.getTransfers());
+    assertEquals(1, resp.getTransferCount());
+    assertEquals(new BigDecimal("20.00"), resp.getTransfers().get(0).getAmount());
+  }
+
+  @Test
+  @DisplayName("getSettlementPlan: not logged in -> throws")
+  void getSettlementPlan_notLoggedIn() {
+    CurrentUserContext.clear();
+    assertThrows(RuntimeException.class, () -> service.getSettlementPlan(10L));
+  }
+
+  @Test
+  @DisplayName("getSettlementPlan: ledger not found -> throws")
+  void getSettlementPlan_ledgerNotFound() {
+    CurrentUserContext.set(new UserView(1L, "Alice"));
+    doReturn(null).when(service).getById(999L);
+
+    assertThrows(RuntimeException.class, () -> service.getSettlementPlan(999L));
+  }
+
+  @Test
+  @DisplayName("getSettlementPlan: not member -> throws")
+  void getSettlementPlan_notMember() {
+    CurrentUserContext.set(new UserView(1L, "Alice"));
+    doReturn(ledger(10L, "Family")).when(service).getById(10L);
+    doReturn(null)
+        .when(ledgerMemberMapper)
+        .selectOne(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
+
+    assertThrows(RuntimeException.class, () -> service.getSettlementPlan(10L));
+  }
+
+  @Test
+  @DisplayName("getSettlementPlan: scales to multiple members")
+  void getSettlementPlan_scalesToMultipleMembers() {
+    CurrentUserContext.set(new UserView(1L, "Alice"));
+
+    doReturn(ledger(10L, "Family")).when(service).getById(10L);
+    doReturn(member(10L, 1L, "OWNER"))
+        .when(ledgerMemberMapper)
+        .selectOne(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
+
+    List<DebtEdge> edges =
+        Arrays.asList(
+            debtEdge(10L, 1L, 1L, 2L, new BigDecimal("10.00")),
+            debtEdge(10L, 2L, 2L, 3L, new BigDecimal("15.00")),
+            debtEdge(10L, 3L, 3L, 4L, new BigDecimal("20.00")),
+            debtEdge(10L, 4L, 4L, 5L, new BigDecimal("25.00")));
+    doReturn(edges).when(debtEdgeMapper).findByLedgerId(10L);
+
+    User alice = user(1L, "Alice");
+    User bob = user(2L, "Bob");
+    User charlie = user(3L, "Charlie");
+    User david = user(4L, "David");
+    User eve = user(5L, "Eve");
+    doReturn(alice).when(userMapper).selectById(1L);
+    doReturn(bob).when(userMapper).selectById(2L);
+    doReturn(charlie).when(userMapper).selectById(3L);
+    doReturn(david).when(userMapper).selectById(4L);
+    doReturn(eve).when(userMapper).selectById(5L);
+
+    SettlementPlanResponse resp = service.getSettlementPlan(10L);
+
+    assertNotNull(resp);
+    assertNotNull(resp.getTransfers());
+    BigDecimal total =
+        resp.getTransfers().stream()
+            .map(SettlementPlanResponse.TransferItem::getAmount)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+    assertEquals(new BigDecimal("25.00"), total);
+    assertNotNull(resp.getTransfers());
   }
 }
