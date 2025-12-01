@@ -71,7 +71,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 .eq(LedgerMember::getUserId, currentUser.getId()));
     AuthUtils.checkMembership(member != null);
 
-    int m = (months == null || months <= 0) ? 3 : Math.min(months, 24);
+    int m = months == null || months <= 0 ? 3 : Math.min(months, 24);
 
     YearMonth endYm = YearMonth.from(LocalDate.now());
     YearMonth startYm = endYm.minusMonths(m - 1);
@@ -165,14 +165,14 @@ public class AnalyticsServiceImpl implements AnalyticsService {
               CategoryStat cs = new CategoryStat();
               cs.setCategoryId(r.getCategoryId());
               cs.setCategoryName(
-                  (r.getCategoryName() == null || r.getCategoryName().isBlank())
+                  r.getCategoryName() == null || r.getCategoryName().isBlank()
                       ? "Uncategorized"
                       : r.getCategoryName());
               BigDecimal amt = nz(r.getAmount());
               cs.setAmount(amt);
 
               BigDecimal ratio =
-                  (denom.compareTo(BigDecimal.ZERO) == 0)
+                  denom.compareTo(BigDecimal.ZERO) == 0
                       ? BigDecimal.ZERO
                       : amt.divide(denom, 4, RoundingMode.HALF_UP);
               cs.setRatio(ratio);
@@ -186,16 +186,22 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     List<AggRows.UserAmountRow> apRows = aggMapper.apByLedger(ledgerId, currentUserId);
 
     Map<Long, BigDecimal> arMap = new HashMap<>();
-    for (AggRows.UserAmountRow r : arRows) arMap.put(r.getUserId(), nz(r.getAmount()));
+    for (AggRows.UserAmountRow r : arRows) {
+      arMap.put(r.getUserId(), nz(r.getAmount()));
+    }
 
     Map<Long, BigDecimal> apMap = new HashMap<>();
-    for (AggRows.UserAmountRow r : apRows) apMap.put(r.getUserId(), nz(r.getAmount()));
+    for (AggRows.UserAmountRow r : apRows) {
+      apMap.put(r.getUserId(), nz(r.getAmount()));
+    }
 
     Set<Long> allUserIds = new HashSet<>();
     allUserIds.addAll(arMap.keySet());
     allUserIds.addAll(apMap.keySet());
 
-    if (allUserIds.isEmpty()) return Collections.emptyList();
+    if (allUserIds.isEmpty()) {
+      return Collections.emptyList();
+    }
 
     List<User> users = userMapper.selectBatchIds(allUserIds);
     Map<Long, String> nameMap =

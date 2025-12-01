@@ -26,8 +26,9 @@ public class AnalyticsController {
 
   @GetMapping("/overview")
   @Operation(
-      summary =
-          "Ledger analytics overview (income/expense, trend, category, AR/AP, merchants, recommendations)")
+      summary = "Ledger analytics overview",
+      description =
+          "Provides a comprehensive overview including income/expense, trend, category breakdown, AR/AP, top merchants, and recommendations.")
   public Result<LedgerAnalyticsOverview> overview(
       @PathVariable Long ledgerId,
       @RequestParam(value = "months", required = false, defaultValue = "3") Integer months) {
