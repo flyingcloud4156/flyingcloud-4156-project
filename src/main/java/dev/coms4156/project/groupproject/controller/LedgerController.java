@@ -77,4 +77,10 @@ public class LedgerController {
     ledgerService.removeMember(ledgerId, userId);
     return Result.ok();
   }
+
+  @GetMapping("/{ledgerId}/settlement-plan")
+  @Operation(summary = "Get minimal settlement plan for N-party debts")
+  public Result<SettlementPlanResponse> getSettlementPlan(@PathVariable Long ledgerId) {
+    return Result.ok(ledgerService.getSettlementPlan(ledgerId));
+  }
 }
