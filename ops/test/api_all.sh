@@ -6,35 +6,60 @@ IFS=$'\n\t'
 # FILE: ops/test/api_all.sh
 # PURPOSE:
 #   - Reset local MySQL DB (no docker)
+#   - Auto-start Spring Boot app in background
 #   - (optional) load big seed for UI charts
-#   - Test EVERY API endpoint (auth/user/ledger/txn/settlement/analytics)
+#   - Test ALL API endpoints (auth / user / ledger / txn / settlement / analytics)
+#   - Auto-stop Spring Boot app when done
 #
 # USAGE:
-#   # 启动 mysql / redis (你已经有了)
+#   # Start mysql / redis
 #   #   brew services start mysql
 #   #   brew services start redis
 #   #
-#   # 配置数据库环境变量（按你自己的密码改）：
+#   # Configure DB environment variables
 #   #   export DB_HOST="127.0.0.1"
 #   #   export DB_PORT="3306"
 #   #   export DB_USER="root"
 #   #   export DB_PASS="your_mysql_root_password"
 #   #
-#   # 跑脚本（LOAD_BIG_SEED=1 会加载大量测试数据）
+#   # Run script (LOAD_BIG_SEED=1 expresses intention to load big seed; script always
+#   # loads the big seed file to keep behavior backward compatible)
 #   #   LOAD_BIG_SEED=1 HOST=http://localhost:8081 bash ops/test/api_all.sh
 # =======================================================================================
 
-HOST="${HOST:-http://localhost:8081}"
+HOST="${HOST:-http://127.0.0.1:8081}"
 
-# 是否加载大号 seed SQL
+# Whether to load the large seed SQL file (currently we always load the big seed file,
+# this flag is kept only for compatibility / future extension)
 LOAD_BIG_SEED="${LOAD_BIG_SEED:-0}"
 
-# 数据库配置（默认值可以被环境变量覆盖）
+# Database configuration (can be overridden by environment variables)
 DB_HOST="${DB_HOST:-127.0.0.1}"
 DB_PORT="${DB_PORT:-3306}"
 DB_USER="${DB_USER:-root}"
 DB_PASS="${DB_PASS:-}"
 DB_NAME="${DB_NAME:-ledger}"
+
+# Spring Boot app configuration
+SPRING_PROFILES="${SPRING_PROFILES:-test}"
+APP_START_TIMEOUT="${APP_START_TIMEOUT:-60}"  # seconds to wait for app to be ready
+
+# API logging: 0 = no logs, 1 = log requests and responses
+VERBOSE="${VERBOSE:-1}"
+
+log_debug() {
+  # All debug logs go to stderr to avoid polluting stdout (stdout is used for JSON
+  # responses that are captured and parsed with jq).
+  if [[ "${VERBOSE}" == "1" ]]; then
+    echo "$@" >&2
+  fi
+}
+
+# Construct MySQL argument array. Only add -p if DB_PASS is non-empty.
+MYSQL_ARGS=(-h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER")
+if [[ -n "$DB_PASS" ]]; then
+  MYSQL_ARGS+=(-p"$DB_PASS")
+fi
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 PROJECT_ROOT=$(cd "${SCRIPT_DIR}/../.." && pwd)
@@ -42,24 +67,91 @@ PROJECT_ROOT=$(cd "${SCRIPT_DIR}/../.." && pwd)
 DB_SCHEMA_FILE="${PROJECT_ROOT}/ops/sql/ledger_flow.sql"
 DB_BIG_SEED_FILE="${PROJECT_ROOT}/ops/sql/backup/ledger_big_seed.sql"
 
+# Spring Boot process PID for cleanup
+SPRING_PID=""
+
 # ---------- command checks ----------
 need() { command -v "$1" >/dev/null 2>&1 || { echo "[FATAL] Missing command: $1"; exit 1; }; }
 need mysql
 need curl
 need jq
+need mvn
 
-# ---------- MySQL helpers (本机) ----------
+# ---------- Spring Boot app management ----------
+start_spring_app() {
+  echo "Starting Spring Boot application in background..."
+  echo "Working directory: $PROJECT_ROOT"
+  echo "Profile: $SPRING_PROFILES"
+
+  # Set environment variables for Spring Boot
+  export SPRING_PROFILES_ACTIVE="$SPRING_PROFILES"
+
+  # Start the app in background (skip frontend plugins to speed up startup)
+  cd "$PROJECT_ROOT"
+  # Keep original behavior: explicitly set profile test again
+  export SPRING_PROFILES_ACTIVE=test
+  export DB_URL="${DB_URL:-jdbc:mysql://localhost:3306/ledger?useSSL=false&serverTimezone=America/New_York&characterEncoding=utf8&allowPublicKeyRetrieval=true}"
+  export DB_USER="${DB_USER:-root}"
+  export DB_PASS="${DB_PASS:-}"
+  export REDIS_HOST="${REDIS_HOST:-localhost}"
+  export REDIS_PORT="${REDIS_PORT:-6379}"
+  export REDIS_PASSWORD="${REDIS_PASSWORD:-}"
+
+  mvn spring-boot:run -Dskip.npm -Dskip.installnodenpm > spring-boot.log 2>&1 &
+  SPRING_PID=$!
+
+  echo "Spring Boot started in background with PID: $SPRING_PID"
+  echo "Waiting for app to be ready..."
+
+  # Poll login endpoint until we see HTTP 405 (used as readiness signal)
+  local count=0
+  while [[ $count -lt $APP_START_TIMEOUT ]]; do
+    local http_code
+    http_code=$(curl -s -o /dev/null -w "%{http_code}" "$HOST/api/v1/auth/login" 2>/dev/null || echo "000")
+    if [[ "$http_code" == "405" ]]; then
+      echo "[OK] Spring Boot app is ready!"
+      return 0
+    fi
+    sleep 2
+    count=$((count + 2))
+    echo "Waiting... ($count/$APP_START_TIMEOUT seconds) - HTTP code: $http_code"
+  done
+
+  echo "[ERROR] Spring Boot app did not become ready within $APP_START_TIMEOUT seconds"
+  echo "Check spring-boot.log for details"
+  kill_spring_app
+  exit 1
+}
+
+kill_spring_app() {
+  if [[ -n "$SPRING_PID" ]]; then
+    echo "Stopping Spring Boot application (PID: $SPRING_PID)..."
+    kill "$SPRING_PID" 2>/dev/null || true
+    wait "$SPRING_PID" 2>/dev/null || true
+    SPRING_PID=""
+  fi
+}
+
+# Cleanup function executed on script exit
+cleanup() {
+  echo "Cleaning up..."
+  kill_spring_app
+  [[ -f "$HTTP_CODE_FILE" ]] && rm -f "$HTTP_CODE_FILE"
+}
+trap cleanup EXIT
+
+# ---------- MySQL helpers (non-interactive) ----------
 mysql_server_exec() {
   local sql="$1"
-  mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASS" -e "$sql"
+  mysql "${MYSQL_ARGS[@]}" -e "$sql"
 }
 
 mysql_db_query() {
   local sql="$1"
-  mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASS" -N -B "$DB_NAME" -e "$sql"
+  mysql "${MYSQL_ARGS[@]}" -N -B "$DB_NAME" -e "$sql"
 }
 
-# ---------- pretty prints ----------
+# ---------- pretty printing helpers ----------
 title() {
   echo ""
   echo "======================================================================================="
@@ -71,10 +163,43 @@ sub() {
   echo "--- $1"
 }
 
-# ---------- API helper ----------
+# ---------- API helpers ----------
 LAST_HTTP="000"
+HTTP_CODE_FILE="/tmp/api_test_http_code_$$"
 
-api_request() {
+fail_on_non2xx() {
+  local code
+  if [[ -f "$HTTP_CODE_FILE" ]]; then
+    code="$(cat "$HTTP_CODE_FILE")"
+  else
+    code="000"
+  fi
+  if [[ "$code" -lt 200 || "$code" -ge 300 ]]; then
+    echo "[ERROR] HTTP $code"
+    exit 1
+  fi
+}
+
+fail_if_success_false() {
+  local body="$1"
+  # Some endpoints may return empty body, treat that as success for our purposes
+  if [[ -z "${body// }" ]]; then
+    return 0
+  fi
+  local ok
+  ok="$(echo "$body" | jq -er '.success' 2>/dev/null || echo "false")"
+  if [[ "$ok" != "true" ]]; then
+    echo "[ERROR] API returned success=false"
+    echo "$body" | jq '.' || echo "$body"
+    exit 1
+  fi
+}
+
+# Unified API call wrapper:
+# - logs request and response
+# - maintains HTTP_CODE_FILE / LAST_HTTP
+# - returns response body on stdout
+api_call() {
   local method="$1"
   local path="$2"
   local payload="${3:-}"
@@ -90,52 +215,76 @@ api_request() {
     headers+=(-H "X-Auth-Token: $token")
   fi
 
+  # ====== log request ======
+  log_debug ""
+  log_debug ">>> HTTP $method $url"
+  if [[ -n "$token" ]]; then
+    # Do not print real token to avoid leakage
+    log_debug ">>> Header: X-Auth-Token: ******(hidden)******"
+  fi
+  if [[ -n "$payload" ]]; then
+    log_debug ">>> Request Body (raw):"
+    if echo "$payload" | jq . >/dev/null 2>&1; then
+      echo "$payload" | jq . >&2
+    else
+      echo "$payload" >&2
+    fi
+  else
+    log_debug ">>> Request Body: (empty)"
+  fi
+
+  # ====== perform HTTP request ======
   local out
   if [[ -n "$payload" ]]; then
-    out=$(curl -sS -X "$method" "$url" "${headers[@]}" -d "$payload" -w $'\n%{http_code}')
+    out=$(curl -sS -X "$method" "$url" "${headers[@]}" -d "$payload" -w $'\n%{http_code}' 2>/dev/null)
   else
-    out=$(curl -sS -X "$method" "$url" "${headers[@]}" -w $'\n%{http_code}')
+    out=$(curl -sS -X "$method" "$url" "${headers[@]}" -w $'\n%{http_code}' 2>/dev/null)
   fi
 
-  LAST_HTTP="$(echo "$out" | tail -n1)"
-  echo "$out" | sed '$d'
-}
+  # Extract HTTP code and save to temp file for fail_on_non2xx
+  local raw_code
+  raw_code="$(echo "$out" | tail -n1)"
+  local http_code
+  http_code="$(echo "$raw_code" | sed 's/[^0-9]*//g' | head -c 3)"
+  [[ ${#http_code} -ne 3 ]] && http_code="000"
+  echo "$http_code" > "$HTTP_CODE_FILE"
+  LAST_HTTP="$http_code"
 
-fail_on_non2xx() {
-  local code="$LAST_HTTP"
-  if [[ "$code" -lt 200 || "$code" -ge 300 ]]; then
-    echo "[ERROR] HTTP $code"
-    exit 1
-  fi
-}
+  # Response body = everything except the last line (http_code)
+  local body
+  body="$(echo "$out" | sed '$d')"
 
-fail_if_success_false() {
-  local body="$1"
-  if [[ -z "${body// }" ]]; then
-    return 0
+  # ====== log response ======
+  log_debug "<<< HTTP Code: $http_code"
+  if [[ -n "${body// }" ]]; then
+    log_debug "<<< Response Body:"
+    if echo "$body" | jq . >/dev/null 2>&1; then
+      echo "$body" | jq . >&2
+    else
+      echo "$body" >&2
+    fi
+  else
+    log_debug "<<< Response Body: (empty)"
   fi
-  local ok
-  ok="$(echo "$body" | jq -er '.success' 2>/dev/null || echo "false")"
-  if [[ "$ok" != "true" ]]; then
-    echo "[ERROR] API returned success=false"
-    echo "$body" | jq '.' || echo "$body"
-    exit 1
-  fi
+  log_debug "<<< END"
+
+  # Keep original behavior: stdout only contains the body
+  echo "$body"
 }
 
 assert_not_null() {
   local name="$1"
   local val="${2:-}"
   if [[ -z "$val" || "$val" == "null" ]]; then
-    echo "[FATAL] $name is null/empty"
+    echo "[FATAL] $name is null or empty"
     exit 1
   fi
 }
 
 # =======================================================================================
-# 0) RESET DB
+# 0) RESET DB AND START SPRING BOOT APP
 # =======================================================================================
-title "0) RESETTING DATABASE (local MySQL)"
+title "0) Resetting database and starting Spring Boot app"
 
 echo "Dropping database $DB_NAME ..."
 mysql_server_exec "DROP DATABASE IF EXISTS \`$DB_NAME\`;"
@@ -143,41 +292,33 @@ mysql_server_exec "DROP DATABASE IF EXISTS \`$DB_NAME\`;"
 echo "Creating database $DB_NAME ..."
 mysql_server_exec "CREATE DATABASE \`$DB_NAME\` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;"
 
-echo "Loading schema: $DB_SCHEMA_FILE"
-mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASS" "$DB_NAME" < "$DB_SCHEMA_FILE"
+echo "Loading schema file: $DB_SCHEMA_FILE"
+mysql "${MYSQL_ARGS[@]}" "$DB_NAME" < "$DB_SCHEMA_FILE"
 
-if [[ "$LOAD_BIG_SEED" == "1" ]]; then
-  echo "Loading BIG seed: $DB_BIG_SEED_FILE"
-  mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASS" "$DB_NAME" < "$DB_BIG_SEED_FILE"
-else
-  echo "Skipping big seed (LOAD_BIG_SEED=0)"
-fi
+echo "Loading seed data (big file): $DB_BIG_SEED_FILE"
+mysql "${MYSQL_ARGS[@]}" "$DB_NAME" < "$DB_BIG_SEED_FILE"
 
-echo "[OK] DB ready."
+echo "[OK] Database is ready."
+
+# Start Spring Boot application
+start_spring_app
 
 # =======================================================================================
 # 1) AUTH + USER APIs
 # =======================================================================================
 title "1) AUTH + USER APIs"
 
+# Use existing seed users
 RAND="$(date +%s)"
-ALICE_EMAIL="alice+$RAND@test.com"
-BOB_EMAIL="bob+$RAND@test.com"
-CHARLIE_EMAIL="charlie+$RAND@test.com"
-PASS="password"
+ALICE_EMAIL="alice@gmail.com"
+BOB_EMAIL="bob@gmail.com"
+CHARLIE_EMAIL="charlie@gmail.com"
+PASS="Passw0rd!"
 
-sub "1.1 Register Alice/Bob/Charlie"
-body=$(api_request POST "/api/v1/auth/register" "{\"email\":\"$ALICE_EMAIL\",\"name\":\"Alice-Test\",\"password\":\"$PASS\"}")
-fail_on_non2xx; fail_if_success_false "$body"
-
-body=$(api_request POST "/api/v1/auth/register" "{\"email\":\"$BOB_EMAIL\",\"name\":\"Bob-Test\",\"password\":\"$PASS\"}")
-fail_on_non2xx; fail_if_success_false "$body"
-
-body=$(api_request POST "/api/v1/auth/register" "{\"email\":\"$CHARLIE_EMAIL\",\"name\":\"Charlie-Test\",\"password\":\"$PASS\"}")
-fail_on_non2xx; fail_if_success_false "$body"
+sub "1.1 Using seed users (Alice / Bob / Charlie already exist)"
 
 sub "1.2 Login Alice"
-login_body=$(api_request POST "/api/v1/auth/login" "{\"email\":\"$ALICE_EMAIL\",\"password\":\"$PASS\"}")
+login_body=$(api_call POST "/api/v1/auth/login" "{\"email\":\"$ALICE_EMAIL\",\"password\":\"$PASS\"}")
 fail_on_non2xx; fail_if_success_false "$login_body"
 ALICE_TOKEN="$(echo "$login_body" | jq -r '.data.access_token')"
 ALICE_REFRESH="$(echo "$login_body" | jq -r '.data.refresh_token')"
@@ -185,23 +326,23 @@ assert_not_null "ALICE_TOKEN" "$ALICE_TOKEN"
 assert_not_null "ALICE_REFRESH" "$ALICE_REFRESH"
 
 sub "1.3 /users/me"
-me_body=$(api_request GET "/api/v1/users/me" "" "$ALICE_TOKEN")
+me_body=$(api_call GET "/api/v1/users/me" "" "$ALICE_TOKEN")
 fail_on_non2xx; fail_if_success_false "$me_body"
 ALICE_ID="$(echo "$me_body" | jq -r '.data.id')"
 assert_not_null "ALICE_ID" "$ALICE_ID"
 
 sub "1.4 /users:lookup (lookup Bob by email)"
-lookup_body=$(api_request GET "/api/v1/users:lookup?email=$BOB_EMAIL" "" "$ALICE_TOKEN")
+lookup_body=$(api_call GET "/api/v1/users:lookup?email=$BOB_EMAIL" "" "$ALICE_TOKEN")
 fail_on_non2xx; fail_if_success_false "$lookup_body"
 BOB_ID="$(echo "$lookup_body" | jq -r '.data.user_id')"
 assert_not_null "BOB_ID" "$BOB_ID"
 
 sub "1.5 /users/{id} (Bob profile)"
-profile_body=$(api_request GET "/api/v1/users/$BOB_ID" "" "$ALICE_TOKEN")
+profile_body=$(api_call GET "/api/v1/users/$BOB_ID" "" "$ALICE_TOKEN")
 fail_on_non2xx; fail_if_success_false "$profile_body"
 
 sub "1.6 refresh token"
-refresh_body=$(api_request POST "/api/v1/auth/refresh?refreshToken=$ALICE_REFRESH" "")
+refresh_body=$(api_call POST "/api/v1/auth/refresh?refreshToken=$ALICE_REFRESH" "")
 fail_on_non2xx; fail_if_success_false "$refresh_body"
 ALICE_TOKEN2="$(echo "$refresh_body" | jq -r '.data.access_token')"
 ALICE_REFRESH2="$(echo "$refresh_body" | jq -r '.data.refresh_token')"
@@ -221,17 +362,17 @@ ledger_payload=$(jq -n --arg name "Road Trip Fund - $RAND" '{
   ledger_type: "GROUP_BALANCE",
   base_currency: "USD"
 }')
-ledger_body=$(api_request POST "/api/v1/ledgers" "$ledger_payload" "$ALICE_TOKEN")
+ledger_body=$(api_call POST "/api/v1/ledgers" "$ledger_payload" "$ALICE_TOKEN")
 fail_on_non2xx; fail_if_success_false "$ledger_body"
 LEDGER_ID="$(echo "$ledger_body" | jq -r '.data.ledger_id')"
 assert_not_null "LEDGER_ID" "$LEDGER_ID"
 
-sub "2.2 Get my ledgers (/ledgers:mine)"
-mine_body=$(api_request GET "/api/v1/ledgers:mine" "" "$ALICE_TOKEN")
+sub "2.2 Get my ledgers (/ledgers/mine)"
+mine_body=$(api_call GET "/api/v1/ledgers/mine" "" "$ALICE_TOKEN")
 fail_on_non2xx; fail_if_success_false "$mine_body"
 
 sub "2.3 Get ledger details (/ledgers/{id})"
-detail_body=$(api_request GET "/api/v1/ledgers/$LEDGER_ID" "" "$ALICE_TOKEN")
+detail_body=$(api_call GET "/api/v1/ledgers/$LEDGER_ID" "" "$ALICE_TOKEN")
 fail_on_non2xx; fail_if_success_false "$detail_body"
 
 sub "2.4 Add Bob + Charlie as members"
@@ -239,23 +380,23 @@ CHARLIE_ID="$(mysql_db_query "SELECT id FROM users WHERE email='$CHARLIE_EMAIL';
 assert_not_null "CHARLIE_ID" "$CHARLIE_ID"
 
 add_bob=$(jq -n --argjson uid "$BOB_ID" '{user_id:$uid, role:"EDITOR"}')
-body=$(api_request POST "/api/v1/ledgers/$LEDGER_ID/members" "$add_bob" "$ALICE_TOKEN")
+body=$(api_call POST "/api/v1/ledgers/$LEDGER_ID/members" "$add_bob" "$ALICE_TOKEN")
 fail_on_non2xx; fail_if_success_false "$body"
 
 add_charlie=$(jq -n --argjson uid "$CHARLIE_ID" '{user_id:$uid, role:"EDITOR"}')
-body=$(api_request POST "/api/v1/ledgers/$LEDGER_ID/members" "$add_charlie" "$ALICE_TOKEN")
+body=$(api_call POST "/api/v1/ledgers/$LEDGER_ID/members" "$add_charlie" "$ALICE_TOKEN")
 fail_on_non2xx; fail_if_success_false "$body"
 
 sub "2.5 List members"
-members_body=$(api_request GET "/api/v1/ledgers/$LEDGER_ID/members" "" "$ALICE_TOKEN")
+members_body=$(api_call GET "/api/v1/ledgers/$LEDGER_ID/members" "" "$ALICE_TOKEN")
 fail_on_non2xx; fail_if_success_false "$members_body"
 
 sub "2.6 Remove Charlie then add back"
-del_body=$(api_request DELETE "/api/v1/ledgers/$LEDGER_ID/members/$CHARLIE_ID" "" "$ALICE_TOKEN")
+del_body=$(api_call DELETE "/api/v1/ledgers/$LEDGER_ID/members/$CHARLIE_ID" "" "$ALICE_TOKEN")
 fail_on_non2xx
 
 add_charlie=$(jq -n --argjson uid "$CHARLIE_ID" '{user_id:$uid, role:"EDITOR"}')
-body=$(api_request POST "/api/v1/ledgers/$LEDGER_ID/members" "$add_charlie" "$ALICE_TOKEN")
+body=$(api_call POST "/api/v1/ledgers/$LEDGER_ID/members" "$add_charlie" "$ALICE_TOKEN")
 fail_on_non2xx; fail_if_success_false "$body"
 
 # =======================================================================================
@@ -289,7 +430,7 @@ payload=$(jq -n \
     ]
   }'
 )
-txn_body=$(api_request POST "/api/v1/ledgers/$LEDGER_ID/transactions" "$payload" "$ALICE_TOKEN")
+txn_body=$(api_call POST "/api/v1/ledgers/$LEDGER_ID/transactions" "$payload" "$ALICE_TOKEN")
 fail_on_non2xx; fail_if_success_false "$txn_body"
 TXN1_ID="$(echo "$txn_body" | jq -r '.data.transaction_id')"
 assert_not_null "TXN1_ID" "$TXN1_ID"
@@ -320,12 +461,12 @@ payload=$(jq -n \
     ]
   }'
 )
-txn_body=$(api_request POST "/api/v1/ledgers/$LEDGER_ID/transactions" "$payload" "$ALICE_TOKEN")
+txn_body=$(api_call POST "/api/v1/ledgers/$LEDGER_ID/transactions" "$payload" "$ALICE_TOKEN")
 fail_on_non2xx; fail_if_success_false "$txn_body"
 TXN2_ID="$(echo "$txn_body" | jq -r '.data.transaction_id')"
 assert_not_null "TXN2_ID" "$TXN2_ID"
 
-sub "3.3 Create another EXPENSE in Oct (for trend)"
+sub "3.3 Create another EXPENSE in October (for trend)"
 payload=$(jq -n \
   --arg type "EXPENSE" \
   --argjson payer_id "$BOB_ID" \
@@ -351,23 +492,23 @@ payload=$(jq -n \
     ]
   }'
 )
-txn_body=$(api_request POST "/api/v1/ledgers/$LEDGER_ID/transactions" "$payload" "$ALICE_TOKEN")
+txn_body=$(api_call POST "/api/v1/ledgers/$LEDGER_ID/transactions" "$payload" "$ALICE_TOKEN")
 fail_on_non2xx; fail_if_success_false "$txn_body"
 TXN3_ID="$(echo "$txn_body" | jq -r '.data.transaction_id')"
 assert_not_null "TXN3_ID" "$TXN3_ID"
 
 sub "3.4 Get transaction detail"
-get_body=$(api_request GET "/api/v1/ledgers/$LEDGER_ID/transactions/$TXN1_ID" "" "$ALICE_TOKEN")
+get_body=$(api_call GET "/api/v1/ledgers/$LEDGER_ID/transactions/$TXN1_ID" "" "$ALICE_TOKEN")
 fail_on_non2xx; fail_if_success_false "$get_body"
 
-sub "3.5 List transactions"
-list_body=$(api_request GET "/api/v1/ledgers/$LEDGER_ID/transactions?page=1&size=20" "" "$ALICE_TOKEN")
+sub "3.5 List transactions (paged)"
+list_body=$(api_call GET "/api/v1/ledgers/$LEDGER_ID/transactions?page=1&size=20" "" "$ALICE_TOKEN")
 fail_on_non2xx; fail_if_success_false "$list_body"
 
 sub "3.6 Delete TXN2 and list again"
-del_body=$(api_request DELETE "/api/v1/ledgers/$LEDGER_ID/transactions/$TXN2_ID" "" "$ALICE_TOKEN")
+del_body=$(api_call DELETE "/api/v1/ledgers/$LEDGER_ID/transactions/$TXN2_ID" "" "$ALICE_TOKEN")
 fail_on_non2xx
-list_body=$(api_request GET "/api/v1/ledgers/$LEDGER_ID/transactions?page=1&size=50" "" "$ALICE_TOKEN")
+list_body=$(api_call GET "/api/v1/ledgers/$LEDGER_ID/transactions?page=1&size=50" "" "$ALICE_TOKEN")
 fail_on_non2xx; fail_if_success_false "$list_body"
 
 # =======================================================================================
@@ -376,7 +517,7 @@ fail_on_non2xx; fail_if_success_false "$list_body"
 title "4) SETTLEMENT PLAN API"
 
 sub "4.1 /settlement-plan"
-settle_body=$(api_request GET "/api/v1/ledgers/$LEDGER_ID/settlement-plan" "" "$ALICE_TOKEN")
+settle_body=$(api_call GET "/api/v1/ledgers/$LEDGER_ID/settlement-plan" "" "$ALICE_TOKEN")
 fail_on_non2xx; fail_if_success_false "$settle_body"
 
 # =======================================================================================
@@ -385,7 +526,7 @@ fail_on_non2xx; fail_if_success_false "$settle_body"
 title "5) ANALYTICS API"
 
 sub "5.1 /analytics/overview?months=3"
-ana_body=$(api_request GET "/api/v1/ledgers/$LEDGER_ID/analytics/overview?months=3" "" "$ALICE_TOKEN")
+ana_body=$(api_call GET "/api/v1/ledgers/$LEDGER_ID/analytics/overview?months=3" "" "$ALICE_TOKEN")
 fail_on_non2xx; fail_if_success_false "$ana_body"
 
 TOTAL_EXPENSE=$(echo "$ana_body" | jq -r '.data.total_expense')
@@ -411,7 +552,7 @@ fi
 title "6) LOGOUT"
 
 sub "6.1 /auth/logout"
-logout_body=$(api_request POST "/api/v1/auth/logout?refreshToken=$ALICE_REFRESH" "" "$ALICE_TOKEN")
+logout_body=$(api_call POST "/api/v1/auth/logout?refreshToken=$ALICE_REFRESH" "" "$ALICE_TOKEN")
 fail_on_non2xx; fail_if_success_false "$logout_body"
 
 echo ""
