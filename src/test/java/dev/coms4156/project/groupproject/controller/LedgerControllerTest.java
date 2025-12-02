@@ -16,6 +16,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import dev.coms4156.project.groupproject.dto.AddLedgerMemberRequest;
+import dev.coms4156.project.groupproject.dto.CreateCategoryRequest;
 import dev.coms4156.project.groupproject.dto.CreateLedgerRequest;
 import dev.coms4156.project.groupproject.dto.LedgerMemberResponse;
 import dev.coms4156.project.groupproject.dto.LedgerResponse;
@@ -70,6 +71,12 @@ class LedgerControllerTest {
     req.setBaseCurrency("USD");
     req.setShareStartDate(LocalDate.of(2025, 1, 1));
 
+    CreateCategoryRequest category = new CreateCategoryRequest();
+    category.setName("Food");
+    category.setKind("EXPENSE");
+    category.setIsActive(true);
+    req.setCategory(category);
+
     LedgerResponse resp = new LedgerResponse();
     resp.setLedgerId(1L);
     resp.setName("Family Budget");
@@ -100,6 +107,12 @@ class LedgerControllerTest {
     req.setBaseCurrency("EUR");
     req.setShareStartDate(LocalDate.of(2026, 12, 31));
 
+    CreateCategoryRequest category = new CreateCategoryRequest();
+    category.setName("Travel");
+    category.setKind("EXPENSE");
+    category.setIsActive(true);
+    req.setCategory(category);
+
     LedgerResponse resp = new LedgerResponse();
     resp.setLedgerId(2L);
     resp.setName("Future Project");
@@ -122,6 +135,12 @@ class LedgerControllerTest {
     req.setName("Test");
     req.setLedgerType("GROUP_BALANCE");
     req.setBaseCurrency("USD");
+
+    CreateCategoryRequest category = new CreateCategoryRequest();
+    category.setName("Test");
+    category.setKind("EXPENSE");
+    category.setIsActive(true);
+    req.setCategory(category);
 
     doThrow(new RuntimeException("Not logged in"))
         .when(ledgerService)

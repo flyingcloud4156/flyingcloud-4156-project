@@ -1,7 +1,9 @@
 package dev.coms4156.project.groupproject.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import lombok.Data;
@@ -24,4 +26,9 @@ public class CreateLedgerRequest {
 
   @Schema(example = "2025-01-01")
   private LocalDate shareStartDate;
+
+  @Valid
+  @NotNull(message = "Category cannot be null")
+  @Schema(description = "Category to create for the ledger")
+  private CreateCategoryRequest category;
 }

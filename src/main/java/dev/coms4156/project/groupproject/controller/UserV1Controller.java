@@ -63,14 +63,6 @@ public class UserV1Controller {
 
   // ==== Users ====
 
-  @GetMapping("/users/lookup")
-  @Operation(
-      summary = "Lookup user by email or phone",
-      security = {@SecurityRequirement(name = "X-Auth-Token")})
-  public Result<UserLookupResponse> lookupUser(@RequestParam String email) {
-    return Result.ok(userService.lookupUser(email));
-  }
-
   @GetMapping("/users/me")
   @Operation(
       summary = "Get current user (id, name)",
@@ -79,7 +71,15 @@ public class UserV1Controller {
     return Result.ok(userService.currentUser());
   }
 
-  @GetMapping("/users/{id}")
+  @GetMapping("user-lookup")
+  @Operation(
+      summary = "Lookup user by email or phone",
+      security = {@SecurityRequirement(name = "X-Auth-Token")})
+  public Result<UserLookupResponse> lookupUser(@RequestParam String email) {
+    return Result.ok(userService.lookupUser(email));
+  }
+
+  @GetMapping("/users/{id:[0-9]+}")
   @Operation(
       summary = "Get user profile by id (no timestamps)",
       security = {@SecurityRequirement(name = "X-Auth-Token")})

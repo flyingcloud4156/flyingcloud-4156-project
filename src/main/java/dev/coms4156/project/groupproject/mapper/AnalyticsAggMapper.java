@@ -64,7 +64,7 @@ public interface AnalyticsAggMapper {
         AND t.type = 'EXPENSE'
         AND (t.is_private = 0 OR t.created_by = #{currentUserId})
       GROUP BY t.category_id, c.name
-      ORDER BY amount DESC
+      ORDER BY COALESCE(c.sort_order, 999999) ASC, amount DESC
       """)
   List<AggRows.CategoryRow> categoryStats(
       @Param("ledgerId") Long ledgerId,

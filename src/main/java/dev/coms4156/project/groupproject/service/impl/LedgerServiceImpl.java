@@ -3,6 +3,7 @@ package dev.coms4156.project.groupproject.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import dev.coms4156.project.groupproject.dto.AddLedgerMemberRequest;
+import dev.coms4156.project.groupproject.dto.CreateCategoryRequest;
 import dev.coms4156.project.groupproject.dto.CreateLedgerRequest;
 import dev.coms4156.project.groupproject.dto.LedgerMemberResponse;
 import dev.coms4156.project.groupproject.dto.LedgerResponse;
@@ -11,16 +12,8 @@ import dev.coms4156.project.groupproject.dto.MyLedgersResponse;
 import dev.coms4156.project.groupproject.dto.SettlementConfig;
 import dev.coms4156.project.groupproject.dto.SettlementPlanResponse;
 import dev.coms4156.project.groupproject.dto.UserView;
-import dev.coms4156.project.groupproject.entity.Currency;
-import dev.coms4156.project.groupproject.entity.DebtEdge;
-import dev.coms4156.project.groupproject.entity.Ledger;
-import dev.coms4156.project.groupproject.entity.LedgerMember;
-import dev.coms4156.project.groupproject.entity.User;
-import dev.coms4156.project.groupproject.mapper.CurrencyMapper;
-import dev.coms4156.project.groupproject.mapper.DebtEdgeMapper;
-import dev.coms4156.project.groupproject.mapper.LedgerMapper;
-import dev.coms4156.project.groupproject.mapper.LedgerMemberMapper;
-import dev.coms4156.project.groupproject.mapper.UserMapper;
+import dev.coms4156.project.groupproject.entity.*;
+import dev.coms4156.project.groupproject.mapper.*;
 import dev.coms4156.project.groupproject.service.LedgerService;
 import dev.coms4156.project.groupproject.utils.AuthUtils;
 import dev.coms4156.project.groupproject.utils.CurrentUserContext;
@@ -46,6 +39,8 @@ public class LedgerServiceImpl extends ServiceImpl<LedgerMapper, Ledger> impleme
   private final UserMapper userMapper;
   private final DebtEdgeMapper debtEdgeMapper;
   private final CurrencyMapper currencyMapper;
+  //  categoryMapper
+  private final CategoryMapper categoryMapper;
 
   /**
    * Constructor for LedgerServiceImpl.
@@ -54,17 +49,20 @@ public class LedgerServiceImpl extends ServiceImpl<LedgerMapper, Ledger> impleme
    * @param userMapper user mapper
    * @param debtEdgeMapper debt edge mapper
    * @param currencyMapper currency mapper
+   * @param categoryMapper category mapper
    */
   @Autowired
   public LedgerServiceImpl(
       LedgerMemberMapper ledgerMemberMapper,
       UserMapper userMapper,
       DebtEdgeMapper debtEdgeMapper,
-      CurrencyMapper currencyMapper) {
+      CurrencyMapper currencyMapper,
+      CategoryMapper categoryMapper) {
     this.ledgerMemberMapper = ledgerMemberMapper;
     this.userMapper = userMapper;
     this.debtEdgeMapper = debtEdgeMapper;
     this.currencyMapper = currencyMapper;
+    this.categoryMapper = categoryMapper;
   }
 
   @Override
@@ -82,6 +80,9 @@ public class LedgerServiceImpl extends ServiceImpl<LedgerMapper, Ledger> impleme
     ledger.setShareStartDate(req.getShareStartDate());
     ledger.setOwnerId(currentUser.getId());
     save(ledger);
+
+    // Create category from the request
+    createCategoryFromRequest(ledger.getId(), req.getCategory());
 
     LedgerMember member = new LedgerMember();
     member.setLedgerId(ledger.getId());
@@ -733,5 +734,41 @@ public class LedgerServiceImpl extends ServiceImpl<LedgerMapper, Ledger> impleme
     BigDecimal getAmount() {
       return amount;
     }
+  }
+
+  /**
+   * Create category from the request for a new ledger.
+   *
+   * @param ledgerId the ledger ID
+   * @param categoryRequest the category request from the client
+   */
+  private void createCategoryFromRequest(Long ledgerId, CreateCategoryRequest categoryRequest) {
+    Category category = new Category();
+    category.setLedgerId(ledgerId);
+    category.setName(categoryRequest.getName());
+    category.setKind(categoryRequest.getKind());
+    category.setIsActive(categoryRequest.getIsActive());
+
+    // Auto-assign sortOrder to avoid conflicts
+    Integer nextSortOrder = getNextSortOrderForLedger(ledgerId);
+    category.setSortOrder(nextSortOrder);
+
+    categoryMapper.insert(category);
+  }
+
+  /**
+   * Get the next available sortOrder for a ledger (auto-increment by 10).
+   *
+   * @param ledgerId the ledger ID
+   * @return the next sortOrder value
+   */
+  private Integer getNextSortOrderForLedger(Long ledgerId) {
+    // Count existing categories in this ledger and assign next order
+    Long categoryCount =
+        categoryMapper.selectCount(
+            new LambdaQueryWrapper<Category>().eq(Category::getLedgerId, ledgerId));
+
+    // Return next value (increment by 10 to leave room for manual reordering)
+    return (categoryCount.intValue() + 1) * 10;
   }
 }

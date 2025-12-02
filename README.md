@@ -77,7 +77,7 @@ This section describes the endpoints provided by this project, along with their 
   * HTTP 400 Status Code with “Invalid refresh token.”
   * HTTP 500 Status Code with “Error occurred during logout.”
 
-#### GET /api/v1/users/lookup
+#### GET /api/v1/user-lookup
 * Expected Input Parameters:
   * email (string): user’s email address
 * Expected Output: A JSON object (UserLookupResponse) containing the following fields

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import dev.coms4156.project.groupproject.dto.CreateCategoryRequest;
 import dev.coms4156.project.groupproject.dto.CreateLedgerRequest;
 import dev.coms4156.project.groupproject.dto.LedgerResponse;
 import dev.coms4156.project.groupproject.dto.UserView;
@@ -69,6 +70,12 @@ class LedgerMemberDatabaseIntegrationTest {
     request.setLedgerType("GROUP_BALANCE");
     request.setBaseCurrency("USD");
 
+    CreateCategoryRequest category = new CreateCategoryRequest();
+    category.setName("Food");
+    category.setKind("EXPENSE");
+    category.setIsActive(true);
+    request.setCategory(category);
+
     LedgerResponse response = ledgerService.createLedger(request);
 
     assertNotNull(response);
@@ -100,6 +107,12 @@ class LedgerMemberDatabaseIntegrationTest {
     request.setLedgerType("DEBT_NETWORK");
     request.setBaseCurrency("USD");
 
+    CreateCategoryRequest category = new CreateCategoryRequest();
+    category.setName("Travel");
+    category.setKind("EXPENSE");
+    category.setIsActive(true);
+    request.setCategory(category);
+
     LedgerResponse response = ledgerService.createLedger(request);
     Long ledgerId = response.getLedgerId();
 
@@ -123,10 +136,22 @@ class LedgerMemberDatabaseIntegrationTest {
     request1.setLedgerType("GROUP_BALANCE");
     request1.setBaseCurrency("USD");
 
+    CreateCategoryRequest category1 = new CreateCategoryRequest();
+    category1.setName("Food");
+    category1.setKind("EXPENSE");
+    category1.setIsActive(true);
+    request1.setCategory(category1);
+
     CreateLedgerRequest request2 = new CreateLedgerRequest();
     request2.setName("Ledger 2");
     request2.setLedgerType("SINGLE");
     request2.setBaseCurrency("USD");
+
+    CreateCategoryRequest category2 = new CreateCategoryRequest();
+    category2.setName("Transport");
+    category2.setKind("EXPENSE");
+    category2.setIsActive(true);
+    request2.setCategory(category2);
 
     LedgerResponse response1 = ledgerService.createLedger(request1);
     LedgerResponse response2 = ledgerService.createLedger(request2);
@@ -153,6 +178,12 @@ class LedgerMemberDatabaseIntegrationTest {
     request.setName("Multi Mapper Test");
     request.setLedgerType("GROUP_BALANCE");
     request.setBaseCurrency("USD");
+
+    CreateCategoryRequest category = new CreateCategoryRequest();
+    category.setName("Entertainment");
+    category.setKind("EXPENSE");
+    category.setIsActive(true);
+    request.setCategory(category);
 
     int ledgerCountBefore = ledgerMapper.selectList(null).size();
     int memberCountBefore = ledgerMemberMapper.selectList(null).size();
