@@ -42,8 +42,8 @@ fi
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 PROJECT_ROOT=$(cd "${SCRIPT_DIR}/../.." && pwd)
 
-DB_SCHEMA_FILE="${PROJECT_ROOT}/ops/sql/ledger_flow.sql"
 DB_BIG_SEED_FILE="${PROJECT_ROOT}/ops/sql/backup/ledger_big_seed.sql"
+SCHEMA_FILE="${PROJECT_ROOT}/ops/sql/ledger_flow.sql"
 
 # Spring Boot PID for cleanup
 SPRING_PID=""
@@ -243,8 +243,8 @@ mysql_server_exec "DROP DATABASE IF EXISTS \`$DB_NAME\`;"
 echo "Creating database $DB_NAME ..."
 mysql_server_exec "CREATE DATABASE \`$DB_NAME\` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;"
 
-echo "Loading schema: $DB_SCHEMA_FILE"
-mysql "${MYSQL_ARGS[@]}" "$DB_NAME" < "$DB_SCHEMA_FILE"
+echo "Loading schema: $SCHEMA_FILE"
+mysql "${MYSQL_ARGS[@]}" "$DB_NAME" < "$SCHEMA_FILE"
 
 echo "Loading seed data: $DB_BIG_SEED_FILE"
 mysql "${MYSQL_ARGS[@]}" "$DB_NAME" < "$DB_BIG_SEED_FILE"
@@ -319,7 +319,11 @@ sub "[AUTH-LOGIN-BOB] Login Bob"
 bob_login=$(api_call POST "/api/v1/auth/login" "{\"email\":\"$BOB_EMAIL_VALID\",\"password\":\"$BOB_PASS_VALID\"}")
 assert_success "$bob_login"
 BOB_TOKEN="$(echo "$bob_login" | jq -r '.data.access_token')"
-BOB_ID="$(echo "$bob_login" | jq -r '.data.user.id // .data.userId // .data.user_id')"
+
+sub "[BOB-ME] /users/me for Bob"
+bob_me=$(api_call GET "/api/v1/users/me" "" "$BOB_TOKEN")
+assert_success "$bob_me"
+BOB_ID="$(echo "$bob_me" | jq -r '.data.id')"
 
 # ==============================================================================
 # 3) LEDGER ENDPOINTS - CREATION, VALIDATION, MEMBERSHIP
@@ -331,7 +335,12 @@ sub "[LEDGER-CREATE-VALID] Create ledger with valid payload"
 ledger_payload_valid=$(jq -n --arg name "API Negative Test Ledger $RAND" '{
   name: $name,
   ledger_type: "GROUP_BALANCE",
-  base_currency: "USD"
+  base_currency: "USD",
+  category: {
+    name: "Test Category",
+    kind: "EXPENSE",
+    is_active: true
+  }
 }')
 ledger_body=$(api_call POST "/api/v1/ledgers" "$ledger_payload_valid" "$ALICE_TOKEN")
 assert_success "$ledger_body"

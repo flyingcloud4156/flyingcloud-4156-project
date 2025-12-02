@@ -23,8 +23,8 @@ fi
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 PROJECT_ROOT=$(cd "${SCRIPT_DIR}/../.." && pwd)
 
-DB_SCHEMA_FILE="${PROJECT_ROOT}/ops/sql/ledger_flow.sql"
 DB_SEED_FILE="${PROJECT_ROOT}/ops/sql/backup/ledger_big_seed.sql"
+SCHEMA_FILE="${PROJECT_ROOT}/ops/sql/ledger_flow.sql"
 
 # ---------- command checks ----------
 need() { command -v "$1" >/dev/null 2>&1 || { echo "[FATAL] Missing command: $1"; exit 1; }; }
@@ -110,8 +110,8 @@ mysql_server_exec "DROP DATABASE IF EXISTS ledger;"
 echo "Creating database ledger ..."
 mysql_server_exec "CREATE DATABASE ledger CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;"
 
-echo "Loading schema: $DB_SCHEMA_FILE"
-mysql "${MYSQL_ARGS[@]}" ledger < "$DB_SCHEMA_FILE"
+echo "Loading schema: $SCHEMA_FILE"
+mysql "${MYSQL_ARGS[@]}" ledger < "$SCHEMA_FILE"
 
 echo "Loading seed data: $DB_SEED_FILE"
 mysql "${MYSQL_ARGS[@]}" ledger < "$DB_SEED_FILE"

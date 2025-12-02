@@ -64,8 +64,8 @@ fi
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 PROJECT_ROOT=$(cd "${SCRIPT_DIR}/../.." && pwd)
 
-DB_SCHEMA_FILE="${PROJECT_ROOT}/ops/sql/ledger_flow.sql"
 DB_BIG_SEED_FILE="${PROJECT_ROOT}/ops/sql/backup/ledger_big_seed.sql"
+SCHEMA_FILE="${PROJECT_ROOT}/ops/sql/ledger_flow.sql"
 
 # Spring Boot process PID for cleanup
 SPRING_PID=""
@@ -292,8 +292,8 @@ mysql_server_exec "DROP DATABASE IF EXISTS \`$DB_NAME\`;"
 echo "Creating database $DB_NAME ..."
 mysql_server_exec "CREATE DATABASE \`$DB_NAME\` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;"
 
-echo "Loading schema file: $DB_SCHEMA_FILE"
-mysql "${MYSQL_ARGS[@]}" "$DB_NAME" < "$DB_SCHEMA_FILE"
+echo "Loading schema file: $SCHEMA_FILE"
+mysql "${MYSQL_ARGS[@]}" "$DB_NAME" < "$SCHEMA_FILE"
 
 echo "Loading seed data (big file): $DB_BIG_SEED_FILE"
 mysql "${MYSQL_ARGS[@]}" "$DB_NAME" < "$DB_BIG_SEED_FILE"
@@ -364,7 +364,7 @@ ledger_payload=$(jq -n --arg name "Road Trip Fund - $RAND" '{
   category: {
     name: "Gas",
     kind: "EXPENSE",
-    isActive: true
+    is_active: true
   }
 }')
 ledger_body=$(api_call POST "/api/v1/ledgers" "$ledger_payload" "$ALICE_TOKEN")

@@ -108,21 +108,7 @@ CREATE TABLE categories (
                             is_active       BOOLEAN NOT NULL DEFAULT TRUE,
                             sort_order      INT NOT NULL DEFAULT 0,
                             UNIQUE KEY uk_ledger_name (ledger_id, name),
-                            CONSTRAINT fk_categories_ledger FOREIGN KEY (ledger_id) REFERENCES ledgers(id) ON DELETE CASCADE,
-                            CONSTRAINT chk_category_name CHECK (
-                                name IN (
-                                    'Gas',
-                                    'Food',
-                                    'Lodging',
-                                    'Entertainment',
-                                    'Supplies',
-                                    'Rent',
-                                    'Groceries',
-                                    'Utilities',
-                                    'Internet',
-                                    'Dining'
-                                )
-                            )
+                            CONSTRAINT fk_categories_ledger FOREIGN KEY (ledger_id) REFERENCES ledgers(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 COMMENT='Simple per-ledger category list for analytics.';
 
