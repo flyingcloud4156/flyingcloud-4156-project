@@ -156,7 +156,7 @@ class TransactionBudgetIntegrationTest {
     CreateTransactionRequest txnRequest = new CreateTransactionRequest();
     txnRequest.setTxnAt(LocalDateTime.now());
     txnRequest.setType("EXPENSE");
-    txnRequest.setCategoryId(1L);
+    txnRequest.setCategoryId(testCategoryId);
     txnRequest.setPayerId(testUserId);
     txnRequest.setAmountTotal(new BigDecimal("900.00"));
     txnRequest.setCurrency("USD");
@@ -224,7 +224,7 @@ class TransactionBudgetIntegrationTest {
     CreateTransactionRequest txnRequest = new CreateTransactionRequest();
     txnRequest.setTxnAt(LocalDateTime.now());
     txnRequest.setType("INCOME");
-    txnRequest.setCategoryId(1L);
+    txnRequest.setCategoryId(testCategoryId);
     txnRequest.setPayerId(testUserId);
     txnRequest.setAmountTotal(new BigDecimal("5000.00"));
     txnRequest.setCurrency("USD");
@@ -319,7 +319,7 @@ class TransactionBudgetIntegrationTest {
     CreateTransactionRequest txnRequest = new CreateTransactionRequest();
     txnRequest.setTxnAt(LocalDateTime.now());
     txnRequest.setType("EXPENSE");
-    txnRequest.setCategoryId(1L);
+    txnRequest.setCategoryId(testCategoryId);
     txnRequest.setPayerId(testUserId);
     txnRequest.setAmountTotal(new BigDecimal("2000.00"));
     txnRequest.setCurrency("USD");

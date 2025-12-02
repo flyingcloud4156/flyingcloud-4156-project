@@ -39,8 +39,10 @@ class BudgetMapperDatabaseIntegrationTest {
   @Autowired private BudgetMapper budgetMapper;
   @Autowired private LedgerMapper ledgerMapper;
   @Autowired private UserMapper userMapper;
+  @Autowired private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
   private Long testLedgerId;
+  private Long testCategoryId;
 
   @BeforeEach
   void setUp() {
@@ -58,6 +60,18 @@ class BudgetMapperDatabaseIntegrationTest {
     ledger.setShareStartDate(LocalDate.now());
     ledgerMapper.insert(ledger);
     testLedgerId = ledger.getId();
+
+    jdbcTemplate.update(
+        "INSERT INTO categories (ledger_id, name, kind) VALUES (?, ?, ?)",
+        testLedgerId,
+        "Test Category",
+        "EXPENSE");
+    testCategoryId =
+        jdbcTemplate.queryForObject(
+            "SELECT id FROM categories WHERE ledger_id = ? AND name = ?",
+            Long.class,
+            testLedgerId,
+            "Test Category");
   }
 
   @Test
@@ -136,7 +150,7 @@ class BudgetMapperDatabaseIntegrationTest {
 
     Budget budget2 = new Budget();
     budget2.setLedgerId(testLedgerId);
-    budget2.setCategoryId(1L);
+    budget2.setCategoryId(testCategoryId);
     budget2.setYear(2025);
     budget2.setMonth(12);
     budget2.setLimitAmount(new BigDecimal("500.00"));
@@ -154,14 +168,14 @@ class BudgetMapperDatabaseIntegrationTest {
 
     assertEquals(2, found.size());
     assertTrue(found.stream().anyMatch(b -> b.getCategoryId() == null));
-    assertTrue(found.stream().anyMatch(b -> Long.valueOf(1L).equals(b.getCategoryId())));
+    assertTrue(found.stream().anyMatch(b -> testCategoryId.equals(b.getCategoryId())));
   }
 
   @Test
   void testLambdaQueryWrapper_complexQuery() {
     Budget budget = new Budget();
     budget.setLedgerId(testLedgerId);
-    budget.setCategoryId(1L);
+    budget.setCategoryId(testCategoryId);
     budget.setYear(2025);
     budget.setMonth(12);
     budget.setLimitAmount(new BigDecimal("1000.00"));
@@ -171,7 +185,7 @@ class BudgetMapperDatabaseIntegrationTest {
         budgetMapper.selectOne(
             new LambdaQueryWrapper<Budget>()
                 .eq(Budget::getLedgerId, testLedgerId)
-                .eq(Budget::getCategoryId, 1L)
+                .eq(Budget::getCategoryId, testCategoryId)
                 .eq(Budget::getYear, 2025)
                 .eq(Budget::getMonth, 12));
 

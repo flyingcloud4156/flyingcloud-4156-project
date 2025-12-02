@@ -132,7 +132,7 @@ class AnalyticsDatabaseIntegrationTest {
     CreateTransactionRequest request2 = new CreateTransactionRequest();
     request2.setTxnAt(LocalDateTime.now());
     request2.setType("EXPENSE");
-    request2.setCategoryId(1L);
+    request2.setCategoryId(testCategoryId);
     request2.setPayerId(testUser1Id);
     request2.setAmountTotal(new BigDecimal("500.00"));
     request2.setCurrency("USD");
@@ -159,7 +159,7 @@ class AnalyticsDatabaseIntegrationTest {
     CreateTransactionRequest request = new CreateTransactionRequest();
     request.setTxnAt(LocalDateTime.now());
     request.setType("EXPENSE");
-    request.setCategoryId(1L);
+    request.setCategoryId(testCategoryId);
     request.setPayerId(testUser1Id);
     request.setAmountTotal(new BigDecimal("300.00"));
     request.setCurrency("USD");
@@ -185,7 +185,7 @@ class AnalyticsDatabaseIntegrationTest {
     CreateTransactionRequest incomeRequest = new CreateTransactionRequest();
     incomeRequest.setTxnAt(LocalDateTime.now());
     incomeRequest.setType("INCOME");
-    incomeRequest.setCategoryId(1L);
+    incomeRequest.setCategoryId(testCategoryId);
     incomeRequest.setPayerId(testUser1Id);
     incomeRequest.setAmountTotal(new BigDecimal("2000.00"));
     incomeRequest.setCurrency("USD");
@@ -203,7 +203,7 @@ class AnalyticsDatabaseIntegrationTest {
     CreateTransactionRequest expenseRequest = new CreateTransactionRequest();
     expenseRequest.setTxnAt(LocalDateTime.now());
     expenseRequest.setType("EXPENSE");
-    expenseRequest.setCategoryId(1L);
+    expenseRequest.setCategoryId(testCategoryId);
     expenseRequest.setPayerId(testUser1Id);
     expenseRequest.setAmountTotal(new BigDecimal("800.00"));
     expenseRequest.setCurrency("USD");
@@ -230,7 +230,7 @@ class AnalyticsDatabaseIntegrationTest {
     CreateTransactionRequest request = new CreateTransactionRequest();
     request.setTxnAt(LocalDateTime.now());
     request.setType("EXPENSE");
-    request.setCategoryId(1L);
+    request.setCategoryId(testCategoryId);
     request.setPayerId(testUser1Id);
     request.setAmountTotal(new BigDecimal("600.00"));
     request.setCurrency("USD");

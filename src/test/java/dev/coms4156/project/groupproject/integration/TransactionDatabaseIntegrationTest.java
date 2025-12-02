@@ -303,7 +303,7 @@ class TransactionDatabaseIntegrationTest {
     CreateTransactionRequest request1 = new CreateTransactionRequest();
     request1.setTxnAt(LocalDateTime.now());
     request1.setType("INCOME");
-    request1.setCategoryId(1L);
+    request1.setCategoryId(testCategoryId);
     request1.setPayerId(testUser1Id);
     request1.setAmountTotal(new BigDecimal("1000.00"));
     request1.setCurrency("USD");
@@ -321,7 +321,7 @@ class TransactionDatabaseIntegrationTest {
     CreateTransactionRequest request2 = new CreateTransactionRequest();
     request2.setTxnAt(LocalDateTime.now());
     request2.setType("EXPENSE");
-    request2.setCategoryId(1L);
+    request2.setCategoryId(testCategoryId);
     request2.setPayerId(testUser1Id);
     request2.setAmountTotal(new BigDecimal("200.00"));
     request2.setCurrency("USD");
