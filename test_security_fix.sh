@@ -12,7 +12,7 @@ echo "Test 1: Try to access user lookup WITHOUT authentication token"
 echo "Expected: HTTP 401 Unauthorized (after fix) / HTTP 200 OK (before fix)"
 echo "Testing..."
 
-RESPONSE=$(curl -s -w "HTTP_CODE:%{http_code}" -X GET "$HOST/api/v1/users/lookup?email=test@example.com")
+RESPONSE=$(curl -s -w "HTTP_CODE:%{http_code}" -X GET "$HOST/api/v1/user-lookup?email=test@example.com")
 
 HTTP_CODE=$(echo "$RESPONSE" | grep -o "HTTP_CODE:[0-9]*" | cut -d: -f2)
 BODY=$(echo "$RESPONSE" | sed 's/HTTP_CODE:[0-9]*$//')
@@ -47,7 +47,7 @@ TOKEN=$(echo "$LOGIN_RESPONSE" | jq -r '.data.access_token // empty')
 if [ -n "$TOKEN" ] && [ "$TOKEN" != "null" ]; then
     echo "Token obtained: ${TOKEN:0:10}..."
 
-    AUTH_RESPONSE=$(curl -s -w "HTTP_CODE:%{http_code}" -X GET "$HOST/api/v1/users/lookup?email=hzh2@gmail.com" \
+    AUTH_RESPONSE=$(curl -s -w "HTTP_CODE:%{http_code}" -X GET "$HOST/api/v1/user-lookup?email=hzh2@gmail.com" \
         -H "X-Auth-Token: $TOKEN")
 
     AUTH_HTTP_CODE=$(echo "$AUTH_RESPONSE" | grep -o "HTTP_CODE:[0-9]*" | cut -d: -f2)

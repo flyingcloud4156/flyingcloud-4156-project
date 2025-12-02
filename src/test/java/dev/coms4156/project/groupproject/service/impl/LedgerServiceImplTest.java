@@ -10,6 +10,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import dev.coms4156.project.groupproject.dto.AddLedgerMemberRequest;
+import dev.coms4156.project.groupproject.dto.CreateCategoryRequest;
 import dev.coms4156.project.groupproject.dto.CreateLedgerRequest;
 import dev.coms4156.project.groupproject.dto.LedgerMemberResponse;
 import dev.coms4156.project.groupproject.dto.LedgerResponse;
@@ -21,6 +22,7 @@ import dev.coms4156.project.groupproject.entity.DebtEdge;
 import dev.coms4156.project.groupproject.entity.Ledger;
 import dev.coms4156.project.groupproject.entity.LedgerMember;
 import dev.coms4156.project.groupproject.entity.User;
+import dev.coms4156.project.groupproject.mapper.CategoryMapper;
 import dev.coms4156.project.groupproject.mapper.DebtEdgeMapper;
 import dev.coms4156.project.groupproject.mapper.LedgerMemberMapper;
 import dev.coms4156.project.groupproject.mapper.UserMapper;
@@ -53,6 +55,7 @@ class LedgerServiceImplTest {
   @Mock private LedgerMemberMapper ledgerMemberMapper;
   @Mock private UserMapper userMapper;
   @Mock private DebtEdgeMapper debtEdgeMapper;
+  @Mock private CategoryMapper categoryMapper;
 
   @Spy @InjectMocks private LedgerServiceImpl service;
 
@@ -67,6 +70,13 @@ class LedgerServiceImplTest {
     req.setLedgerType("GROUP_BALANCE");
     req.setBaseCurrency("USD");
     req.setShareStartDate(LocalDate.of(2025, 1, 1));
+
+    // Add test category (sortOrder will be auto-assigned)
+    CreateCategoryRequest category = new CreateCategoryRequest();
+    category.setName("Food");
+    category.setKind("EXPENSE");
+    category.setIsActive(true);
+    req.setCategory(category);
     return req;
   }
 

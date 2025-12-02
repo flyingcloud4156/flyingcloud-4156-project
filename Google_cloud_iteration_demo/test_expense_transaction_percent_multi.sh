@@ -127,7 +127,7 @@ get_user_id_by_email() {
   local email="$1"; local token="$2"
   echo "🔍 Looking up user ID for email: $email" >&2
   local response
-  response=$(api_get "/api/v1/users/lookup?email=${email}" "$token")
+  response=$(api_get "/api/v1/user-lookup?email=${email}" "$token")
   fail_if_false "$response"
   local user_id
   user_id=$(echo "$response" | jq -r '.data.user_id')

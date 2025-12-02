@@ -268,19 +268,19 @@ assert_not_null "USER1_ID" "$USER1_ID"
 echo " User1 ID retrieved: $USER1_ID"
 
 echo_subtitle "5.2 Typical Valid: Lookup user by email"
-resp=$(curl -sS -X GET "$HOST/api/v1/users/lookup?email=$NEW_USER2_EMAIL" -H "X-Auth-Token: $USER1_TOKEN")
+resp=$(curl -sS -X GET "$HOST/api/v1/user-lookup?email=$NEW_USER2_EMAIL" -H "X-Auth-Token: $USER1_TOKEN")
 echo "$resp" | jq . || echo "$resp"
 USER2_ID=$(echo "$resp" | jq -r '.data.user_id // empty')
 assert_not_null "USER2_ID" "$USER2_ID"
 echo " User2 ID retrieved: $USER2_ID"
 
 echo_subtitle "5.3 Atypical Valid: Lookup with special characters in email (NEW)"
-resp=$(curl -sS -X GET "$HOST/api/v1/users/lookup?email=short.minimal2025@gmail.com" -H "X-Auth-Token: $USER1_TOKEN")
+resp=$(curl -sS -X GET "$HOST/api/v1/user-lookup?email=short.minimal2025@gmail.com" -H "X-Auth-Token: $USER1_TOKEN")
 echo "$resp" | jq . || echo "$resp"
 echo " Special character email lookup handled"
 
 echo_subtitle "5.4 Invalid: Lookup non-existent user"
-resp=$(curl -sS -X GET "$HOST/api/v1/users/lookup?email=doesnotexist999@fake.com" -H "X-Auth-Token: $USER1_TOKEN")
+resp=$(curl -sS -X GET "$HOST/api/v1/user-lookup?email=doesnotexist999@fake.com" -H "X-Auth-Token: $USER1_TOKEN")
 echo "$resp" | jq . || echo "$resp"
 echo " Non-existent user lookup properly rejected"
 
@@ -428,7 +428,7 @@ resp=$(api_post "/api/v1/auth/register" "$(json_register_payload "$NEW_USER3_EMA
 payload=$(jq -n --arg email "$NEW_USER3_EMAIL" --arg password "$NEW_USER3_PASSWORD" '{email:$email, password:$password}')
 resp=$(api_post "/api/v1/auth/login" "$payload")
 USER3_TOKEN=$(echo "$resp" | jq -r '.data.access_token // empty')
-resp=$(curl -sS -X GET "$HOST/api/v1/users/lookup?email=$NEW_USER3_EMAIL" -H "X-Auth-Token: $USER1_TOKEN")
+resp=$(curl -sS -X GET "$HOST/api/v1/user-lookup?email=$NEW_USER3_EMAIL" -H "X-Auth-Token: $USER1_TOKEN")
 USER3_ID=$(echo "$resp" | jq -r '.data.user_id // empty')
 assert_not_null "USER3_ID" "$USER3_ID"
 
