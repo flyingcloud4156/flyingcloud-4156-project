@@ -23,6 +23,9 @@ public class AuthInterceptor implements HandlerInterceptor {
   @Override
   public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
       throws Exception {
+    if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+      return true;
+    }
     String token = request.getHeader(RedisKeys.HEADER_TOKEN);
     if (StringUtils.hasText(token)) {
       String json = redis.opsForValue().get(RedisKeys.accessTokenKey(token));

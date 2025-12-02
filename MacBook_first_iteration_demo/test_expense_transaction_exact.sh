@@ -26,7 +26,7 @@ IFS=$'\n\t'
 HOST="http://localhost:8081"
 
 # Dynamically set paths based on script location
-SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 PROJECT_ROOT=$(cd "${SCRIPT_DIR}/.." && pwd)
 DB_SCHEMA_FILE="${PROJECT_ROOT}/ops/sql/ledger_flow.sql"
 DB_SEED_FILE="${PROJECT_ROOT}/ops/sql/backup/ledger.sql"

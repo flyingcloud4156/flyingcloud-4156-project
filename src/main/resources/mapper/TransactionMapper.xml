@@ -22,16 +22,14 @@
         )
       )
       AND (
-        SELECT l.share_start_date FROM ledgers l WHERE l.id = t.ledger_id
-      ) IS NULL
-      OR t.txn_at >= (
-        SELECT l.share_start_date FROM ledgers l WHERE l.id = t.ledger_id
-      )
-      OR EXISTS (
-        SELECT 1 FROM ledger_members lm 
-        WHERE lm.ledger_id = t.ledger_id 
-          AND lm.user_id = #{currentUserId} 
-          AND lm.role IN ('OWNER', 'ADMIN')
+        (SELECT l.share_start_date FROM ledgers l WHERE l.id = t.ledger_id) IS NULL
+        OR t.txn_at >= (SELECT l.share_start_date FROM ledgers l WHERE l.id = t.ledger_id)
+        OR EXISTS (
+          SELECT 1 FROM ledger_members lm
+          WHERE lm.ledger_id = t.ledger_id
+            AND lm.user_id = #{currentUserId}
+            AND lm.role IN ('OWNER', 'ADMIN')
+        )
       )
     ORDER BY t.txn_at DESC, t.id DESC
   </select>
@@ -61,6 +59,17 @@
             AND lm.role IN ('OWNER', 'ADMIN')
         )
       )
+  </select>
+
+  <!-- Sum expense amounts by time range and optional category -->
+  <select id="sumExpenseByTimeRange" resultType="java.math.BigDecimal">
+    SELECT COALESCE(SUM(amount_total), 0)
+    FROM transactions
+    WHERE ledger_id = #{ledgerId}
+      AND type = 'EXPENSE'
+      AND txn_at >= #{start}
+      AND txn_at &lt; #{end}
+      AND (#{categoryId} IS NULL OR category_id = #{categoryId})
   </select>
 
 </mapper>

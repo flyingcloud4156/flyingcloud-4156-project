@@ -1,0 +1,12 @@
+{
+  "name": "ledger-frontend-tests",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "test": "jest --runInBand"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "jsdom": "^24.1.0"
+  }
+}

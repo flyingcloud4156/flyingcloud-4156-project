@@ -2,12 +2,15 @@ package dev.coms4156.project.groupproject.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -57,6 +60,7 @@ class TransactionServiceImplTest {
   @Mock private LedgerMapper ledgerMapper;
   @Mock private LedgerMemberMapper ledgerMemberMapper;
   @Mock private CurrencyMapper currencyMapper;
+  @Mock private dev.coms4156.project.groupproject.service.BudgetService budgetService;
 
   @InjectMocks private TransactionServiceImpl service;
 
@@ -595,6 +599,250 @@ class TransactionServiceImplTest {
 
     req.setSplits(Arrays.asList(split1, split2));
     return req;
+  }
+
+  @Test
+  @DisplayName("createTransaction: EXPENSE with budget alert -> returns alert message")
+  void createTransaction_expenseWithBudgetAlert_returnsAlert() {
+    CurrentUserContext.set(new UserView(1L, "Alice"));
+    Ledger led = ledger(1L, "USD", "GROUP_BALANCE");
+    doReturn(led).when(ledgerMapper).selectById(1L);
+    doReturn(ledgerMember(1L, "OWNER"))
+        .when(ledgerMemberMapper)
+        .selectOne(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
+
+    LedgerMember member1 = new LedgerMember();
+    member1.setUserId(1L);
+    member1.setLedgerId(1L);
+    doReturn(Collections.singletonList(member1))
+        .when(ledgerMemberMapper)
+        .selectList(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
+
+    doAnswer(
+            inv -> {
+              Transaction t = inv.getArgument(0);
+              t.setId(100L);
+              return 1;
+            })
+        .when(transactionMapper)
+        .insert(any(Transaction.class));
+
+    Currency usd = new Currency();
+    usd.setCode("USD");
+    usd.setExponent(2);
+    doReturn(usd).when(currencyMapper).selectById("USD");
+
+    doReturn(1).when(transactionSplitMapper).insertBatch(any(List.class));
+
+    doReturn("Budget warning: Category 5 at 90%, approaching limit")
+        .when(budgetService)
+        .checkBudgetAfterTransaction(any(Long.class), any(Long.class), any(LocalDateTime.class));
+
+    CreateTransactionRequest req = reqExpenseEqual(1L, 1L, new BigDecimal("100.00"));
+    req.setCategoryId(5L);
+
+    CreateTransactionResponse resp = service.createTransaction(1L, req);
+
+    assertNotNull(resp);
+    assertEquals(100L, resp.getTransactionId());
+    assertEquals("Budget warning: Category 5 at 90%, approaching limit", resp.getBudgetAlert());
+
+    verify(budgetService, times(1))
+        .checkBudgetAfterTransaction(eq(1L), eq(5L), any(LocalDateTime.class));
+  }
+
+  @Test
+  @DisplayName("createTransaction: EXPENSE with no budget alert -> returns null alert")
+  void createTransaction_expenseNoBudgetAlert_returnsNullAlert() {
+    CurrentUserContext.set(new UserView(1L, "Alice"));
+    Ledger led = ledger(1L, "USD", "GROUP_BALANCE");
+    doReturn(led).when(ledgerMapper).selectById(1L);
+    doReturn(ledgerMember(1L, "OWNER"))
+        .when(ledgerMemberMapper)
+        .selectOne(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
+
+    LedgerMember member1 = new LedgerMember();
+    member1.setUserId(1L);
+    member1.setLedgerId(1L);
+    doReturn(Collections.singletonList(member1))
+        .when(ledgerMemberMapper)
+        .selectList(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
+
+    doAnswer(
+            inv -> {
+              Transaction t = inv.getArgument(0);
+              t.setId(101L);
+              return 1;
+            })
+        .when(transactionMapper)
+        .insert(any(Transaction.class));
+
+    Currency usd = new Currency();
+    usd.setCode("USD");
+    usd.setExponent(2);
+    doReturn(usd).when(currencyMapper).selectById("USD");
+
+    doReturn(1).when(transactionSplitMapper).insertBatch(any(List.class));
+
+    doReturn(null)
+        .when(budgetService)
+        .checkBudgetAfterTransaction(any(Long.class), any(), any(LocalDateTime.class));
+
+    CreateTransactionRequest req = reqExpenseEqual(1L, 1L, new BigDecimal("50.00"));
+
+    CreateTransactionResponse resp = service.createTransaction(1L, req);
+
+    assertNotNull(resp);
+    assertEquals(101L, resp.getTransactionId());
+    assertNull(resp.getBudgetAlert());
+
+    verify(budgetService, times(1))
+        .checkBudgetAfterTransaction(eq(1L), any(), any(LocalDateTime.class));
+  }
+
+  @Test
+  @DisplayName("createTransaction: INCOME -> budget service NOT called")
+  void createTransaction_income_budgetServiceNotCalled() {
+    CurrentUserContext.set(new UserView(1L, "Alice"));
+    Ledger led = ledger(1L, "USD", "GROUP_BALANCE");
+    doReturn(led).when(ledgerMapper).selectById(1L);
+    doReturn(ledgerMember(1L, "OWNER"))
+        .when(ledgerMemberMapper)
+        .selectOne(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
+
+    LedgerMember member1 = new LedgerMember();
+    member1.setUserId(1L);
+    member1.setLedgerId(1L);
+    doReturn(Collections.singletonList(member1))
+        .when(ledgerMemberMapper)
+        .selectList(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
+
+    doAnswer(
+            inv -> {
+              Transaction t = inv.getArgument(0);
+              t.setId(102L);
+              return 1;
+            })
+        .when(transactionMapper)
+        .insert(any(Transaction.class));
+
+    Currency usd = new Currency();
+    usd.setCode("USD");
+    usd.setExponent(2);
+    doReturn(usd).when(currencyMapper).selectById("USD");
+
+    doReturn(1).when(transactionSplitMapper).insertBatch(any(List.class));
+
+    CreateTransactionRequest req = reqExpenseEqual(1L, 1L, new BigDecimal("200.00"));
+    req.setType("INCOME");
+
+    CreateTransactionResponse resp = service.createTransaction(1L, req);
+
+    assertNotNull(resp);
+    assertEquals(102L, resp.getTransactionId());
+    assertNull(resp.getBudgetAlert());
+
+    verify(budgetService, never())
+        .checkBudgetAfterTransaction(any(Long.class), any(), any(LocalDateTime.class));
+  }
+
+  @Test
+  @DisplayName("createTransaction: EXPENSE with budget service exception -> transaction succeeds")
+  void createTransaction_expenseBudgetServiceThrows_transactionSucceeds() {
+    CurrentUserContext.set(new UserView(1L, "Alice"));
+    Ledger led = ledger(1L, "USD", "GROUP_BALANCE");
+    doReturn(led).when(ledgerMapper).selectById(1L);
+    doReturn(ledgerMember(1L, "OWNER"))
+        .when(ledgerMemberMapper)
+        .selectOne(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
+
+    LedgerMember member1 = new LedgerMember();
+    member1.setUserId(1L);
+    member1.setLedgerId(1L);
+    doReturn(Collections.singletonList(member1))
+        .when(ledgerMemberMapper)
+        .selectList(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
+
+    doAnswer(
+            inv -> {
+              Transaction t = inv.getArgument(0);
+              t.setId(103L);
+              return 1;
+            })
+        .when(transactionMapper)
+        .insert(any(Transaction.class));
+
+    Currency usd = new Currency();
+    usd.setCode("USD");
+    usd.setExponent(2);
+    doReturn(usd).when(currencyMapper).selectById("USD");
+
+    doReturn(1).when(transactionSplitMapper).insertBatch(any(List.class));
+
+    doThrow(new RuntimeException("Budget service error"))
+        .when(budgetService)
+        .checkBudgetAfterTransaction(any(Long.class), any(), any(LocalDateTime.class));
+
+    CreateTransactionRequest req = reqExpenseEqual(1L, 1L, new BigDecimal("75.00"));
+
+    CreateTransactionResponse resp = service.createTransaction(1L, req);
+
+    assertNotNull(resp);
+    assertEquals(103L, resp.getTransactionId());
+    assertNull(resp.getBudgetAlert());
+
+    verify(budgetService, times(1))
+        .checkBudgetAfterTransaction(eq(1L), any(), any(LocalDateTime.class));
+  }
+
+  @Test
+  @DisplayName("createTransaction: EXPENSE with null categoryId -> budget service called with null")
+  void createTransaction_expenseNullCategory_budgetServiceCalledWithNull() {
+    CurrentUserContext.set(new UserView(1L, "Alice"));
+    Ledger led = ledger(1L, "USD", "GROUP_BALANCE");
+    doReturn(led).when(ledgerMapper).selectById(1L);
+    doReturn(ledgerMember(1L, "OWNER"))
+        .when(ledgerMemberMapper)
+        .selectOne(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
+
+    LedgerMember member1 = new LedgerMember();
+    member1.setUserId(1L);
+    member1.setLedgerId(1L);
+    doReturn(Collections.singletonList(member1))
+        .when(ledgerMemberMapper)
+        .selectList(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
+
+    doAnswer(
+            inv -> {
+              Transaction t = inv.getArgument(0);
+              t.setId(104L);
+              return 1;
+            })
+        .when(transactionMapper)
+        .insert(any(Transaction.class));
+
+    Currency usd = new Currency();
+    usd.setCode("USD");
+    usd.setExponent(2);
+    doReturn(usd).when(currencyMapper).selectById("USD");
+
+    doReturn(1).when(transactionSplitMapper).insertBatch(any(List.class));
+
+    doReturn("Budget alert: Total Budget exceeded at 110%")
+        .when(budgetService)
+        .checkBudgetAfterTransaction(any(Long.class), any(), any(LocalDateTime.class));
+
+    CreateTransactionRequest req = reqExpenseEqual(1L, 1L, new BigDecimal("300.00"));
+    req.setCategoryId(null);
+
+    CreateTransactionResponse resp = service.createTransaction(1L, req);
+
+    assertNotNull(resp);
+    assertEquals(104L, resp.getTransactionId());
+    assertEquals("Budget alert: Total Budget exceeded at 110%", resp.getBudgetAlert());
+
+    verify(budgetService, times(1))
+        .checkBudgetAfterTransaction(eq(1L), eq(null), any(LocalDateTime.class));
   }
 
   private CreateTransactionRequest reqExpenseWeight() {

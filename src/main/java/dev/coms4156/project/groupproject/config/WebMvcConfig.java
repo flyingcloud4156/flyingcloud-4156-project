@@ -41,12 +41,6 @@ public class WebMvcConfig implements WebMvcConfigurer {
   @Override
   public void addInterceptors(InterceptorRegistry registry) {
     registry
-        .addInterceptor(accessLogInterceptor)
-        .addPathPatterns("/api/v1/**")
-        .excludePathPatterns(
-            "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/actuator/**");
-
-    registry
         .addInterceptor(authInterceptor)
         .addPathPatterns("/api/v1/**")
         .excludePathPatterns(
@@ -57,5 +51,10 @@ public class WebMvcConfig implements WebMvcConfigurer {
             "/swagger-ui/**",
             "/swagger-ui.html",
             "/actuator/**");
+    registry
+        .addInterceptor(accessLogInterceptor)
+        .addPathPatterns("/api/v1/**")
+        .excludePathPatterns(
+            "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/actuator/**");
   }
 }

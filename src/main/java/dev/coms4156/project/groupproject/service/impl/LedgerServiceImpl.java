@@ -40,6 +40,13 @@ public class LedgerServiceImpl extends ServiceImpl<LedgerMapper, Ledger> impleme
   private final UserMapper userMapper;
   private final DebtEdgeMapper debtEdgeMapper;
 
+  /**
+   * Constructor for LedgerServiceImpl.
+   *
+   * @param ledgerMemberMapper ledger member mapper
+   * @param userMapper user mapper
+   * @param debtEdgeMapper debt edge mapper
+   */
   @Autowired
   public LedgerServiceImpl(
       LedgerMemberMapper ledgerMemberMapper, UserMapper userMapper, DebtEdgeMapper debtEdgeMapper) {
@@ -322,35 +329,45 @@ public class LedgerServiceImpl extends ServiceImpl<LedgerMapper, Ledger> impleme
       }
     }
 
-    while (!creditors.isEmpty() && !debtors.isEmpty()) {
-      BalanceEntry creditor = creditors.poll();
-      BalanceEntry debtor = debtors.poll();
+    processSettlements(creditors, debtors, transfers);
+    return transfers;
+  }
 
-      BigDecimal transferAmount = creditor.getAmount().min(debtor.getAmount());
-
-      SettlementPlanResponse.TransferItem transfer =
-          new SettlementPlanResponse.TransferItem(
-              debtor.getUserId(),
-              debtor.getUserName(),
-              creditor.getUserId(),
-              creditor.getUserName(),
-              transferAmount);
-      transfers.add(transfer);
-
-      BigDecimal remainingCreditor = creditor.getAmount().subtract(transferAmount);
-      BigDecimal remainingDebtor = debtor.getAmount().subtract(transferAmount);
-
-      if (remainingCreditor.compareTo(BigDecimal.ZERO) > 0) {
-        creditors.offer(
-            new BalanceEntry(creditor.getUserId(), creditor.getUserName(), remainingCreditor));
-      }
-
-      if (remainingDebtor.compareTo(BigDecimal.ZERO) > 0) {
-        debtors.offer(new BalanceEntry(debtor.getUserId(), debtor.getUserName(), remainingDebtor));
-      }
+  private void processSettlements(
+      PriorityQueue<BalanceEntry> creditors,
+      PriorityQueue<BalanceEntry> debtors,
+      List<SettlementPlanResponse.TransferItem> transfers) {
+    if (creditors.isEmpty() || debtors.isEmpty()) {
+      return;
     }
 
-    return transfers;
+    BalanceEntry creditor = creditors.poll();
+    BalanceEntry debtor = debtors.poll();
+
+    BigDecimal transferAmount = creditor.getAmount().min(debtor.getAmount());
+
+    SettlementPlanResponse.TransferItem transfer =
+        new SettlementPlanResponse.TransferItem(
+            debtor.getUserId(),
+            debtor.getUserName(),
+            creditor.getUserId(),
+            creditor.getUserName(),
+            transferAmount);
+    transfers.add(transfer);
+
+    BigDecimal remainingCreditor = creditor.getAmount().subtract(transferAmount);
+    BigDecimal remainingDebtor = debtor.getAmount().subtract(transferAmount);
+
+    if (remainingCreditor.compareTo(BigDecimal.ZERO) > 0) {
+      creditors.offer(
+          new BalanceEntry(creditor.getUserId(), creditor.getUserName(), remainingCreditor));
+    }
+
+    if (remainingDebtor.compareTo(BigDecimal.ZERO) > 0) {
+      debtors.offer(new BalanceEntry(debtor.getUserId(), debtor.getUserName(), remainingDebtor));
+    }
+
+    processSettlements(creditors, debtors, transfers);
   }
 
   /** Helper class for balance entries used in priority queues. */

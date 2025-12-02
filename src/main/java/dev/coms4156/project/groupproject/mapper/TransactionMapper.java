@@ -44,4 +44,19 @@ public interface TransactionMapper extends BaseMapper<Transaction> {
    */
   Transaction findTransactionByIdWithVisibility(
       @Param("transactionId") Long transactionId, @Param("currentUserId") Long currentUserId);
+
+  /**
+   * Sum expense amounts in a given time range, optionally filtered by category.
+   *
+   * @param ledgerId ledger ID
+   * @param categoryId category ID (null for all categories)
+   * @param start start time (inclusive)
+   * @param end end time (exclusive)
+   * @return total expense amount
+   */
+  java.math.BigDecimal sumExpenseByTimeRange(
+      @Param("ledgerId") Long ledgerId,
+      @Param("categoryId") Long categoryId,
+      @Param("start") LocalDateTime start,
+      @Param("end") LocalDateTime end);
 }
