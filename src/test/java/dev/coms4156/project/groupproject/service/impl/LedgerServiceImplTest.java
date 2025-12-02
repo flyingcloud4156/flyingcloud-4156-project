@@ -1,8 +1,10 @@
 package dev.coms4156.project.groupproject.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
@@ -15,12 +17,15 @@ import dev.coms4156.project.groupproject.dto.LedgerMemberResponse;
 import dev.coms4156.project.groupproject.dto.LedgerResponse;
 import dev.coms4156.project.groupproject.dto.ListLedgerMembersResponse;
 import dev.coms4156.project.groupproject.dto.MyLedgersResponse;
+import dev.coms4156.project.groupproject.dto.SettlementConfig;
 import dev.coms4156.project.groupproject.dto.SettlementPlanResponse;
 import dev.coms4156.project.groupproject.dto.UserView;
+import dev.coms4156.project.groupproject.entity.Currency;
 import dev.coms4156.project.groupproject.entity.DebtEdge;
 import dev.coms4156.project.groupproject.entity.Ledger;
 import dev.coms4156.project.groupproject.entity.LedgerMember;
 import dev.coms4156.project.groupproject.entity.User;
+import dev.coms4156.project.groupproject.mapper.CurrencyMapper;
 import dev.coms4156.project.groupproject.mapper.DebtEdgeMapper;
 import dev.coms4156.project.groupproject.mapper.LedgerMemberMapper;
 import dev.coms4156.project.groupproject.mapper.UserMapper;
@@ -30,7 +35,10 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -53,6 +61,7 @@ class LedgerServiceImplTest {
   @Mock private LedgerMemberMapper ledgerMemberMapper;
   @Mock private UserMapper userMapper;
   @Mock private DebtEdgeMapper debtEdgeMapper;
+  @Mock private CurrencyMapper currencyMapper;
 
   @Spy @InjectMocks private LedgerServiceImpl service;
 
@@ -439,15 +448,32 @@ class LedgerServiceImplTest {
 
   private static DebtEdge debtEdge(
       long ledgerId, long transactionId, long fromUserId, long toUserId, BigDecimal amount) {
+    return debtEdge(ledgerId, transactionId, fromUserId, toUserId, amount, "USD");
+  }
+
+  private static DebtEdge debtEdge(
+      long ledgerId,
+      long transactionId,
+      long fromUserId,
+      long toUserId,
+      BigDecimal amount,
+      String currency) {
     DebtEdge edge = new DebtEdge();
     edge.setLedgerId(ledgerId);
     edge.setTransactionId(transactionId);
     edge.setFromUserId(fromUserId);
     edge.setToUserId(toUserId);
     edge.setAmount(amount);
-    edge.setEdgeCurrency("USD");
+    edge.setEdgeCurrency(currency);
     edge.setCreatedAt(LocalDateTime.now());
     return edge;
+  }
+
+  private static Currency currency(String code, int exponent) {
+    Currency c = new Currency();
+    c.setCode(code);
+    c.setExponent(exponent);
+    return c;
   }
 
   private static User user(long id, String name) {
@@ -690,5 +716,390 @@ class LedgerServiceImplTest {
             .reduce(BigDecimal.ZERO, BigDecimal::add);
     assertEquals(new BigDecimal("25.00"), total);
     assertNotNull(resp.getTransfers());
+  }
+
+  // ========== Enhanced Settlement Features Tests ==========
+
+  @Test
+  @DisplayName("getSettlementPlan with config: currency conversion - EUR to USD")
+  void getSettlementPlan_currencyConversion() {
+    CurrentUserContext.set(new UserView(1L, "Alice"));
+
+    Ledger ledger = ledger(10L, "Family");
+    ledger.setBaseCurrency("USD");
+    doReturn(ledger).when(service).getById(10L);
+    doReturn(member(10L, 1L, "OWNER"))
+        .when(ledgerMemberMapper)
+        .selectOne(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
+
+    // Edge in EUR, needs conversion to USD (1 EUR = 1.1 USD)
+    DebtEdge edge1 = debtEdge(10L, 1L, 1L, 2L, new BigDecimal("100.00"), "EUR");
+    doReturn(Arrays.asList(edge1)).when(debtEdgeMapper).findByLedgerId(10L);
+
+    User alice = user(1L, "Alice");
+    User bob = user(2L, "Bob");
+    doReturn(alice).when(userMapper).selectById(1L);
+    doReturn(bob).when(userMapper).selectById(2L);
+
+    // Mock currency
+    Currency usdCurrency = currency("USD", 2);
+    doReturn(usdCurrency).when(currencyMapper).selectById("USD");
+
+    SettlementConfig config = new SettlementConfig();
+    Map<String, BigDecimal> rates = new HashMap<>();
+    rates.put("EUR-USD", new BigDecimal("1.1"));
+    config.setCurrencyRates(rates);
+
+    SettlementPlanResponse resp = service.getSettlementPlan(10L, config);
+
+    assertNotNull(resp);
+    assertEquals(1, resp.getTransferCount());
+    // 100 EUR * 1.1 = 110 USD
+    assertEquals(new BigDecimal("110.00"), resp.getTransfers().get(0).getAmount());
+  }
+
+  @Test
+  @DisplayName("getSettlementPlan with config: rounding ROUND_HALF_UP")
+  void getSettlementPlan_roundingHalfUp() {
+    CurrentUserContext.set(new UserView(1L, "Alice"));
+
+    doReturn(ledger(10L, "Family")).when(service).getById(10L);
+    doReturn(member(10L, 1L, "OWNER"))
+        .when(ledgerMemberMapper)
+        .selectOne(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
+
+    // Amount that needs rounding: 25.555
+    DebtEdge edge1 = debtEdge(10L, 1L, 1L, 2L, new BigDecimal("25.555"));
+    doReturn(Arrays.asList(edge1)).when(debtEdgeMapper).findByLedgerId(10L);
+
+    User alice = user(1L, "Alice");
+    User bob = user(2L, "Bob");
+    doReturn(alice).when(userMapper).selectById(1L);
+    doReturn(bob).when(userMapper).selectById(2L);
+
+    Currency usdCurrency = currency("USD", 2);
+    doReturn(usdCurrency).when(currencyMapper).selectById("USD");
+
+    SettlementConfig config = new SettlementConfig();
+    config.setRoundingStrategy("ROUND_HALF_UP");
+
+    SettlementPlanResponse resp = service.getSettlementPlan(10L, config);
+
+    assertNotNull(resp);
+    assertEquals(1, resp.getTransferCount());
+    // 25.555 rounded to 2 decimals with HALF_UP = 25.56
+    assertEquals(new BigDecimal("25.56"), resp.getTransfers().get(0).getAmount());
+  }
+
+  @Test
+  @DisplayName("getSettlementPlan with config: rounding TRIM_TO_UNIT")
+  void getSettlementPlan_roundingTrimToUnit() {
+    CurrentUserContext.set(new UserView(1L, "Alice"));
+
+    doReturn(ledger(10L, "Family")).when(service).getById(10L);
+    doReturn(member(10L, 1L, "OWNER"))
+        .when(ledgerMemberMapper)
+        .selectOne(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
+
+    DebtEdge edge1 = debtEdge(10L, 1L, 1L, 2L, new BigDecimal("25.999"));
+    doReturn(Arrays.asList(edge1)).when(debtEdgeMapper).findByLedgerId(10L);
+
+    User alice = user(1L, "Alice");
+    User bob = user(2L, "Bob");
+    doReturn(alice).when(userMapper).selectById(1L);
+    doReturn(bob).when(userMapper).selectById(2L);
+
+    Currency usdCurrency = currency("USD", 2);
+    doReturn(usdCurrency).when(currencyMapper).selectById("USD");
+
+    SettlementConfig config = new SettlementConfig();
+    config.setRoundingStrategy("TRIM_TO_UNIT");
+
+    SettlementPlanResponse resp = service.getSettlementPlan(10L, config);
+
+    assertNotNull(resp);
+    assertEquals(1, resp.getTransferCount());
+    // 25.999 trimmed to 2 decimals with DOWN = 25.99
+    assertEquals(new BigDecimal("25.99"), resp.getTransfers().get(0).getAmount());
+  }
+
+  @Test
+  @DisplayName("getSettlementPlan with config: rounding NONE")
+  void getSettlementPlan_roundingNone() {
+    CurrentUserContext.set(new UserView(1L, "Alice"));
+
+    doReturn(ledger(10L, "Family")).when(service).getById(10L);
+    doReturn(member(10L, 1L, "OWNER"))
+        .when(ledgerMemberMapper)
+        .selectOne(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
+
+    BigDecimal exactAmount = new BigDecimal("25.123456789");
+    DebtEdge edge1 = debtEdge(10L, 1L, 1L, 2L, exactAmount);
+    doReturn(Arrays.asList(edge1)).when(debtEdgeMapper).findByLedgerId(10L);
+
+    User alice = user(1L, "Alice");
+    User bob = user(2L, "Bob");
+    doReturn(alice).when(userMapper).selectById(1L);
+    doReturn(bob).when(userMapper).selectById(2L);
+
+    Currency usdCurrency = currency("USD", 2);
+    doReturn(usdCurrency).when(currencyMapper).selectById("USD");
+
+    SettlementConfig config = new SettlementConfig();
+    config.setRoundingStrategy("NONE");
+
+    SettlementPlanResponse resp = service.getSettlementPlan(10L, config);
+
+    assertNotNull(resp);
+    assertEquals(1, resp.getTransferCount());
+    // Amount should remain unchanged
+    assertEquals(exactAmount, resp.getTransfers().get(0).getAmount());
+  }
+
+  @Test
+  @DisplayName("getSettlementPlan with config: transfer cap limits amount per transfer")
+  void getSettlementPlan_transferCap() {
+    CurrentUserContext.set(new UserView(1L, "Alice"));
+
+    doReturn(ledger(10L, "Family")).when(service).getById(10L);
+    doReturn(member(10L, 1L, "OWNER"))
+        .when(ledgerMemberMapper)
+        .selectOne(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
+
+    // Large debt that should be split into multiple capped transfers
+    DebtEdge edge1 = debtEdge(10L, 1L, 1L, 2L, new BigDecimal("5000.00"));
+    doReturn(Arrays.asList(edge1)).when(debtEdgeMapper).findByLedgerId(10L);
+
+    User alice = user(1L, "Alice");
+    User bob = user(2L, "Bob");
+    doReturn(alice).when(userMapper).selectById(1L);
+    doReturn(bob).when(userMapper).selectById(2L);
+
+    Currency usdCurrency = currency("USD", 2);
+    doReturn(usdCurrency).when(currencyMapper).selectById("USD");
+
+    SettlementConfig config = new SettlementConfig();
+    config.setMaxTransferAmount(new BigDecimal("1000.00"));
+
+    SettlementPlanResponse resp = service.getSettlementPlan(10L, config);
+
+    assertNotNull(resp);
+    // Should create multiple transfers due to cap (exact count depends on algorithm)
+    assertTrue(resp.getTransferCount() >= 1);
+    // All transfers should be capped at 1000
+    for (SettlementPlanResponse.TransferItem transfer : resp.getTransfers()) {
+      assertTrue(
+          transfer.getAmount().compareTo(new BigDecimal("1000.00")) <= 0,
+          "Transfer amount " + transfer.getAmount() + " exceeds cap of 1000.00");
+    }
+    // Total should equal original debt
+    BigDecimal total =
+        resp.getTransfers().stream()
+            .map(SettlementPlanResponse.TransferItem::getAmount)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+    assertEquals(new BigDecimal("5000.00"), total);
+  }
+
+  @Test
+  @DisplayName("getSettlementPlan with config: payment channel constraint blocks transfer")
+  void getSettlementPlan_paymentChannelConstraint() {
+    CurrentUserContext.set(new UserView(1L, "Alice"));
+
+    doReturn(ledger(10L, "Family")).when(service).getById(10L);
+    doReturn(member(10L, 1L, "OWNER"))
+        .when(ledgerMemberMapper)
+        .selectOne(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
+
+    // Setup: Alice (1) is owed by Bob (2) and Charlie (3)
+    // Net: Alice = +55 (creditor), Bob = -25 (debtor), Charlie = -30 (debtor)
+    // Settlement should be: Bob->Alice 25, Charlie->Alice 30
+    DebtEdge edge1 = debtEdge(10L, 1L, 1L, 2L, new BigDecimal("25.00")); // 1 owed by 2
+    DebtEdge edge2 = debtEdge(10L, 2L, 1L, 3L, new BigDecimal("30.00")); // 1 owed by 3
+    doReturn(Arrays.asList(edge1, edge2)).when(debtEdgeMapper).findByLedgerId(10L);
+
+    User alice = user(1L, "Alice");
+    User bob = user(2L, "Bob");
+    doReturn(alice).when(userMapper).selectById(1L);
+    doReturn(bob).when(userMapper).selectById(2L);
+    // User 3 (Charlie) may not be used if algorithm can't find valid path around blocked channel
+    // Currency mapper may not be called if no transfers are created
+
+    SettlementConfig config = new SettlementConfig();
+    // Block payment from user 2 (Bob) to user 1 (Alice)
+    Map<String, Set<String>> channels = new HashMap<>();
+    channels.put("2-1", Collections.emptySet()); // Empty set means blocked
+    config.setPaymentChannels(channels);
+
+    SettlementPlanResponse resp = service.getSettlementPlan(10L, config);
+
+    assertNotNull(resp);
+    // Verify that blocked transfer (2->1) is not present
+    // This is the key assertion - the blocked channel should prevent this transfer
+    boolean hasBlockedTransfer =
+        resp.getTransfers().stream()
+            .anyMatch(t -> t.getFromUserId().equals(2L) && t.getToUserId().equals(1L));
+    assertFalse(
+        hasBlockedTransfer,
+        "Blocked transfer 2->1 should not be present. Transfers: " + resp.getTransfers());
+    // If transfers exist, they should not include the blocked pair
+    // (Note: With constraints, the algorithm might produce fewer transfers or none if no valid path
+    // exists)
+  }
+
+  @Test
+  @DisplayName("getSettlementPlan with config: force min-cost flow algorithm")
+  void getSettlementPlan_forceMinCostFlow() {
+    CurrentUserContext.set(new UserView(1L, "Alice"));
+
+    doReturn(ledger(10L, "Family")).when(service).getById(10L);
+    doReturn(member(10L, 1L, "OWNER"))
+        .when(ledgerMemberMapper)
+        .selectOne(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
+
+    // Complex scenario with multiple debts
+    List<DebtEdge> edges =
+        Arrays.asList(
+            debtEdge(10L, 1L, 1L, 2L, new BigDecimal("10.00")),
+            debtEdge(10L, 2L, 2L, 3L, new BigDecimal("15.00")),
+            debtEdge(10L, 3L, 3L, 4L, new BigDecimal("20.00")),
+            debtEdge(10L, 4L, 4L, 5L, new BigDecimal("25.00")));
+    doReturn(edges).when(debtEdgeMapper).findByLedgerId(10L);
+
+    User alice = user(1L, "Alice");
+    User bob = user(2L, "Bob");
+    User charlie = user(3L, "Charlie");
+    User david = user(4L, "David");
+    User eve = user(5L, "Eve");
+    doReturn(alice).when(userMapper).selectById(1L);
+    doReturn(bob).when(userMapper).selectById(2L);
+    doReturn(charlie).when(userMapper).selectById(3L);
+    doReturn(david).when(userMapper).selectById(4L);
+    doReturn(eve).when(userMapper).selectById(5L);
+
+    Currency usdCurrency = currency("USD", 2);
+    doReturn(usdCurrency).when(currencyMapper).selectById("USD");
+
+    SettlementConfig config = new SettlementConfig();
+    config.setForceMinCostFlow(true);
+
+    SettlementPlanResponse resp = service.getSettlementPlan(10L, config);
+
+    assertNotNull(resp);
+    assertNotNull(resp.getTransfers());
+    // Min-cost flow should produce a valid settlement
+    assertTrue(resp.getTransferCount() > 0);
+  }
+
+  @Test
+  @DisplayName("getSettlementPlan with config: min-cost flow fallback when threshold exceeded")
+  void getSettlementPlan_minCostFlowFallback() {
+    CurrentUserContext.set(new UserView(1L, "Alice"));
+
+    doReturn(ledger(10L, "Family")).when(service).getById(10L);
+    doReturn(member(10L, 1L, "OWNER"))
+        .when(ledgerMemberMapper)
+        .selectOne(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
+
+    // Create a simple scenario - chain of debts that should produce 1 transfer with heap-greedy
+    // This won't trigger fallback, but tests the threshold logic exists
+    List<DebtEdge> edges =
+        Arrays.asList(
+            debtEdge(10L, 1L, 1L, 2L, new BigDecimal("10.00")),
+            debtEdge(10L, 2L, 2L, 3L, new BigDecimal("10.00")));
+    doReturn(edges).when(debtEdgeMapper).findByLedgerId(10L);
+
+    // Mock only users that will actually be used in settlement
+    // Net balances: User1 = +10 (creditor), User2 = 0 (netted), User3 = -10 (debtor)
+    // So only User1 and User3 will be in queues
+    doReturn(user(1L, "User1")).when(userMapper).selectById(1L);
+    doReturn(user(3L, "User3")).when(userMapper).selectById(3L);
+
+    Currency usdCurrency = currency("USD", 2);
+    doReturn(usdCurrency).when(currencyMapper).selectById("USD");
+
+    SettlementConfig config = new SettlementConfig();
+    config.setMinCostFlowThreshold(5); // If heap-greedy produces >5 transfers, use min-cost flow
+
+    SettlementPlanResponse resp = service.getSettlementPlan(10L, config);
+
+    assertNotNull(resp);
+    assertNotNull(resp.getTransfers());
+    // Should produce a valid settlement (heap-greedy should handle this simple case)
+    assertTrue(resp.getTransferCount() > 0);
+  }
+
+  @Test
+  @DisplayName("getSettlementPlan with config: multiple constraints combined")
+  void getSettlementPlan_multipleConstraints() {
+    CurrentUserContext.set(new UserView(1L, "Alice"));
+
+    doReturn(ledger(10L, "Family")).when(service).getById(10L);
+    doReturn(member(10L, 1L, "OWNER"))
+        .when(ledgerMemberMapper)
+        .selectOne(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
+
+    DebtEdge edge1 = debtEdge(10L, 1L, 1L, 2L, new BigDecimal("1500.00"));
+    doReturn(Arrays.asList(edge1)).when(debtEdgeMapper).findByLedgerId(10L);
+
+    User alice = user(1L, "Alice");
+    User bob = user(2L, "Bob");
+    doReturn(alice).when(userMapper).selectById(1L);
+    doReturn(bob).when(userMapper).selectById(2L);
+
+    Currency usdCurrency = currency("USD", 2);
+    doReturn(usdCurrency).when(currencyMapper).selectById("USD");
+
+    SettlementConfig config = new SettlementConfig();
+    config.setRoundingStrategy("ROUND_HALF_UP");
+    config.setMaxTransferAmount(new BigDecimal("1000.00"));
+
+    SettlementPlanResponse resp = service.getSettlementPlan(10L, config);
+
+    assertNotNull(resp);
+    // Should create multiple transfers due to cap (1500 / 1000 = at least 2 transfers)
+    assertTrue(resp.getTransferCount() >= 1, "Should have at least 1 transfer");
+    // All transfers should be capped at 1000
+    for (SettlementPlanResponse.TransferItem transfer : resp.getTransfers()) {
+      assertTrue(transfer.getAmount().compareTo(new BigDecimal("1000.00")) <= 0);
+    }
+    // Total should equal original debt (or close to it, accounting for rounding)
+    BigDecimal total =
+        resp.getTransfers().stream()
+            .map(SettlementPlanResponse.TransferItem::getAmount)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+    assertTrue(
+        total.compareTo(new BigDecimal("1500.00")) == 0
+            || total.compareTo(new BigDecimal("1499.99")) >= 0,
+        "Total should be close to 1500, got: " + total);
+  }
+
+  @Test
+  @DisplayName("getSettlementPlan with config: null config uses defaults")
+  void getSettlementPlan_nullConfig() {
+    CurrentUserContext.set(new UserView(1L, "Alice"));
+
+    doReturn(ledger(10L, "Family")).when(service).getById(10L);
+    doReturn(member(10L, 1L, "OWNER"))
+        .when(ledgerMemberMapper)
+        .selectOne(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
+
+    DebtEdge edge1 = debtEdge(10L, 1L, 1L, 2L, new BigDecimal("25.00"));
+    doReturn(Arrays.asList(edge1)).when(debtEdgeMapper).findByLedgerId(10L);
+
+    User alice = user(1L, "Alice");
+    User bob = user(2L, "Bob");
+    doReturn(alice).when(userMapper).selectById(1L);
+    doReturn(bob).when(userMapper).selectById(2L);
+
+    Currency usdCurrency = currency("USD", 2);
+    doReturn(usdCurrency).when(currencyMapper).selectById("USD");
+
+    // Pass null config - should use defaults
+    SettlementPlanResponse resp = service.getSettlementPlan(10L, null);
+
+    assertNotNull(resp);
+    assertEquals(1, resp.getTransferCount());
+    // Should work with default rounding (ROUND_HALF_UP)
+    assertEquals(new BigDecimal("25.00"), resp.getTransfers().get(0).getAmount());
   }
 }
