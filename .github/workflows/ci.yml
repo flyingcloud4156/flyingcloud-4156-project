@@ -60,6 +60,30 @@ jobs:
     runs-on: ubuntu-latest
     needs: style-and-static-analysis
 
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: ledger
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -proot --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -71,6 +95,18 @@ jobs:
           java-version: "17"
           cache: maven
 
+      - name: Wait for MySQL to be ready
+        run: |
+          until mysqladmin ping -h 127.0.0.1 -P 3306 -u root -proot --silent; do
+            echo "Waiting for MySQL..."
+            sleep 2
+          done
+          echo "MySQL is ready!"
+
+      - name: Initialize database schema
+        run: |
+          mysql -h 127.0.0.1 -P 3306 -u root -proot ledger < ops/sql/ledger_flow.sql
+
       # This command:
       # - runs backend unit tests (Surefire)
       # - runs any API/integration tests bound to integration-test/verify
@@ -78,6 +114,12 @@ jobs:
       # - generates JaCoCo coverage report (configured in your pom at verify phase)
       - name: Build, test and generate coverage
         run: mvn -B -ntp clean verify
+        env:
+          SPRING_DATASOURCE_URL: jdbc:mysql://127.0.0.1:3306/ledger
+          SPRING_DATASOURCE_USERNAME: root
+          SPRING_DATASOURCE_PASSWORD: root
+          SPRING_REDIS_HOST: 127.0.0.1
+          SPRING_REDIS_PORT: 6379
 
       - name: Upload test and coverage reports
         uses: actions/upload-artifact@v4
