@@ -22,16 +22,14 @@
         )
       )
       AND (
-        SELECT l.share_start_date FROM ledgers l WHERE l.id = t.ledger_id
-      ) IS NULL
-      OR t.txn_at >= (
-        SELECT l.share_start_date FROM ledgers l WHERE l.id = t.ledger_id
-      )
-      OR EXISTS (
-        SELECT 1 FROM ledger_members lm 
-        WHERE lm.ledger_id = t.ledger_id 
-          AND lm.user_id = #{currentUserId} 
-          AND lm.role IN ('OWNER', 'ADMIN')
+        (SELECT l.share_start_date FROM ledgers l WHERE l.id = t.ledger_id) IS NULL
+        OR t.txn_at >= (SELECT l.share_start_date FROM ledgers l WHERE l.id = t.ledger_id)
+        OR EXISTS (
+          SELECT 1 FROM ledger_members lm
+          WHERE lm.ledger_id = t.ledger_id
+            AND lm.user_id = #{currentUserId}
+            AND lm.role IN ('OWNER', 'ADMIN')
+        )
       )
     ORDER BY t.txn_at DESC, t.id DESC
   </select>
