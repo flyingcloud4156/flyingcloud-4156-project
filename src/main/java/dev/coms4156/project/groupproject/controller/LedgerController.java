@@ -90,12 +90,19 @@ public class LedgerController {
     return Result.ok(ledgerService.getSettlementPlan(ledgerId));
   }
 
+  /**
+   * Generates a settlement plan with custom configuration options.
+   *
+   * @param ledgerId the ID of the ledger
+   * @param config optional settlement configuration
+   * @return settlement plan response
+   */
   @PostMapping("/{ledgerId}/settlement-plan")
   @Operation(
       summary = "Get settlement plan with custom configuration",
       description =
-          "Generates a settlement plan with custom constraints, rounding rules, currency conversion, "
-              + "and algorithm selection (heap-greedy or min-cost flow).")
+          "Generates a settlement plan with custom constraints, rounding rules, currency "
+              + "conversion, and algorithm selection (heap-greedy or min-cost flow).")
   public Result<SettlementPlanResponse> getSettlementPlanWithConfig(
       @PathVariable Long ledgerId, @RequestBody(required = false) SettlementConfig config) {
     // Cast to implementation to access overloaded method

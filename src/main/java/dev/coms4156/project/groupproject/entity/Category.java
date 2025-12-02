@@ -6,6 +6,10 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import java.time.LocalDateTime;
 import lombok.Data;
 
+/**
+ * Entity representing a category in the ledger system. Categories are used to group transactions
+ * and organize budget allocations.
+ */
 @Data
 @TableName("categories")
 public class Category {

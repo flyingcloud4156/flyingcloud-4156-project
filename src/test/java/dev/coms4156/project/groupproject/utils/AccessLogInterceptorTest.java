@@ -51,7 +51,6 @@ class AccessLogInterceptorTest {
   void afterCompletion_authenticatedUser() throws Exception {
     HttpServletRequest request = mock(HttpServletRequest.class);
     HttpServletResponse response = mock(HttpServletResponse.class);
-    Object handler = new Object();
 
     when(request.getAttribute("startTime")).thenReturn(System.currentTimeMillis());
     when(request.getAttribute("requestId")).thenReturn("test-request-id");
@@ -63,6 +62,7 @@ class AccessLogInterceptorTest {
     UserView testUser = new UserView(1L, "TestUser");
     CurrentUserContext.set(testUser);
 
+    Object handler = new Object();
     interceptor.afterCompletion(request, response, handler, null);
 
     // If no exception thrown, test passes
@@ -74,7 +74,6 @@ class AccessLogInterceptorTest {
   void afterCompletion_anonymousUser() throws Exception {
     HttpServletRequest request = mock(HttpServletRequest.class);
     HttpServletResponse response = mock(HttpServletResponse.class);
-    Object handler = new Object();
 
     when(request.getAttribute("startTime")).thenReturn(System.currentTimeMillis());
     when(request.getAttribute("requestId")).thenReturn("test-request-id");
@@ -84,6 +83,7 @@ class AccessLogInterceptorTest {
     when(response.getStatus()).thenReturn(201);
 
     // No user set in CurrentUserContext - should log as "anonymous"
+    Object handler = new Object();
     interceptor.afterCompletion(request, response, handler, null);
 
     assertTrue(true);
@@ -94,8 +94,6 @@ class AccessLogInterceptorTest {
   void afterCompletion_withException() throws Exception {
     HttpServletRequest request = mock(HttpServletRequest.class);
     HttpServletResponse response = mock(HttpServletResponse.class);
-    Object handler = new Object();
-    Exception testException = new RuntimeException("Test error");
 
     when(request.getAttribute("startTime")).thenReturn(System.currentTimeMillis());
     when(request.getAttribute("requestId")).thenReturn("test-request-id");
@@ -104,6 +102,8 @@ class AccessLogInterceptorTest {
     when(request.getParameterMap()).thenReturn(new HashMap<>());
     when(response.getStatus()).thenReturn(500);
 
+    Exception testException = new RuntimeException("Test error");
+    Object handler = new Object();
     interceptor.afterCompletion(request, response, handler, testException);
 
     assertTrue(true);
@@ -114,7 +114,6 @@ class AccessLogInterceptorTest {
   void sanitizeParameters_emptyMap() throws Exception {
     HttpServletRequest request = mock(HttpServletRequest.class);
     HttpServletResponse response = mock(HttpServletResponse.class);
-    Object handler = new Object();
 
     when(request.getAttribute("startTime")).thenReturn(System.currentTimeMillis());
     when(request.getAttribute("requestId")).thenReturn("test-request-id");
@@ -123,6 +122,7 @@ class AccessLogInterceptorTest {
     when(request.getParameterMap()).thenReturn(new HashMap<>());
     when(response.getStatus()).thenReturn(200);
 
+    Object handler = new Object();
     interceptor.afterCompletion(request, response, handler, null);
 
     assertTrue(true);
@@ -133,7 +133,6 @@ class AccessLogInterceptorTest {
   void sanitizeParameters_nullMap() throws Exception {
     HttpServletRequest request = mock(HttpServletRequest.class);
     HttpServletResponse response = mock(HttpServletResponse.class);
-    Object handler = new Object();
 
     when(request.getAttribute("startTime")).thenReturn(System.currentTimeMillis());
     when(request.getAttribute("requestId")).thenReturn("test-request-id");
@@ -142,6 +141,7 @@ class AccessLogInterceptorTest {
     when(request.getParameterMap()).thenReturn(null);
     when(response.getStatus()).thenReturn(200);
 
+    Object handler = new Object();
     interceptor.afterCompletion(request, response, handler, null);
 
     assertTrue(true);
@@ -151,8 +151,6 @@ class AccessLogInterceptorTest {
   @DisplayName("sanitizeParameters: password field -> redacts value")
   void sanitizeParameters_passwordField() throws Exception {
     HttpServletRequest request = mock(HttpServletRequest.class);
-    HttpServletResponse response = mock(HttpServletResponse.class);
-    Object handler = new Object();
 
     Map<String, String[]> params = new HashMap<>();
     params.put("username", new String[] {"testuser"});
@@ -163,8 +161,11 @@ class AccessLogInterceptorTest {
     when(request.getMethod()).thenReturn("POST");
     when(request.getRequestURI()).thenReturn("/api/v1/login");
     when(request.getParameterMap()).thenReturn(params);
+
+    HttpServletResponse response = mock(HttpServletResponse.class);
     when(response.getStatus()).thenReturn(200);
 
+    Object handler = new Object();
     interceptor.afterCompletion(request, response, handler, null);
 
     assertTrue(true);
@@ -174,8 +175,6 @@ class AccessLogInterceptorTest {
   @DisplayName("sanitizeParameters: regular params -> shows values")
   void sanitizeParameters_regularParams() throws Exception {
     HttpServletRequest request = mock(HttpServletRequest.class);
-    HttpServletResponse response = mock(HttpServletResponse.class);
-    Object handler = new Object();
 
     Map<String, String[]> params = new HashMap<>();
     params.put("page", new String[] {"1"});
@@ -186,8 +185,11 @@ class AccessLogInterceptorTest {
     when(request.getMethod()).thenReturn("GET");
     when(request.getRequestURI()).thenReturn("/api/v1/transactions");
     when(request.getParameterMap()).thenReturn(params);
+
+    HttpServletResponse response = mock(HttpServletResponse.class);
     when(response.getStatus()).thenReturn(200);
 
+    Object handler = new Object();
     interceptor.afterCompletion(request, response, handler, null);
 
     assertTrue(true);

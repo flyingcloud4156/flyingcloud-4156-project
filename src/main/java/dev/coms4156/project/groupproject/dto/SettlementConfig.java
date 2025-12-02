@@ -51,8 +51,8 @@ public class SettlementConfig {
 
   @Schema(
       description =
-          "Currency conversion rates map (fromCurrency-toCurrency -> rate). "
-              + "If not provided, assumes 1:1 for same currency or throws error for different currencies.",
+          "Currency conversion rates map (fromCurrency-toCurrency -> rate). If not "
+              + "provided, assumes 1:1 for same currency or throws error for different currencies.",
       example = "{\"EUR-USD\": 1.1, \"GBP-USD\": 1.25}")
   private Map<String, BigDecimal> currencyRates;
 }

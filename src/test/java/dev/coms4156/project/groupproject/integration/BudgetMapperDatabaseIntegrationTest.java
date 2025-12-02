@@ -249,13 +249,13 @@ class BudgetMapperDatabaseIntegrationTest {
     budget.setMonth(12);
     budget.setLimitAmount(new BigDecimal("1000.00"));
 
-    LocalDateTime beforeInsert = LocalDateTime.now().minusSeconds(1);
     budgetMapper.insert(budget);
-    LocalDateTime afterInsert = LocalDateTime.now().plusSeconds(1);
 
     Budget found = budgetMapper.selectById(budget.getId());
     assertNotNull(found.getCreatedAt());
     assertNotNull(found.getUpdatedAt());
+    LocalDateTime beforeInsert = LocalDateTime.now().minusSeconds(1);
+    LocalDateTime afterInsert = LocalDateTime.now().plusSeconds(1);
     assertTrue(found.getCreatedAt().isAfter(beforeInsert));
     assertTrue(found.getCreatedAt().isBefore(afterInsert));
   }
