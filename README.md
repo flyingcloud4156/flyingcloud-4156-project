@@ -265,6 +265,15 @@ To run the full automated API test suite:
 
 <code>bash final_api_tests_fixed.sh</code>
 
+**Note: API tests are run manually and are not automated in the CI pipeline.** This is because API tests require:
+- A running database instance (MySQL) with specific test data
+- A running Spring Boot application server
+- Authentication tokens that expire and need to be refreshed during test execution
+- Complex state management across multiple API calls (e.g., creating users, then using their tokens)
+- Manual verification of complex workflows that are difficult to automate in a CI environment
+
+While these tests could theoretically be automated in CI, it would require setting up database containers, managing application lifecycle, and handling authentication state, which adds significant complexity. The bash scripts provide a practical way to test the complete API workflow manually while still being automated in execution.
+
 Before using bash scripts to test,we've also used Postman to test some APIs ,you can access the test cases here: https://swjy1412-6196945.postman.co/workspace/Jinyi-Wang's-Workspace~67097b2f-bdc0-4997-8ef5-9b20805b25b5/collection/49421217-e21193f8-cfc5-4f6b-bef2-d9b136d6f83d?action=share&source=copy-link&creator=49421217
 However due to authentication and database issues, this test cases are not easy to be replicated on local machines, so we switched to using bash scripts.
 
@@ -286,8 +295,8 @@ We used the command <code>mvn checktyle:check</code> to check the style of our c
 
 ## Tool Used
 * Checkstyle
-  * We use Checkstyle for code reporting. Note that Checkstyle does NOT get run as part of the CI pipeline.
-  * For running Checkstyle manually, you can use the "Checkstyle-IDEA" plugin for IntelliJ.
+  * We use Checkstyle for code reporting. Checkstyle IS run as part of the CI pipeline (see `.github/workflows/ci.yml`).
+  * For running Checkstyle manually, you can use the "Checkstyle-IDEA" plugin for IntelliJ or run `mvn checkstyle:check`.
 * PMD
   * We are using PMD to do static analysis of our Java code.
   * Originally we were planning on using SonarQube, however we did not do this as it requires us to either pay or setup a server to host a SonarQube instance.
