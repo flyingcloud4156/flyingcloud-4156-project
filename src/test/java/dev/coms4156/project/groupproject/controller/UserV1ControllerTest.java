@@ -199,14 +199,14 @@ class UserV1ControllerTest {
   }
 
   @Test
-  @DisplayName("GET /users:lookup: typical -> 200 with user info")
+  @DisplayName("GET /users/lookup: typical -> 200 with user info")
   void lookupUser_typical() throws Exception {
     UserLookupResponse resp = new UserLookupResponse(10L, "Alice");
 
     doReturn(resp).when(userService).lookupUser(anyString());
 
     mockMvc
-        .perform(get("/api/v1/users:lookup").param("email", "alice@example.com"))
+        .perform(get("/api/v1/users/lookup").param("email", "alice@example.com"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.success").value(true))
         .andExpect(jsonPath("$.data.userId").value(10))
@@ -216,12 +216,12 @@ class UserV1ControllerTest {
   }
 
   @Test
-  @DisplayName("GET /users:lookup: user not found -> exception bubbles up")
+  @DisplayName("GET /users/lookup: user not found -> exception bubbles up")
   void lookupUser_notFound() throws Exception {
     doThrow(new RuntimeException("USER_NOT_FOUND")).when(userService).lookupUser(anyString());
 
     try {
-      mockMvc.perform(get("/api/v1/users:lookup").param("email", "nobody@example.com"));
+      mockMvc.perform(get("/api/v1/users/lookup").param("email", "nobody@example.com"));
     } catch (Exception e) {
       assert e.getMessage().contains("USER_NOT_FOUND");
     }

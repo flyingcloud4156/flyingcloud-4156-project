@@ -63,7 +63,7 @@ public class UserV1Controller {
 
   // ==== Users ====
 
-  @GetMapping("/users:lookup")
+  @GetMapping("/users/lookup")
   @Operation(
       summary = "Lookup user by email or phone",
       security = {@SecurityRequirement(name = "X-Auth-Token")})

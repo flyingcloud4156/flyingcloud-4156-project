@@ -137,10 +137,10 @@ class LedgerControllerTest {
     }
   }
 
-  // ====== GET /api/v1/ledgers:mine ======
+  // ====== GET /api/v1/ledgers/mine ======
 
   @Test
-  @DisplayName("GET /ledgers:mine: typical with multiple ledgers -> 200")
+  @DisplayName("GET /ledgers/mine: typical with multiple ledgers -> 200")
   void getMyLedgers_typical() {
     MyLedgersResponse resp = new MyLedgersResponse();
     resp.setItems(new ArrayList<>());
@@ -172,7 +172,7 @@ class LedgerControllerTest {
   }
 
   @Test
-  @DisplayName("GET /ledgers:mine: atypical empty result -> 200")
+  @DisplayName("GET /ledgers/mine: atypical empty result -> 200")
   void getMyLedgers_empty() {
     MyLedgersResponse resp = new MyLedgersResponse();
     resp.setItems(Collections.emptyList());
@@ -186,7 +186,7 @@ class LedgerControllerTest {
   }
 
   @Test
-  @DisplayName("GET /ledgers:mine: invalid not logged in -> exception")
+  @DisplayName("GET /ledgers/mine: invalid not logged in -> exception")
   void getMyLedgers_notLoggedIn() {
     doThrow(new RuntimeException("Not logged in")).when(ledgerService).getMyLedgers();
 

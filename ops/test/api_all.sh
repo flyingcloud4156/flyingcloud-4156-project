@@ -331,8 +331,8 @@ fail_on_non2xx; fail_if_success_false "$me_body"
 ALICE_ID="$(echo "$me_body" | jq -r '.data.id')"
 assert_not_null "ALICE_ID" "$ALICE_ID"
 
-sub "1.4 /users:lookup (lookup Bob by email)"
-lookup_body=$(api_call GET "/api/v1/users:lookup?email=$BOB_EMAIL" "" "$ALICE_TOKEN")
+sub "1.4 /users/lookup (lookup Bob by email)"
+lookup_body=$(api_call GET "/api/v1/users/lookup?email=$BOB_EMAIL" "" "$ALICE_TOKEN")
 fail_on_non2xx; fail_if_success_false "$lookup_body"
 BOB_ID="$(echo "$lookup_body" | jq -r '.data.user_id')"
 assert_not_null "BOB_ID" "$BOB_ID"

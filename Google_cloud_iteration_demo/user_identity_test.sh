@@ -201,7 +201,7 @@ echo ""
 echo "------ STEP 6: Lookup Bob & Fetch Profile ------"
 
 echo "API: GET /api/v1/users:lookup?email=bob@test.com"
-LOOKUP_RESP=$(curl -sS -X GET "$HOST/users:lookup?email=bob@test.com" \
+LOOKUP_RESP=$(curl -sS -X GET "$HOST/users/lookup?email=bob@test.com" \
   -H "X-Auth-Token: $NEW_ACCESS_TOKEN")
 echo "$LOOKUP_RESP" | jq .
 

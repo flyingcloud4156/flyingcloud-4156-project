@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 /**
  * Unit test to guard the regression fix in {@link LedgerController}: the mapping must be "/mine"
- * (not ":mine").
  *
  * <p>This test uses reflection only and does not start Spring.
  */
