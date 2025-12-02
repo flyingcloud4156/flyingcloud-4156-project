@@ -44,10 +44,12 @@ class AnalyticsDatabaseIntegrationTest {
   @Autowired private LedgerMapper ledgerMapper;
   @Autowired private UserMapper userMapper;
   @Autowired private LedgerMemberMapper ledgerMemberMapper;
+  @Autowired private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
   private Long testUser1Id;
   private Long testUser2Id;
   private Long testLedgerId;
+  private Long testCategoryId;
 
   @BeforeEach
   void setUp() {
@@ -88,6 +90,18 @@ class AnalyticsDatabaseIntegrationTest {
     member2.setUserId(testUser2Id);
     member2.setRole("EDITOR");
     ledgerMemberMapper.insert(member2);
+
+    jdbcTemplate.update(
+        "INSERT INTO categories (ledger_id, name, kind) VALUES (?, ?, ?)",
+        testLedgerId,
+        "Test Category",
+        "EXPENSE");
+    testCategoryId =
+        jdbcTemplate.queryForObject(
+            "SELECT id FROM categories WHERE ledger_id = ? AND name = ?",
+            Long.class,
+            testLedgerId,
+            "Test Category");
   }
 
   @AfterEach
@@ -100,7 +114,7 @@ class AnalyticsDatabaseIntegrationTest {
     CreateTransactionRequest request1 = new CreateTransactionRequest();
     request1.setTxnAt(LocalDateTime.now());
     request1.setType("INCOME");
-    request1.setCategoryId(1L);
+    request1.setCategoryId(testCategoryId);
     request1.setPayerId(testUser1Id);
     request1.setAmountTotal(new BigDecimal("1000.00"));
     request1.setCurrency("USD");

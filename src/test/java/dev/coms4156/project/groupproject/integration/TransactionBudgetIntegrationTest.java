@@ -54,9 +54,11 @@ class TransactionBudgetIntegrationTest {
   @Autowired private LedgerMapper ledgerMapper;
   @Autowired private UserMapper userMapper;
   @Autowired private LedgerMemberMapper ledgerMemberMapper;
+  @Autowired private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
   private Long testUserId;
   private Long testLedgerId;
+  private Long testCategoryId;
 
   @BeforeEach
   void setUp() {
@@ -84,6 +86,18 @@ class TransactionBudgetIntegrationTest {
     member.setUserId(testUserId);
     member.setRole("OWNER");
     ledgerMemberMapper.insert(member);
+
+    jdbcTemplate.update(
+        "INSERT INTO categories (ledger_id, name, kind) VALUES (?, ?, ?)",
+        testLedgerId,
+        "Test Category",
+        "EXPENSE");
+    testCategoryId =
+        jdbcTemplate.queryForObject(
+            "SELECT id FROM categories WHERE ledger_id = ? AND name = ?",
+            Long.class,
+            testLedgerId,
+            "Test Category");
   }
 
   @AfterEach
@@ -96,7 +110,7 @@ class TransactionBudgetIntegrationTest {
     CreateTransactionRequest request = new CreateTransactionRequest();
     request.setTxnAt(LocalDateTime.now());
     request.setType("EXPENSE");
-    request.setCategoryId(1L);
+    request.setCategoryId(testCategoryId);
     request.setPayerId(testUserId);
     request.setAmountTotal(new BigDecimal("100.00"));
     request.setCurrency("USD");
@@ -167,19 +181,19 @@ class TransactionBudgetIntegrationTest {
   @Test
   void whenCreateExpenseExceedsCategoryBudget_thenCategoryAlertIsReturned() {
     SetBudgetRequest budgetRequest = new SetBudgetRequest();
-    budgetRequest.setCategoryId(1L);
+    budgetRequest.setCategoryId(testCategoryId);
     budgetRequest.setYear(LocalDateTime.now().getYear());
     budgetRequest.setMonth(LocalDateTime.now().getMonthValue());
-    budgetRequest.setLimitAmount(new BigDecimal("500.00"));
+    budgetRequest.setLimitAmount(new BigDecimal("50.00"));
 
     budgetService.setBudget(testLedgerId, budgetRequest);
 
     CreateTransactionRequest txnRequest = new CreateTransactionRequest();
     txnRequest.setTxnAt(LocalDateTime.now());
     txnRequest.setType("EXPENSE");
-    txnRequest.setCategoryId(1L);
+    txnRequest.setCategoryId(testCategoryId);
     txnRequest.setPayerId(testUserId);
-    txnRequest.setAmountTotal(new BigDecimal("450.00"));
+    txnRequest.setAmountTotal(new BigDecimal("100.00"));
     txnRequest.setCurrency("USD");
     txnRequest.setNote("Category expense");
     txnRequest.setIsPrivate(false);
@@ -233,7 +247,7 @@ class TransactionBudgetIntegrationTest {
   @Test
   void verifyTransactionAndBudgetDataSharing_viaLedgerIdAndCategoryId() {
     SetBudgetRequest budgetRequest = new SetBudgetRequest();
-    budgetRequest.setCategoryId(1L);
+    budgetRequest.setCategoryId(testCategoryId);
     budgetRequest.setYear(2025);
     budgetRequest.setMonth(12);
     budgetRequest.setLimitAmount(new BigDecimal("2000.00"));
@@ -246,7 +260,7 @@ class TransactionBudgetIntegrationTest {
     CreateTransactionRequest txnRequest = new CreateTransactionRequest();
     txnRequest.setTxnAt(LocalDateTime.of(2025, 12, 15, 10, 0));
     txnRequest.setType("EXPENSE");
-    txnRequest.setCategoryId(1L);
+    txnRequest.setCategoryId(testCategoryId);
     txnRequest.setPayerId(testUserId);
     txnRequest.setAmountTotal(new BigDecimal("750.00"));
     txnRequest.setCurrency("USD");
@@ -265,9 +279,9 @@ class TransactionBudgetIntegrationTest {
     Transaction savedTxn = transactionMapper.selectById(response.getTransactionId());
     assertNotNull(savedTxn);
     assertEquals(testLedgerId, savedTxn.getLedgerId());
-    assertEquals(Long.valueOf(1L), savedTxn.getCategoryId());
+    assertEquals(testCategoryId, savedTxn.getCategoryId());
     assertEquals(testLedgerId, savedBudget.getLedgerId());
-    assertEquals(Long.valueOf(1L), savedBudget.getCategoryId());
+    assertEquals(testCategoryId, savedBudget.getCategoryId());
   }
 
   @Test

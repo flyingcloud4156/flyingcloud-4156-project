@@ -103,9 +103,10 @@ jobs:
           done
           echo "MySQL is ready!"
 
-      - name: Initialize database schema
+      - name: Initialize database schema and test data
         run: |
           mysql -h 127.0.0.1 -P 3306 -u root -proot ledger < ops/sql/ledger_flow.sql
+          mysql -h 127.0.0.1 -P 3306 -u root -proot ledger < ops/sql/test_data_seed.sql
 
       # This command:
       # - runs backend unit tests (Surefire)

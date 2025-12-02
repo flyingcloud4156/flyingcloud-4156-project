@@ -59,11 +59,13 @@ class TransactionDatabaseIntegrationTest {
   @Autowired private LedgerMapper ledgerMapper;
   @Autowired private UserMapper userMapper;
   @Autowired private LedgerMemberMapper ledgerMemberMapper;
+  @Autowired private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
   private Long testUser1Id;
   private Long testUser2Id;
   private Long testUser3Id;
   private Long testLedgerId;
+  private Long testCategoryId;
 
   @BeforeEach
   void setUp() {
@@ -117,6 +119,18 @@ class TransactionDatabaseIntegrationTest {
     member3.setUserId(testUser3Id);
     member3.setRole("VIEWER");
     ledgerMemberMapper.insert(member3);
+
+    jdbcTemplate.update(
+        "INSERT INTO categories (ledger_id, name, kind) VALUES (?, ?, ?)",
+        testLedgerId,
+        "Test Category",
+        "EXPENSE");
+    testCategoryId =
+        jdbcTemplate.queryForObject(
+            "SELECT id FROM categories WHERE ledger_id = ? AND name = ?",
+            Long.class,
+            testLedgerId,
+            "Test Category");
   }
 
   @AfterEach
@@ -129,7 +143,7 @@ class TransactionDatabaseIntegrationTest {
     CreateTransactionRequest request = new CreateTransactionRequest();
     request.setTxnAt(LocalDateTime.now());
     request.setType("EXPENSE");
-    request.setCategoryId(1L);
+    request.setCategoryId(testCategoryId);
     request.setPayerId(testUser1Id);
     request.setAmountTotal(new BigDecimal("300.00"));
     request.setCurrency("USD");
@@ -160,7 +174,7 @@ class TransactionDatabaseIntegrationTest {
     CreateTransactionRequest request = new CreateTransactionRequest();
     request.setTxnAt(LocalDateTime.now());
     request.setType("EXPENSE");
-    request.setCategoryId(1L);
+    request.setCategoryId(testCategoryId);
     request.setPayerId(testUser1Id);
     request.setAmountTotal(new BigDecimal("300.00"));
     request.setCurrency("USD");
@@ -197,7 +211,7 @@ class TransactionDatabaseIntegrationTest {
     CreateTransactionRequest request = new CreateTransactionRequest();
     request.setTxnAt(LocalDateTime.now());
     request.setType("EXPENSE");
-    request.setCategoryId(1L);
+    request.setCategoryId(testCategoryId);
     request.setPayerId(testUser1Id);
     request.setAmountTotal(new BigDecimal("600.00"));
     request.setCurrency("USD");
@@ -238,7 +252,7 @@ class TransactionDatabaseIntegrationTest {
     CreateTransactionRequest request = new CreateTransactionRequest();
     request.setTxnAt(LocalDateTime.now());
     request.setType("EXPENSE");
-    request.setCategoryId(1L);
+    request.setCategoryId(testCategoryId);
     request.setPayerId(testUser1Id);
     request.setAmountTotal(new BigDecimal("900.00"));
     request.setCurrency("USD");
@@ -335,7 +349,7 @@ class TransactionDatabaseIntegrationTest {
     CreateTransactionRequest request = new CreateTransactionRequest();
     request.setTxnAt(LocalDateTime.now());
     request.setType("EXPENSE");
-    request.setCategoryId(1L);
+    request.setCategoryId(testCategoryId);
     request.setPayerId(testUser1Id);
     request.setAmountTotal(new BigDecimal("400.00"));
     request.setCurrency("USD");
