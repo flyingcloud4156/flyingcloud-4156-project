@@ -77,7 +77,7 @@ This section describes the endpoints provided by this project, along with their 
   * HTTP 400 Status Code with “Invalid refresh token.”
   * HTTP 500 Status Code with “Error occurred during logout.”
 
-#### GET /api/v1/users:lookup
+#### GET /api/v1/users/lookup
 * Expected Input Parameters:
   * email (string): user’s email address
 * Expected Output: A JSON object (UserLookupResponse) containing the following fields
@@ -124,7 +124,7 @@ This section describes the endpoints provided by this project, along with their 
   * HTTP 500 Status Code with "Error occurred while creating ledger."
 
 
-#### GET /api/v1/ledgers:mine
+#### GET /api/v1/ledgers/mine
 * Expected Input Parameters: N/A
 * Expected Output: A JSON object (MyLedgersResponse) containing the list of ledgers owned or joined by the current user
 * Upon Success: HTTP 200 Status Code returned with ledger list in JSON
