@@ -7,6 +7,7 @@ import dev.coms4156.project.groupproject.dto.LedgerResponse;
 import dev.coms4156.project.groupproject.dto.ListLedgerMembersResponse;
 import dev.coms4156.project.groupproject.dto.MyLedgersResponse;
 import dev.coms4156.project.groupproject.dto.Result;
+import dev.coms4156.project.groupproject.dto.SettlementConfig;
 import dev.coms4156.project.groupproject.dto.SettlementPlanResponse;
 import dev.coms4156.project.groupproject.service.LedgerService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -80,8 +81,29 @@ public class LedgerController {
   }
 
   @GetMapping("/{ledgerId}/settlement-plan")
-  @Operation(summary = "Get minimal settlement plan for N-party debts")
+  @Operation(
+      summary = "Get minimal settlement plan for N-party debts",
+      description =
+          "Generates a minimal settlement plan using heap-greedy algorithm. "
+              + "For advanced options (constraints, rounding, min-cost flow), use POST endpoint.")
   public Result<SettlementPlanResponse> getSettlementPlan(@PathVariable Long ledgerId) {
+    return Result.ok(ledgerService.getSettlementPlan(ledgerId));
+  }
+
+  @PostMapping("/{ledgerId}/settlement-plan")
+  @Operation(
+      summary = "Get settlement plan with custom configuration",
+      description =
+          "Generates a settlement plan with custom constraints, rounding rules, currency conversion, "
+              + "and algorithm selection (heap-greedy or min-cost flow).")
+  public Result<SettlementPlanResponse> getSettlementPlanWithConfig(
+      @PathVariable Long ledgerId, @RequestBody(required = false) SettlementConfig config) {
+    // Cast to implementation to access overloaded method
+    if (ledgerService instanceof dev.coms4156.project.groupproject.service.impl.LedgerServiceImpl) {
+      dev.coms4156.project.groupproject.service.impl.LedgerServiceImpl impl =
+          (dev.coms4156.project.groupproject.service.impl.LedgerServiceImpl) ledgerService;
+      return Result.ok(impl.getSettlementPlan(ledgerId, config));
+    }
     return Result.ok(ledgerService.getSettlementPlan(ledgerId));
   }
 }
