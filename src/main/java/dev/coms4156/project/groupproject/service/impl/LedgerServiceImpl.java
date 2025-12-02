@@ -28,6 +28,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
@@ -577,60 +578,81 @@ public class LedgerServiceImpl extends ServiceImpl<LedgerMapper, Ledger> impleme
       List<SettlementPlanResponse.TransferItem> transfers,
       SettlementConfig config,
       String baseCurrency) {
-    if (creditors.isEmpty() || debtors.isEmpty()) {
-      return;
-    }
+    // Use iterative approach to avoid infinite recursion with blocked channels
+    // Higher limit to handle capped transfers that need multiple iterations
+    int maxIterations = 1000; // Safety limit - high enough for capped transfers
+    int iterations = 0;
+    Set<String> triedPairs = new HashSet<>(); // Track tried pairs to avoid infinite loops
 
-    BalanceEntry creditor = creditors.poll();
-    BalanceEntry debtor = debtors.poll();
+    while (!creditors.isEmpty() && !debtors.isEmpty() && iterations < maxIterations) {
+      iterations++;
 
-    // Check payment channel constraint
-    if (!isPaymentChannelAllowed(debtor.getUserId(), creditor.getUserId(), config)) {
-      // Put them back and try next
-      creditors.offer(creditor);
-      debtors.offer(debtor);
-      return;
-    }
+      BalanceEntry creditor = creditors.poll();
+      BalanceEntry debtor = debtors.poll();
 
-    BigDecimal transferAmount = creditor.getAmount().min(debtor.getAmount());
+      // Create pair key to track tried combinations (for blocked channels)
+      String pairKey = debtor.getUserId() + "-" + creditor.getUserId();
 
-    // Apply cap if configured
-    if (config.getMaxTransferAmount() != null
-        && transferAmount.compareTo(config.getMaxTransferAmount()) > 0) {
-      transferAmount = config.getMaxTransferAmount();
-    }
-
-    // Apply rounding
-    transferAmount = applyRounding(transferAmount, config, baseCurrency);
-
-    if (transferAmount.compareTo(BigDecimal.ZERO) > 0) {
-      SettlementPlanResponse.TransferItem transfer =
-          new SettlementPlanResponse.TransferItem(
-              debtor.getUserId(),
-              debtor.getUserName(),
-              creditor.getUserId(),
-              creditor.getUserName(),
-              transferAmount);
-      transfers.add(transfer);
-
-      BigDecimal remainingCreditor = creditor.getAmount().subtract(transferAmount);
-      BigDecimal remainingDebtor = debtor.getAmount().subtract(transferAmount);
-
-      if (remainingCreditor.compareTo(BigDecimal.ZERO) > 0) {
-        creditors.offer(
-            new BalanceEntry(creditor.getUserId(), creditor.getUserName(), remainingCreditor));
+      // Check payment channel constraint
+      if (!isPaymentChannelAllowed(debtor.getUserId(), creditor.getUserId(), config)) {
+        triedPairs.add(pairKey);
+        // If we've tried all possible pairs, break
+        if (triedPairs.size() >= creditors.size() * debtors.size() * 2) {
+          creditors.offer(creditor);
+          debtors.offer(debtor);
+          break;
+        }
+        // Try to find alternative pairing - put creditor back, try different debtor
+        creditors.offer(creditor);
+        // Put debtor at end to try other creditors first
+        debtors.offer(debtor);
+        continue;
       }
 
-      if (remainingDebtor.compareTo(BigDecimal.ZERO) > 0) {
-        debtors.offer(new BalanceEntry(debtor.getUserId(), debtor.getUserName(), remainingDebtor));
-      }
-    } else {
-      // Put them back if transfer amount is zero
-      creditors.offer(creditor);
-      debtors.offer(debtor);
-    }
+      BigDecimal transferAmount = creditor.getAmount().min(debtor.getAmount());
 
-    processSettlementsWithConstraints(creditors, debtors, transfers, config, baseCurrency);
+      // Apply cap if configured
+      if (config.getMaxTransferAmount() != null
+          && transferAmount.compareTo(config.getMaxTransferAmount()) > 0) {
+        transferAmount = config.getMaxTransferAmount();
+      }
+
+      // Apply rounding
+      transferAmount = applyRounding(transferAmount, config, baseCurrency);
+
+      if (transferAmount.compareTo(BigDecimal.ZERO) > 0) {
+        SettlementPlanResponse.TransferItem transfer =
+            new SettlementPlanResponse.TransferItem(
+                debtor.getUserId(),
+                debtor.getUserName(),
+                creditor.getUserId(),
+                creditor.getUserName(),
+                transferAmount);
+        transfers.add(transfer);
+
+        BigDecimal remainingCreditor = creditor.getAmount().subtract(transferAmount);
+        BigDecimal remainingDebtor = debtor.getAmount().subtract(transferAmount);
+
+        // Clear tried pairs when we successfully create a transfer
+        // This allows the same pair to be processed again if capped
+        triedPairs.clear();
+
+        if (remainingCreditor.compareTo(BigDecimal.ZERO) > 0) {
+          creditors.offer(
+              new BalanceEntry(creditor.getUserId(), creditor.getUserName(), remainingCreditor));
+        }
+
+        if (remainingDebtor.compareTo(BigDecimal.ZERO) > 0) {
+          debtors.offer(
+              new BalanceEntry(debtor.getUserId(), debtor.getUserName(), remainingDebtor));
+        }
+      } else {
+        // Put them back if transfer amount is zero (shouldn't happen, but safety check)
+        creditors.offer(creditor);
+        debtors.offer(debtor);
+        break; // Avoid infinite loop
+      }
+    }
   }
 
   /**
@@ -650,11 +672,11 @@ public class LedgerServiceImpl extends ServiceImpl<LedgerMapper, Ledger> impleme
     Set<String> allowedChannels = config.getPaymentChannels().get(channelKey);
 
     // If no specific channels defined for this pair, allow
-    if (allowedChannels == null || allowedChannels.isEmpty()) {
+    if (allowedChannels == null) {
       return true;
     }
 
-    // For now, we allow if any channel is specified (could be enhanced to check actual channel)
+    // Empty set means blocked, non-empty set means allowed (with those channels)
     return !allowedChannels.isEmpty();
   }
 
@@ -671,9 +693,9 @@ public class LedgerServiceImpl extends ServiceImpl<LedgerMapper, Ledger> impleme
     Currency currencyEntity = currencyMapper.selectById(currency);
     int exponent = currencyEntity != null ? currencyEntity.getExponent() : 2;
 
-    String strategy = config.getRoundingStrategy();
-    if (strategy == null) {
-      strategy = "ROUND_HALF_UP";
+    String strategy = "ROUND_HALF_UP"; // Default
+    if (config != null && config.getRoundingStrategy() != null) {
+      strategy = config.getRoundingStrategy();
     }
 
     switch (strategy) {
