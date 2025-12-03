@@ -5,12 +5,14 @@ on:
     branches:
       - "main"
       - "ddl"
+      - "ddl_main"
     paths-ignore:
       - "**/*.md"
   pull_request:
     branches:
       - "main"
-      - "dev"
+      - "ddl"
+      - "ddl_main"
     paths-ignore:
       - "**/*.md"
   workflow_dispatch:
