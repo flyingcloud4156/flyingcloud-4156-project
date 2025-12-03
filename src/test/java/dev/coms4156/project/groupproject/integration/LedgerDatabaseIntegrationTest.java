@@ -89,6 +89,10 @@ class LedgerDatabaseIntegrationTest {
     LedgerResponse response = ledgerService.createLedger(request);
 
     assertNotNull(response.getLedgerId());
+    assertNotNull(response.getCategories());
+    assertEquals(1, response.getCategories().size());
+    assertEquals("Food", response.getCategories().get(0).getName());
+    assertEquals("EXPENSE", response.getCategories().get(0).getKind());
 
     Ledger savedLedger = ledgerMapper.selectById(response.getLedgerId());
     assertNotNull(savedLedger);

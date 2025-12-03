@@ -106,7 +106,8 @@ CREATE TABLE categories (
                             kind            ENUM('EXPENSE','INCOME','TRANSFER') NOT NULL DEFAULT 'EXPENSE'
                       COMMENT 'Used for basic grouping; transactions still carry their own type.',
                             is_active       BOOLEAN NOT NULL DEFAULT TRUE,
-                            sort_order      INT NOT NULL DEFAULT 0,
+                            created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                            updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                             UNIQUE KEY uk_ledger_name (ledger_id, name),
                             CONSTRAINT fk_categories_ledger FOREIGN KEY (ledger_id) REFERENCES ledgers(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci

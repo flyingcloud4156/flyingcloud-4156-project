@@ -62,7 +62,7 @@ class AnalyticsAggMapperSqlContractTest {
     assertTrue(sql.contains("LEFT JOIN categories c ON c.id = t.category_id"));
     assertTrue(sql.contains("t.type = 'EXPENSE'"));
     assertTrue(sql.contains("(t.is_private = 0 OR t.created_by = #{currentUserId})"));
-    assertTrue(sql.contains("ORDER BY COALESCE(c.sort_order, 999999) ASC, amount DESC"));
+    assertTrue(sql.contains("ORDER BY amount DESC"));
   }
 
   @Test

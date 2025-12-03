@@ -82,18 +82,18 @@ INSERT INTO ledger_members (ledger_id, user_id, role, joined_at) VALUES
 -- --------------------------
 -- Categories
 -- --------------------------
-INSERT INTO categories (id, ledger_id, name, kind, is_active, sort_order) VALUES
-(1,1,'Gas','EXPENSE',TRUE,10),
-(2,1,'Food','EXPENSE',TRUE,20),
-(3,1,'Lodging','EXPENSE',TRUE,30),
-(4,1,'Entertainment','EXPENSE',TRUE,40),
-(5,1,'Supplies','EXPENSE',TRUE,50),
+INSERT INTO categories (id, ledger_id, name, kind, is_active) VALUES
+(1,1,'Gas','EXPENSE',TRUE),
+(2,1,'Food','EXPENSE',TRUE),
+(3,1,'Lodging','EXPENSE',TRUE),
+(4,1,'Entertainment','EXPENSE',TRUE),
+(5,1,'Supplies','EXPENSE',TRUE),
 
-(6,2,'Rent','EXPENSE',TRUE,10),
-(7,2,'Groceries','EXPENSE',TRUE,20),
-(8,2,'Utilities','EXPENSE',TRUE,30),
-(9,2,'Internet','EXPENSE',TRUE,40),
-(10,2,'Dining','EXPENSE',TRUE,50);
+(6,2,'Rent','EXPENSE',TRUE),
+(7,2,'Groceries','EXPENSE',TRUE),
+(8,2,'Utilities','EXPENSE',TRUE),
+(9,2,'Internet','EXPENSE',TRUE),
+(10,2,'Dining','EXPENSE',TRUE);
 
 -- ======================================================================================
 -- Ledger 1: Road Trip Demo

@@ -20,7 +20,6 @@ public class Category {
   private String name;
   private String kind;
   private Boolean isActive;
-  private Integer sortOrder;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
 }

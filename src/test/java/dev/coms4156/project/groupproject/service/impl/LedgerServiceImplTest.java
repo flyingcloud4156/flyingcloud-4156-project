@@ -80,7 +80,7 @@ class LedgerServiceImplTest {
     req.setBaseCurrency("USD");
     req.setShareStartDate(LocalDate.of(2025, 1, 1));
 
-    // Add test category (sortOrder will be auto-assigned)
+    // Add test category
     CreateCategoryRequest category = new CreateCategoryRequest();
     category.setName("Food");
     category.setKind("EXPENSE");
@@ -125,9 +125,9 @@ class LedgerServiceImplTest {
     doReturn(1)
         .when(categoryMapper)
         .insert(any(dev.coms4156.project.groupproject.entity.Category.class));
-    doReturn(0L)
+    doReturn(Collections.emptyList())
         .when(categoryMapper)
-        .selectCount(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
+        .selectList(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
 
     CreateLedgerRequest req = createLedgerReq("Family");
     LedgerResponse resp = service.createLedger(req);
@@ -136,6 +136,7 @@ class LedgerServiceImplTest {
     assertEquals(10L, resp.getLedgerId());
     assertEquals("Family", resp.getName());
     assertEquals("OWNER", resp.getRole());
+    assertNotNull(resp.getCategories());
 
     verify(service, times(1)).save(any(Ledger.class));
     verify(ledgerMemberMapper, times(1)).insert(any(LedgerMember.class));
@@ -202,12 +203,16 @@ class LedgerServiceImplTest {
     doReturn(member(10L, 1L, "OWNER"))
         .when(ledgerMemberMapper)
         .selectOne(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
+    doReturn(Collections.emptyList())
+        .when(categoryMapper)
+        .selectList(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
 
     LedgerResponse resp = service.getLedgerDetails(10L);
 
     assertEquals(10L, resp.getLedgerId());
     assertEquals("Family", resp.getName());
     assertEquals("OWNER", resp.getRole());
+    assertNotNull(resp.getCategories());
   }
 
   @Test

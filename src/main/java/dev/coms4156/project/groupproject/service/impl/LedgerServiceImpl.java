@@ -3,6 +3,7 @@ package dev.coms4156.project.groupproject.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import dev.coms4156.project.groupproject.dto.AddLedgerMemberRequest;
+import dev.coms4156.project.groupproject.dto.CategoryResponse;
 import dev.coms4156.project.groupproject.dto.CreateCategoryRequest;
 import dev.coms4156.project.groupproject.dto.CreateLedgerRequest;
 import dev.coms4156.project.groupproject.dto.LedgerMemberResponse;
@@ -100,13 +101,33 @@ public class LedgerServiceImpl extends ServiceImpl<LedgerMapper, Ledger> impleme
     member.setRole("OWNER");
     ledgerMemberMapper.insert(member);
 
+    // Query categories for this ledger
+    List<Category> categories =
+        categoryMapper.selectList(
+            new LambdaQueryWrapper<Category>()
+                .eq(Category::getLedgerId, ledger.getId())
+                .orderByAsc(Category::getName));
+
+    List<CategoryResponse> categoryResponses =
+        categories.stream()
+            .map(
+                cat ->
+                    new CategoryResponse(
+                        cat.getId(),
+                        cat.getLedgerId(),
+                        cat.getName(),
+                        cat.getKind(),
+                        cat.getIsActive()))
+            .collect(Collectors.toList());
+
     return new LedgerResponse(
         ledger.getId(),
         ledger.getName(),
         ledger.getLedgerType(),
         ledger.getBaseCurrency(),
         ledger.getShareStartDate(),
-        member.getRole());
+        member.getRole(),
+        categoryResponses);
   }
 
   @Override
@@ -154,13 +175,33 @@ public class LedgerServiceImpl extends ServiceImpl<LedgerMapper, Ledger> impleme
 
     AuthUtils.checkMembership(member != null);
 
+    // Query categories for this ledger
+    List<Category> categories =
+        categoryMapper.selectList(
+            new LambdaQueryWrapper<Category>()
+                .eq(Category::getLedgerId, ledgerId)
+                .orderByAsc(Category::getName));
+
+    List<CategoryResponse> categoryResponses =
+        categories.stream()
+            .map(
+                cat ->
+                    new CategoryResponse(
+                        cat.getId(),
+                        cat.getLedgerId(),
+                        cat.getName(),
+                        cat.getKind(),
+                        cat.getIsActive()))
+            .collect(Collectors.toList());
+
     return new LedgerResponse(
         ledger.getId(),
         ledger.getName(),
         ledger.getLedgerType(),
         ledger.getBaseCurrency(),
         ledger.getShareStartDate(),
-        member.getRole());
+        member.getRole(),
+        categoryResponses);
   }
 
   @Override
@@ -759,26 +800,6 @@ public class LedgerServiceImpl extends ServiceImpl<LedgerMapper, Ledger> impleme
     category.setKind(categoryRequest.getKind());
     category.setIsActive(categoryRequest.getIsActive());
 
-    // Auto-assign sortOrder to avoid conflicts
-    Integer nextSortOrder = getNextSortOrderForLedger(ledgerId);
-    category.setSortOrder(nextSortOrder);
-
     categoryMapper.insert(category);
-  }
-
-  /**
-   * Get the next available sortOrder for a ledger (auto-increment by 10).
-   *
-   * @param ledgerId the ledger ID
-   * @return the next sortOrder value
-   */
-  private Integer getNextSortOrderForLedger(Long ledgerId) {
-    // Count existing categories in this ledger and assign next order
-    Long categoryCount =
-        categoryMapper.selectCount(
-            new LambdaQueryWrapper<Category>().eq(Category::getLedgerId, ledgerId));
-
-    // Return next value (increment by 10 to leave room for manual reordering)
-    return (categoryCount.intValue() + 1) * 10;
   }
 }

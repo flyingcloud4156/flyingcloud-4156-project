@@ -78,6 +78,7 @@ class LedgerControllerTest {
     req.setCategory(category);
 
     LedgerResponse resp = new LedgerResponse();
+    resp.setCategories(Collections.emptyList());
     resp.setLedgerId(1L);
     resp.setName("Family Budget");
     resp.setLedgerType("GROUP_BALANCE");
@@ -114,6 +115,7 @@ class LedgerControllerTest {
     req.setCategory(category);
 
     LedgerResponse resp = new LedgerResponse();
+    resp.setCategories(Collections.emptyList());
     resp.setLedgerId(2L);
     resp.setName("Future Project");
 
@@ -223,6 +225,7 @@ class LedgerControllerTest {
   @DisplayName("GET /ledgers/{id}: typical -> 200 with details")
   void getLedgerDetails_typical() throws Exception {
     LedgerResponse resp = new LedgerResponse();
+    resp.setCategories(Collections.emptyList());
     resp.setLedgerId(1L);
     resp.setName("Family Budget");
     resp.setLedgerType("GROUP_BALANCE");
@@ -245,6 +248,7 @@ class LedgerControllerTest {
   @DisplayName("GET /ledgers/{id}: atypical very large ledgerId -> 200 if exists")
   void getLedgerDetails_largeLedgerId() throws Exception {
     LedgerResponse resp = new LedgerResponse();
+    resp.setCategories(Collections.emptyList());
     resp.setLedgerId(999999L);
     resp.setName("Test");
 
