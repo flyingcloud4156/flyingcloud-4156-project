@@ -85,7 +85,7 @@ class LedgerServiceImplTest {
     category.setName("Food");
     category.setKind("EXPENSE");
     category.setIsActive(true);
-    req.setCategory(category);
+    req.setCategories(Collections.singletonList(category));
     return req;
   }
 

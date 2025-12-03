@@ -75,7 +75,7 @@ class LedgerControllerTest {
     category.setName("Food");
     category.setKind("EXPENSE");
     category.setIsActive(true);
-    req.setCategory(category);
+    req.setCategories(Collections.singletonList(category));
 
     LedgerResponse resp = new LedgerResponse();
     resp.setCategories(Collections.emptyList());
@@ -112,7 +112,7 @@ class LedgerControllerTest {
     category.setName("Travel");
     category.setKind("EXPENSE");
     category.setIsActive(true);
-    req.setCategory(category);
+    req.setCategories(Collections.singletonList(category));
 
     LedgerResponse resp = new LedgerResponse();
     resp.setCategories(Collections.emptyList());
@@ -142,7 +142,7 @@ class LedgerControllerTest {
     category.setName("Test");
     category.setKind("EXPENSE");
     category.setIsActive(true);
-    req.setCategory(category);
+    req.setCategories(Collections.singletonList(category));
 
     doThrow(new RuntimeException("Not logged in"))
         .when(ledgerService)

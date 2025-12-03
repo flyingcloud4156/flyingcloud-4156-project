@@ -93,7 +93,9 @@ public class LedgerServiceImpl extends ServiceImpl<LedgerMapper, Ledger> impleme
     save(ledger);
 
     // Create category from the request
-    createCategoryFromRequest(ledger.getId(), req.getCategory());
+    for (CreateCategoryRequest categoryRequest : req.getCategories()) {
+      createCategoryFromRequest(ledger.getId(), categoryRequest);
+    }
 
     LedgerMember member = new LedgerMember();
     member.setLedgerId(ledger.getId());
