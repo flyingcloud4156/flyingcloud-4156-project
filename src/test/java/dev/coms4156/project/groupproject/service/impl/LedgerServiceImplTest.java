@@ -3,6 +3,7 @@ package dev.coms4156.project.groupproject.service.impl;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -125,9 +126,9 @@ class LedgerServiceImplTest {
     doReturn(1)
         .when(categoryMapper)
         .insert(any(dev.coms4156.project.groupproject.entity.Category.class));
-    doReturn(Collections.emptyList())
+    doReturn(null)
         .when(categoryMapper)
-        .selectList(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
+        .selectOne(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
 
     CreateLedgerRequest req = createLedgerReq("Family");
     LedgerResponse resp = service.createLedger(req);
@@ -136,7 +137,7 @@ class LedgerServiceImplTest {
     assertEquals(10L, resp.getLedgerId());
     assertEquals("Family", resp.getName());
     assertEquals("OWNER", resp.getRole());
-    assertNotNull(resp.getCategories());
+    assertNull(resp.getCategory());
 
     verify(service, times(1)).save(any(Ledger.class));
     verify(ledgerMemberMapper, times(1)).insert(any(LedgerMember.class));
@@ -203,16 +204,16 @@ class LedgerServiceImplTest {
     doReturn(member(10L, 1L, "OWNER"))
         .when(ledgerMemberMapper)
         .selectOne(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
-    doReturn(Collections.emptyList())
+    doReturn(null)
         .when(categoryMapper)
-        .selectList(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
+        .selectOne(any(com.baomidou.mybatisplus.core.conditions.Wrapper.class));
 
     LedgerResponse resp = service.getLedgerDetails(10L);
 
     assertEquals(10L, resp.getLedgerId());
     assertEquals("Family", resp.getName());
     assertEquals("OWNER", resp.getRole());
-    assertNotNull(resp.getCategories());
+    assertNull(resp.getCategory());
   }
 
   @Test

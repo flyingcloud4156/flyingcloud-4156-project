@@ -101,24 +101,21 @@ public class LedgerServiceImpl extends ServiceImpl<LedgerMapper, Ledger> impleme
     member.setRole("OWNER");
     ledgerMemberMapper.insert(member);
 
-    // Query categories for this ledger
-    List<Category> categories =
-        categoryMapper.selectList(
-            new LambdaQueryWrapper<Category>()
-                .eq(Category::getLedgerId, ledger.getId())
-                .orderByAsc(Category::getName));
+    // Query the category for this ledger (there should be exactly one)
+    Category category =
+        categoryMapper.selectOne(
+            new LambdaQueryWrapper<Category>().eq(Category::getLedgerId, ledger.getId()));
 
-    List<CategoryResponse> categoryResponses =
-        categories.stream()
-            .map(
-                cat ->
-                    new CategoryResponse(
-                        cat.getId(),
-                        cat.getLedgerId(),
-                        cat.getName(),
-                        cat.getKind(),
-                        cat.getIsActive()))
-            .collect(Collectors.toList());
+    CategoryResponse categoryResponse = null;
+    if (category != null) {
+      categoryResponse =
+          new CategoryResponse(
+              category.getId(),
+              category.getLedgerId(),
+              category.getName(),
+              category.getKind(),
+              category.getIsActive());
+    }
 
     return new LedgerResponse(
         ledger.getId(),
@@ -127,7 +124,7 @@ public class LedgerServiceImpl extends ServiceImpl<LedgerMapper, Ledger> impleme
         ledger.getBaseCurrency(),
         ledger.getShareStartDate(),
         member.getRole(),
-        categoryResponses);
+        categoryResponse);
   }
 
   @Override
@@ -175,24 +172,21 @@ public class LedgerServiceImpl extends ServiceImpl<LedgerMapper, Ledger> impleme
 
     AuthUtils.checkMembership(member != null);
 
-    // Query categories for this ledger
-    List<Category> categories =
-        categoryMapper.selectList(
-            new LambdaQueryWrapper<Category>()
-                .eq(Category::getLedgerId, ledgerId)
-                .orderByAsc(Category::getName));
+    // Query the category for this ledger
+    Category category =
+        categoryMapper.selectOne(
+            new LambdaQueryWrapper<Category>().eq(Category::getLedgerId, ledgerId));
 
-    List<CategoryResponse> categoryResponses =
-        categories.stream()
-            .map(
-                cat ->
-                    new CategoryResponse(
-                        cat.getId(),
-                        cat.getLedgerId(),
-                        cat.getName(),
-                        cat.getKind(),
-                        cat.getIsActive()))
-            .collect(Collectors.toList());
+    CategoryResponse categoryResponse = null;
+    if (category != null) {
+      categoryResponse =
+          new CategoryResponse(
+              category.getId(),
+              category.getLedgerId(),
+              category.getName(),
+              category.getKind(),
+              category.getIsActive());
+    }
 
     return new LedgerResponse(
         ledger.getId(),
@@ -201,7 +195,7 @@ public class LedgerServiceImpl extends ServiceImpl<LedgerMapper, Ledger> impleme
         ledger.getBaseCurrency(),
         ledger.getShareStartDate(),
         member.getRole(),
-        categoryResponses);
+        categoryResponse);
   }
 
   @Override
