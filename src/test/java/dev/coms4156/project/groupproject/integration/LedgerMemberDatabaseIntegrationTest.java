@@ -81,8 +81,9 @@ class LedgerMemberDatabaseIntegrationTest {
     assertNotNull(response);
     assertNotNull(response.getLedgerId());
     assertEquals("OWNER", response.getRole());
-    assertNotNull(response.getCategory());
-    assertEquals("Food", response.getCategory().getName());
+    assertNotNull(response.getCategories());
+    assertEquals(1, response.getCategories().size());
+    assertEquals("Food", response.getCategories().get(0).getName());
 
     Ledger ledger = ledgerMapper.selectById(response.getLedgerId());
     assertNotNull(ledger);

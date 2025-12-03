@@ -2,6 +2,7 @@ package dev.coms4156.project.groupproject.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDate;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -18,6 +19,6 @@ public class LedgerResponse {
   private LocalDate shareStartDate;
   private String role;
 
-  @Schema(description = "Category associated with this ledger")
-  private CategoryResponse category;
+  @Schema(description = "Categories associated with this ledger")
+  private List<CategoryResponse> categories;
 }
