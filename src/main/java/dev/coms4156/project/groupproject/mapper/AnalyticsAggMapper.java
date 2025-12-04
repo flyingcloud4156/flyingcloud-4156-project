@@ -47,7 +47,7 @@ public interface AnalyticsAggMapper {
       AND ts.computed_amount IS NOT NULL
     GROUP BY DATE_FORMAT(t.txn_at, '%Y-%m')
     ORDER BY period ASC
-    """)
+      """)
   List<AggRows.MonthlyRow> monthlyStats(
       @Param("ledgerId") Long ledgerId,
       @Param("start") LocalDateTime start,
@@ -71,7 +71,7 @@ public interface AnalyticsAggMapper {
       AND ts.computed_amount IS NOT NULL
     GROUP BY t.category_id, c.name
     ORDER BY amount DESC
-    """)
+      """)
   List<AggRows.CategoryRow> categoryStats(
       @Param("ledgerId") Long ledgerId,
       @Param("start") LocalDateTime start,

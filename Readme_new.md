@@ -313,33 +313,149 @@
 
 # 6. Unit Testing
 
-（原章节存在，但内容不足 → 需替换为 outline）
 
 ## 6.1 Testing Framework
 
-- JUnit + Mockito（保留原说明）
+- Testing framework: JUnit. 
+- Mocking framework: Mockito. 
+- Configuration files: pom.xml(Main confiduration), Mockito to enable inline mocking (src/test/resources/mockito-extensions/org.mockito.plugins.MockMaker).
 
-## 6.2 Equivalence Partitioning & Boundary Analysis（课程要求）
+The testing and mocking frameworks are configured via Maven dependencies defined in pom.xml. No additional manual setup is required — Maven automatically downloads and integrates JUnit and Mockito during the build process.
+Our unit tests are located under the directory 'src/test'. You can choose any of the classes present in the src/test directory and click run to see the results.
 
-对于每个主要 unit：
 
-- 列出输入参数
-- 有效分区
-- 无效分区
-- 边界案例
-- 对应的测试类名称
+## 6.2 Equivalence Partitioning & Boundary Analysis
+
+For each major unit:
+
+- List input parameters
+- Valid partitions
+- Invalid partitions
+- Boundary cases
+- Corresponding test class names
+
+### 6.2.1 BudgetService.setBudget()
+
+**Input Parameters:**
+- `ledgerId` (Long): Ledger ID
+- `SetBudgetRequest`:
+  - `categoryId` (Long, optional): Category ID, null indicates ledger-level budget
+  - `year` (Integer): Budget year
+  - `month` (Integer): Budget month
+  - `limitAmount` (BigDecimal): Budget limit amount
+
+**Valid Partitions:**
+- Authenticated user with OWNER or ADMIN role
+- Ledger exists
+- User is a member of the ledger
+- `year`: 2020-2100
+- `month`: 1-12
+- `limitAmount`: ≥ 0.01
+- `categoryId`: null (ledger-level) or valid category ID
+
+**Invalid Partitions:**
+- Unauthenticated user
+- Ledger does not exist
+- User is not a member of the ledger
+- User has MEMBER role (insufficient permissions)
+- `year`: < 2020 or > 2100
+- `month`: < 1 or > 12
+- `limitAmount`: < 0.01 or null
+
+**Boundary Cases:**
+- `year` = 2020 (minimum value)
+- `year` = 2100 (maximum value)
+- `month` = 1 (minimum value)
+- `month` = 12 (maximum value)
+- `limitAmount` = 0.01 (minimum value)
+- `categoryId` = null (ledger-level budget)
+- Updating existing budget (same ledgerId, categoryId, year, month)
+
+**Test Class Names:**
+- `BudgetServiceImplTest`
+- `BudgetControllerTest`
+
+### 6.2.2 BudgetService.getBudgetStatus()
+
+**Input Parameters:**
+- `ledgerId` (Long): Ledger ID
+- `year` (Integer): Query year
+- `month` (Integer): Query month
+
+**Valid Partitions:**
+- Authenticated user
+- User is a member of the ledger (any role)
+- `year`: 2020-2100
+- `month`: 1-12
+- Budgets exist or do not exist for the ledger
+
+**Invalid Partitions:**
+- Unauthenticated user
+- User is not a member of the ledger
+- `year`: < 2020 or > 2100
+- `month`: < 1 or > 12
+
+**Boundary Cases:**
+- No budgets (returns empty list)
+- Single budget
+- Multiple budgets (2, 3, or more)
+- `year` = 2020 (minimum value)
+- `year` = 2100 (maximum value)
+- `month` = 1 (minimum value)
+- `month` = 12 (maximum value)
+
+**Test Class Names:**
+- `BudgetServiceImplTest`
+- `BudgetControllerTest`
+
+### 6.2.3 BudgetService.checkBudgetAfterTransaction() (Alert Feature)
+
+**Input Parameters:**
+- `ledgerId` (Long): Ledger ID
+- `categoryId` (Long, optional): Transaction category ID, null indicates no category
+- `txnAt` (LocalDateTime): Transaction timestamp
+
+**Valid Partitions:**
+- Budgets exist or do not exist for the ledger
+- `categoryId` = null (check ledger-level budget)
+- `categoryId` ≠ null (prioritize category budget, fallback to ledger budget if not found)
+- Budget status:
+  - OK: ratio < 0.8 (returns null, no alert)
+  - NEAR_LIMIT: 0.8 ≤ ratio < 1.0 (returns warning message)
+  - EXCEEDED: ratio ≥ 1.0 (returns alert message)
+
+**Invalid Partitions:**
+- Ledger does not exist
+- `txnAt` = null
+- `limitAmount` = 0 (avoid division by zero, returns null)
+
+**Boundary Cases:**
+- No budgets (returns null)
+- ratio = 0.0 (no spending, status OK)
+- ratio = 0.79 (just below threshold, status OK)
+- ratio = 0.80 (exactly at threshold, status NEAR_LIMIT)
+- ratio = 0.99 (just below 1.0, status NEAR_LIMIT)
+- ratio = 1.00 (exactly at 1.0, status EXCEEDED)
+- ratio = 1.50 (above 1.0, status EXCEEDED)
+- `categoryId` = null, ledger budget exists (check ledger budget)
+- `categoryId` ≠ null, category budget exists (prioritize category budget)
+- `categoryId` ≠ null, no category budget but ledger budget exists (fallback to ledger budget)
+- `categoryId` ≠ null, no matching budgets (returns null)
+- Both category and ledger budgets exist and both exceeded (prioritize category alert)
+
+**Test Class Names:**
+- `BudgetServiceImplTest`
+- `TransactionBudgetIntegrationTest` (integration test, verifies automatic budget check when transaction is created)
 
 ## 6.3 How to Run Unit Tests
 
 ```
-mvn test
+mvn clean test
 ```
 
 ## 6.4 Unit Tests in CI
 
-说明：
-
-- CI 自动运行所有单测（rubric 要求）
+Unit tests will be run by CI automatically on push.
 
 ------
 
