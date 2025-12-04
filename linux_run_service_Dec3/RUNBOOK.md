@@ -1,28 +1,7 @@
-Below is the **precise and faithful English translation** of your complete document.
+# FlyingCloud 4156 Project – Linux Direct Deployment Guide
 
----
 
-# FlyingCloud 4156 Project – Linux Direct Deployment Guide (No Docker)
-
-# Updated December 3, 2025
-
-This document explains how to directly deploy and run the project on a Linux server **without using Docker containers**. It covers two scenarios:
-
-* **Scenario A**: Redeployment (delete existing database and reinitialize)
-* **Scenario B**: First-time deployment on a new server
-
-**Notes**:
-
-* All commands assume your project path is `/home/zh2701/flyingcloud-4156-project`
-* Root privileges are required to install system software and services
-* Ensure that ports 8081, 3306, and 6379 are available
-* Back up important data before performing cleanup operations
-
-**🚨 CRITICAL DATABASE CONFIGURATION**:
-* **DB_USER MUST be `ledger_user`** (not root)
-* **DB_PASS MUST be empty** `""`
-* Follow database initialization steps in exact order
-* If Spring Boot cannot connect to MySQL, it's almost always a user credential issue
+This document explains how to directly deploy and run the project on a Linux server.
 
 ---
 
@@ -372,6 +351,9 @@ The frontend will be available at `http://localhost:3000` (default serve port).
 If you do not want to create a system service, you can run the applications manually:
 
 ## Backend (Spring Boot)
+
+First Method
+
 ```bash
 cd /home/zh2701/flyingcloud-4156-project
 export DB_URL="jdbc:mysql://localhost:3306/ledger?useSSL=false&serverTimezone=America/New_York&characterEncoding=utf8&allowPublicKeyRetrieval=true"
@@ -383,7 +365,7 @@ export REDIS_PASSWORD=""
 export SPRING_PROFILES_ACTIVE="prod"
 mvn spring-boot:run
 ```
-
+Second Method
 ```bash
 cd /home/zh2701/flyingcloud-4156-project
 
@@ -649,21 +631,6 @@ curl http://localhost:8081/actuator/metrics
 
 The frontend is a static HTML/CSS/JavaScript application that serves as the user interface for the Ledger application.
 
-## Configure Frontend API URL
-
-Before starting the frontend, configure the API URL to point to your backend server:
-
-```bash
-# Option 1: Automatic configuration (recommended)
-cd /home/zh2701/flyingcloud-4156-project
-./linux_run_service_Dec3/configure_frontend.sh
-
-# Option 2: Manual configuration
-# Edit frontend/index.html and change the baseUrl input value
-# from: value="http://localhost:8081"
-# to:   value="http://YOUR_SERVER_IP:8081"
-```
-
 ## Start Frontend
 
 ```bash
@@ -676,21 +643,13 @@ npm install
 npm start
 ```
 
-The frontend will be available at `http://YOUR_SERVER_IP:3000` (default serve port).
-
-## Frontend Files
-
-- `index.html` - Login page
-- `dashboard.html` - Main dashboard (may not be used in current implementation)
-- `login.js` - Login page logic
-- `dashboard.js` - Dashboard logic (may not be used)
-- `style.css` - Application styles
-
 ## Configuration
 
 The frontend connects to the backend API. By default it uses `http://localhost:8081`. You can change this in the login form.
 
 ---
+
+
 
 # Deployment Updates
 
@@ -717,6 +676,3 @@ npm start
 sudo systemctl status flyingcloud-app
 ```
 
----
-
-If you'd like, I can **format this as a PDF**, **improve the English wording**, or **convert it into a Markdown guide**.
