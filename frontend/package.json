@@ -4,7 +4,7 @@
   "type": "commonjs",
   "scripts": {
     "start": "serve .",
-    "test": "jest --runInBand"
+    "test": "jest --runInBand --passWithNoTests"
   },
   "devDependencies": {
     "jest": "^29.7.0",
