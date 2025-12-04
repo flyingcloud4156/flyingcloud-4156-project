@@ -215,7 +215,7 @@ cd  /home/zh2701/flyingcloud-4156-project
 
 **Spring Boot requires specific database credentials. You MUST configure:**
 
-- **DB_USER**: `ledger_user` (NOT root)
+- **DB_USER**: `root` (NOT root)
 - **DB_PASS**: `""` (empty password)
 
 ```bash
@@ -223,9 +223,9 @@ cd  /home/zh2701/flyingcloud-4156-project
 sudo mysql -u root
 
 # Create the required database user
-CREATE USER IF NOT EXISTS 'ledger_user'@'localhost' IDENTIFIED BY '';
-GRANT ALL PRIVILEGES ON ledger.* TO 'ledger_user'@'localhost';
-GRANT ALL PRIVILEGES ON *.* TO 'ledger_user'@'localhost' WITH GRANT OPTION;
+CREATE USER IF NOT EXISTS 'root'@'localhost' IDENTIFIED BY '';
+GRANT ALL PRIVILEGES ON ledger.* TO 'root'@'localhost';
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
 EXIT;
 ```
@@ -247,7 +247,7 @@ sudo mysql -u root -p ledger < ops/sql/ledger_flow.sql
 sudo mysql -u root -p ledger < ops/sql/backup/ledger_big_seed.sql
 
 # 5. Verify setup with correct user
-mysql -u ledger_user -e "USE ledger; SHOW TABLES; SELECT COUNT(*) FROM users;"
+mysql -u root -e "USE ledger; SHOW TABLES; SELECT COUNT(*) FROM users;"
 ```
 
 ## Step 7:Build Project
@@ -279,7 +279,7 @@ Group=zh2701
 WorkingDirectory=/home/zh2701/flyingcloud-4156-project
 Environment=SPRING_PROFILES_ACTIVE=prod
 Environment=DB_URL=jdbc:mysql://localhost:3306/ledger?useSSL=false&serverTimezone=America/New_York&characterEncoding=utf8&allowPublicKeyRetrieval=true
-Environment=DB_USER=ledger_user
+Environment=DB_USER=root
 Environment=DB_PASS=
 Environment=REDIS_HOST=localhost
 Environment=REDIS_PORT=6379
@@ -357,12 +357,25 @@ First Method
 ```bash
 cd /home/zh2701/flyingcloud-4156-project
 export DB_URL="jdbc:mysql://localhost:3306/ledger?useSSL=false&serverTimezone=America/New_York&characterEncoding=utf8&allowPublicKeyRetrieval=true"
-export DB_USER="ledger_user"
+export DB_USER="root"
 export DB_PASS=""
 export REDIS_HOST="localhost"
 export REDIS_PORT="6379"
 export REDIS_PASSWORD=""
 export SPRING_PROFILES_ACTIVE="prod"
+mvn spring-boot:run
+```
+
+
+```bash
+cd /home/zh2701/flyingcloud-4156-project
+DB_URL="jdbc:mysql://127.0.0.1:3306/ledger?useSSL=false&serverTimezone=America/New_York&characterEncoding=utf8&allowPublicKeyRetrieval=true" \
+DB_USER="root" \
+DB_PASS="" \
+REDIS_HOST="localhost" \
+REDIS_PORT="6379" \
+REDIS_PASSWORD="" \
+SPRING_PROFILES_ACTIVE="prod" \
 mvn spring-boot:run
 ```
 Second Method
@@ -371,7 +384,7 @@ cd /home/zh2701/flyingcloud-4156-project
 
 # Set environment variables
 export DB_URL="jdbc:mysql://localhost:3306/ledger?useSSL=false&serverTimezone=America/New_York&characterEncoding=utf8&allowPublicKeyRetrieval=true"
-export DB_USER="ledger_user"
+export DB_USER="root"
 export DB_PASS=""
 export REDIS_HOST="localhost"
 export REDIS_PORT="6379"
@@ -491,7 +504,7 @@ sudo systemctl restart flyingcloud-app
 
 ## Application Cannot Connect to Database
 
-**Most Common Issue**: Wrong database user credentials. Spring Boot MUST use `ledger_user` with empty password.
+**Most Common Issue**: Wrong database user credentials. Spring Boot MUST use `root` with empty password.
 
 ```bash
 # Check if MySQL is running
@@ -501,16 +514,16 @@ sudo systemctl status mysql
 netstat -tlnp | grep 3306
 
 # Test database connection with CORRECT user
-mysql -u ledger_user -e "SELECT 1;"
+mysql -u root -e "SELECT 1;"
 
 # Verify database exists and has tables
-mysql -u ledger_user -e "USE ledger; SHOW TABLES;"
+mysql -u root -e "USE ledger; SHOW TABLES;"
 
 # Check DB URL in app logs
 sudo journalctl -u flyingcloud-app | grep -i "jdbc\|datasource"
 
 # If connection fails, recreate the user:
-sudo mysql -u root -e "CREATE USER IF NOT EXISTS 'ledger_user'@'localhost' IDENTIFIED BY ''; GRANT ALL PRIVILEGES ON ledger.* TO 'ledger_user'@'localhost'; FLUSH PRIVILEGES;"
+sudo mysql -u root -e "CREATE USER IF NOT EXISTS 'root'@'localhost' IDENTIFIED BY ''; GRANT ALL PRIVILEGES ON ledger.* TO 'root'@'localhost'; FLUSH PRIVILEGES;"
 ```
 
 ## Redis Connection Failure
@@ -619,7 +632,7 @@ curl http://localhost:8081/actuator/metrics
 1. **Change default passwords** — never use default root passwords
 2. **Firewall configuration** — only open necessary ports
 3. **SSL certificate** — configure HTTPS for production
-4. **Database users** — create a dedicated DB user for the app (`ledger_user` with empty password); avoid using root
+4. **Database users** — create a dedicated DB user for the app (`root` with empty password); avoid using root
 5. **Regular backups** — set up automated backup scripts
 6. **Log rotation** — configure rotation to prevent disk from filling up
 
