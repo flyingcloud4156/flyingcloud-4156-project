@@ -1,97 +1,45 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Ledger Analytics</title>
-  <link rel="stylesheet" href="./style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Ledger Login</title>
+    <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
-  <div class="container">
-    <h1>Ledger Analytics</h1>
+<div class="container">
+    <h1>Ledger App</h1>
 
     <div class="card">
-      <div class="row">
-        <label>API Base URL</label>
-        <input id="baseUrl" value="http://localhost:8081" />
-      </div>
-
-      <div class="row">
-        <label>Email</label>
-        <input id="email" placeholder="user@gmail.com" />
-      </div>
-
-      <div class="row">
-        <label>Password</label>
-        <input id="password" type="password" placeholder="******" />
-      </div>
-
-      <button id="btnLogin">Login</button>
-      <div id="loginStatus" class="muted"></div>
-    </div>
-
-    <div id="app" class="hidden">
-      <div class="card">
         <div class="row">
-          <label>Ledger</label>
-          <select id="ledgerSelect"></select>
+            <label>API Base URL</label>
+            <input id="baseUrl" value="http://localhost:8081" />
         </div>
 
         <div class="row">
-          <label>Months</label>
-          <input id="months" type="number" min="1" max="24" value="3" />
+            <label>Email</label>
+            <input id="email" placeholder="user@gmail.com" />
         </div>
 
-        <button id="btnLoad">Load Analytics</button>
-        <div id="rangeInfo" class="muted"></div>
-      </div>
-
-      <div class="grid">
-        <div class="card">
-          <h2>Totals</h2>
-          <div class="kpi">
-            <div><div class="muted">Income</div><div id="kIncome" class="big">-</div></div>
-            <div><div class="muted">Expense</div><div id="kExpense" class="big">-</div></div>
-            <div><div class="muted">Net</div><div id="kNet" class="big">-</div></div>
-          </div>
-          <div id="recs"></div>
+        <div class="row">
+            <label>Password</label>
+            <input id="password" type="password" placeholder="******" />
         </div>
 
-        <div class="card">
-          <h2>Trend (Income vs Expense)</h2>
-          <canvas id="trendChart"></canvas>
+        <div class="row">
+            <label>Name (register)</label>
+            <input id="name" placeholder="Only needed for registration" />
         </div>
 
-        <div class="card">
-          <h2>Expense by Category</h2>
-          <canvas id="catChart"></canvas>
+        <div class="login-actions">
+            <button id="btnLogin">Login</button>
+            <button id="btnRegister" class="secondary">Register</button>
         </div>
 
-        <div class="card">
-          <h2>AR / AP (Debt Summary)</h2>
-          <table id="arapTable">
-            <thead>
-              <tr><th>User</th><th>AR</th><th>AP</th><th>Net</th></tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-
-        <div class="card">
-          <h2>Top Merchants (by note)</h2>
-          <table id="merchantTable">
-            <thead>
-            <tr><th>Label</th><th>Amount</th></tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-
-      </div>
+        <div id="loginStatus" class="muted"></div>
     </div>
-  </div>
+</div>
 
-  <script src="./app.js"></script>
+<script src="./login.js"></script>
 </body>
 </html>
