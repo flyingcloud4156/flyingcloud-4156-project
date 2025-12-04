@@ -1,7 +1,20 @@
 // login.js
 
+function computeBaseUrl() {
+    const loc = window.location;
+    const proto = loc.protocol === 'file:' ? 'http:' : loc.protocol;
+    const host = loc.hostname || 'localhost';
+    return `${proto}//${host}:8081`;
+}
+
 function getBaseUrl() {
-    return document.getElementById('baseUrl').value.trim().replace(/\/$/, '');
+    const el = document.getElementById('baseUrl');
+    const fallback = computeBaseUrl();
+    if (!el) return fallback;
+    const v = (el.value || '').trim();
+    const url = v ? v.replace(/\/$/, '') : fallback;
+    if (!v) el.value = url;
+    return url;
 }
 
 async function callApi(path, body) {
@@ -51,7 +64,6 @@ async function handleLogin() {
             return;
         }
 
-        localStorage.setItem('ledger_base_url', getBaseUrl());
         localStorage.setItem('ledger_access_token', token);
 
         statusEl.textContent = 'Login success. Redirecting...';
@@ -93,10 +105,14 @@ async function handleRegister() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 恢复 baseUrl
-    const storedBase = localStorage.getItem('ledger_base_url');
-    if (storedBase) {
-        document.getElementById('baseUrl').value = storedBase;
+    // Auto-fill baseUrl and show note
+    const baseInput = document.getElementById('baseUrl');
+    if (baseInput) {
+        baseInput.value = computeBaseUrl();
+    }
+    const baseNote = document.getElementById('baseUrlNote');
+    if (baseNote) {
+        baseNote.textContent = computeBaseUrl();
     }
 
     document.getElementById('btnLogin').addEventListener('click', handleLogin);
