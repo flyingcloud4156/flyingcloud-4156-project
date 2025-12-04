@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pmd xmlns="http://pmd.sourceforge.net/report/2.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://pmd.sourceforge.net/report/2.0.0 http://pmd.sourceforge.net/report_2_0_0.xsd" version="6.55.0" timestamp="2025-12-04T16:56:20.782">
+<file name="/Users/jinyiwang/Desktop/4156project-final/flyingcloud-4156-project/src/main/java/dev/coms4156/project/groupproject/service/impl/LedgerServiceImpl.java">
+<violation beginline="586" endline="591" begincolumn="15" endcolumn="33" rule="AvoidInstantiatingObjectsInLoops" ruleset="Performance" package="dev.coms4156.project.groupproject.service.impl" class="LedgerServiceImpl" method="generateMinCostFlowSettlement" externalInfoUrl="https://pmd.github.io/pmd-6.55.0/pmd_rules_java_performance.html#avoidinstantiatingobjectsinloops" priority="3">
+Avoid instantiating new objects inside loops
+</violation>
+<violation beginline="679" endline="684" begincolumn="13" endcolumn="31" rule="AvoidInstantiatingObjectsInLoops" ruleset="Performance" package="dev.coms4156.project.groupproject.service.impl" class="LedgerServiceImpl" method="processSettlementsWithConstraints" externalInfoUrl="https://pmd.github.io/pmd-6.55.0/pmd_rules_java_performance.html#avoidinstantiatingobjectsinloops" priority="3">
+Avoid instantiating new objects inside loops
+</violation>
+<violation beginline="802" endline="803" begincolumn="47" endcolumn="96" rule="UnusedPrivateMethod" ruleset="Best Practices" package="dev.coms4156.project.groupproject.service.impl" class="LedgerServiceImpl" method="createTransferItem" externalInfoUrl="https://pmd.github.io/pmd-6.55.0/pmd_rules_java_bestpractices.html#unusedprivatemethod" priority="3">
+Avoid unused private methods such as 'createTransferItem(Long,String,Long,String,BigDecimal)'.
+</violation>
+</file>
+<suppressedviolation filename="/Users/jinyiwang/Desktop/4156project-final/flyingcloud-4156-project/src/main/java/dev/coms4156/project/groupproject/service/impl/TransactionServiceImpl.java" suppressiontype="nopmd" msg="Avoid instantiating new objects inside loops" usermsg=" - Must create new object in loop
+"></suppressedviolation>
+<suppressedviolation filename="/Users/jinyiwang/Desktop/4156project-final/flyingcloud-4156-project/src/main/java/dev/coms4156/project/groupproject/service/impl/TransactionServiceImpl.java" suppressiontype="nopmd" msg="Avoid instantiating new objects inside loops" usermsg=" - Must create new object in loop
+"></suppressedviolation>
+<suppressedviolation filename="/Users/jinyiwang/Desktop/4156project-final/flyingcloud-4156-project/src/main/java/dev/coms4156/project/groupproject/service/impl/TransactionServiceImpl.java" suppressiontype="nopmd" msg="Avoid instantiating new objects inside loops" usermsg=" - Must create new object in loop
+"></suppressedviolation>
+</pmd>

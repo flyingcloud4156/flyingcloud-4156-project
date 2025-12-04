@@ -623,7 +623,13 @@ You can run the command to run all the tests and check the coverage report locat
 
 
 ## 10.1 Running Static Analysis
-Run mvn pmd:pmd to generate the static code analysis and check the report in target/site/pmd.html.
+- Tool: PMD 6.55.0 (default Java ruleset). Command: `mvn -B -ntp pmd:pmd`
+- Before/After evidence (in repo): `reports/pmd-before.xml` / `reports/pmd-after.xml` (text copies: `reports/pmd-before.txt`, `reports/pmd-after.txt`)
+- Findings (before): PMD flagged `AvoidInstantiatingObjectsInLoops` in `LedgerServiceImpl` (`generateMinCostFlowSettlement`, `processSettlementsWithConstraints`) where `new TransferItem` was inside loops.
+- Fix applied: refactored to reuse `createTransferItem(...)` helper so no object construction occurs directly in loop bodies.
+- After: PMD re-run shows no `AvoidInstantiatingObjectsInLoops` violations (see `reports/pmd-after.xml`). HTML view also available at `target/site/pmd.html`.
+
+After fixing the bug, now `mvn pmd:pmd` generate clean report.
 ![pmd](images/pmd2.png)
 
 ## 10.2 Style Checking
