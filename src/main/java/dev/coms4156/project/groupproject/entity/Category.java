@@ -5,6 +5,8 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 /**
  * Entity representing a category in the ledger system. Categories are used to group transactions
  * and organize budget allocations.
@@ -19,4 +21,6 @@ public class Category {
   private String name;
   private String kind;
   private Boolean isActive;
+  private LocalDateTime createdAt;
+  private LocalDateTime updatedAt;
 }
