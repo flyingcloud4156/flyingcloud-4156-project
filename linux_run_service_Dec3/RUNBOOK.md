@@ -18,6 +18,12 @@ This document explains how to directly deploy and run the project on a Linux ser
 * Ensure that ports 8081, 3306, and 6379 are available
 * Back up important data before performing cleanup operations
 
+**🚨 CRITICAL DATABASE CONFIGURATION**:
+* **DB_USER MUST be `ledger_user`** (not root)
+* **DB_PASS MUST be empty** `""`
+* Follow database initialization steps in exact order
+* If Spring Boot cannot connect to MySQL, it's almost always a user credential issue
+
 ---
 
 ## System Requirements
@@ -224,17 +230,45 @@ cd  /home/zh2701/flyingcloud-4156-project
 # Or directly copy project files to this directory
 ```
 
-## Step 6:  Create Database
+## Step 6: Create Database and Setup User
+
+### ⚠️ CRITICAL: Database User Configuration
+
+**Spring Boot requires specific database credentials. You MUST configure:**
+
+- **DB_USER**: `ledger_user` (NOT root)
+- **DB_PASS**: `""` (empty password)
 
 ```bash
-# Create database
-sudo mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS ledger CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;"
+# First, connect to MySQL as root (Ubuntu/Debian usually requires sudo)
+sudo mysql -u root
 
-# Import schema
+# Create the required database user
+CREATE USER IF NOT EXISTS 'ledger_user'@'localhost' IDENTIFIED BY '';
+GRANT ALL PRIVILEGES ON ledger.* TO 'ledger_user'@'localhost';
+GRANT ALL PRIVILEGES ON *.* TO 'ledger_user'@'localhost' WITH GRANT OPTION;
+FLUSH PRIVILEGES;
+EXIT;
+```
+
+### Database Initialization (Follow Order Strictly)
+
+```bash
+# 1. DROP existing database (clean slate - ⚠️ THIS DELETES ALL DATA)
+sudo mysql -u root -p -e "DROP DATABASE IF EXISTS ledger;"
+
+# 2. Create fresh database
+sudo mysql -u root -p -e "CREATE DATABASE ledger CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;"
+
+# 3. Import database schema (tables, constraints, indexes)
+cd /home/zh2701/flyingcloud-4156-project
 sudo mysql -u root -p ledger < ops/sql/ledger_flow.sql
 
-# Import seed data (optional)
+# 4. Import seed data (optional - demo users/transactions)
 sudo mysql -u root -p ledger < ops/sql/backup/ledger_big_seed.sql
+
+# 5. Verify setup with correct user
+mysql -u ledger_user -e "USE ledger; SHOW TABLES; SELECT COUNT(*) FROM users;"
 ```
 
 ## Step 7:Build Project
@@ -266,7 +300,7 @@ Group=zh2701
 WorkingDirectory=/home/zh2701/flyingcloud-4156-project
 Environment=SPRING_PROFILES_ACTIVE=prod
 Environment=DB_URL=jdbc:mysql://localhost:3306/ledger?useSSL=false&serverTimezone=America/New_York&characterEncoding=utf8&allowPublicKeyRetrieval=true
-Environment=DB_USER=root
+Environment=DB_USER=ledger_user
 Environment=DB_PASS=
 Environment=REDIS_HOST=localhost
 Environment=REDIS_PORT=6379
@@ -338,13 +372,24 @@ The frontend will be available at `http://localhost:3000` (default serve port).
 If you do not want to create a system service, you can run the applications manually:
 
 ## Backend (Spring Boot)
+```bash
+cd /home/zh2701/flyingcloud-4156-project
+export DB_URL="jdbc:mysql://localhost:3306/ledger?useSSL=false&serverTimezone=America/New_York&characterEncoding=utf8&allowPublicKeyRetrieval=true"
+export DB_USER="ledger_user"
+export DB_PASS=""
+export REDIS_HOST="localhost"
+export REDIS_PORT="6379"
+export REDIS_PASSWORD=""
+export SPRING_PROFILES_ACTIVE="prod"
+mvn spring-boot:run
+```
 
 ```bash
 cd /home/zh2701/flyingcloud-4156-project
 
 # Set environment variables
 export DB_URL="jdbc:mysql://localhost:3306/ledger?useSSL=false&serverTimezone=America/New_York&characterEncoding=utf8&allowPublicKeyRetrieval=true"
-export DB_USER="root"
+export DB_USER="ledger_user"
 export DB_PASS=""
 export REDIS_HOST="localhost"
 export REDIS_PORT="6379"
@@ -464,6 +509,8 @@ sudo systemctl restart flyingcloud-app
 
 ## Application Cannot Connect to Database
 
+**Most Common Issue**: Wrong database user credentials. Spring Boot MUST use `ledger_user` with empty password.
+
 ```bash
 # Check if MySQL is running
 sudo systemctl status mysql
@@ -471,11 +518,17 @@ sudo systemctl status mysql
 # Check MySQL port
 netstat -tlnp | grep 3306
 
-# Test database connection
-mysql -u root -p -e "SELECT 1;"
+# Test database connection with CORRECT user
+mysql -u ledger_user -e "SELECT 1;"
+
+# Verify database exists and has tables
+mysql -u ledger_user -e "USE ledger; SHOW TABLES;"
 
 # Check DB URL in app logs
 sudo journalctl -u flyingcloud-app | grep -i "jdbc\|datasource"
+
+# If connection fails, recreate the user:
+sudo mysql -u root -e "CREATE USER IF NOT EXISTS 'ledger_user'@'localhost' IDENTIFIED BY ''; GRANT ALL PRIVILEGES ON ledger.* TO 'ledger_user'@'localhost'; FLUSH PRIVILEGES;"
 ```
 
 ## Redis Connection Failure
@@ -584,7 +637,7 @@ curl http://localhost:8081/actuator/metrics
 1. **Change default passwords** — never use default root passwords
 2. **Firewall configuration** — only open necessary ports
 3. **SSL certificate** — configure HTTPS for production
-4. **Database users** — create a dedicated DB user for the app; avoid using root
+4. **Database users** — create a dedicated DB user for the app (`ledger_user` with empty password); avoid using root
 5. **Regular backups** — set up automated backup scripts
 6. **Log rotation** — configure rotation to prevent disk from filling up
 
