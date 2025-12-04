@@ -46,8 +46,8 @@ public interface AnalyticsAggMapper {
       AND (t.is_private = 0 OR t.created_by = #{currentUserId})
       AND ts.computed_amount IS NOT NULL
     GROUP BY DATE_FORMAT(t.txn_at, '%Y-%m')
-      ORDER BY period ASC
-      """)
+    ORDER BY period ASC
+    """)
   List<AggRows.MonthlyRow> monthlyStats(
       @Param("ledgerId") Long ledgerId,
       @Param("start") LocalDateTime start,
@@ -69,9 +69,9 @@ public interface AnalyticsAggMapper {
         AND t.type = 'EXPENSE'
         AND (t.is_private = 0 OR t.created_by = #{currentUserId})
       AND ts.computed_amount IS NOT NULL
-      GROUP BY t.category_id, c.name
-      ORDER BY amount DESC
-      """)
+    GROUP BY t.category_id, c.name
+    ORDER BY amount DESC
+    """)
   List<AggRows.CategoryRow> categoryStats(
       @Param("ledgerId") Long ledgerId,
       @Param("start") LocalDateTime start,
@@ -94,8 +94,8 @@ public interface AnalyticsAggMapper {
       AND (t.is_private = 0 OR t.created_by = #{currentUserId})
       AND ts.computed_amount IS NOT NULL
     GROUP BY t.note
-      ORDER BY amount DESC
-      LIMIT #{limit}
+    ORDER BY amount DESC
+    LIMIT #{limit}
       """)
   List<AggRows.MerchantRow> topMerchants(
       @Param("ledgerId") Long ledgerId,
