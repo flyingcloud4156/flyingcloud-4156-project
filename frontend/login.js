@@ -8,13 +8,7 @@ function computeBaseUrl() {
 }
 
 function getBaseUrl() {
-    const el = document.getElementById('baseUrl');
-    const fallback = computeBaseUrl();
-    if (!el) return fallback;
-    const v = (el.value || '').trim();
-    const url = v ? v.replace(/\/$/, '') : fallback;
-    if (!v) el.value = url;
-    return url;
+    return computeBaseUrl();
 }
 
 async function callApi(path, body) {
@@ -105,16 +99,6 @@ async function handleRegister() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Auto-fill baseUrl and show note
-    const baseInput = document.getElementById('baseUrl');
-    if (baseInput) {
-        baseInput.value = computeBaseUrl();
-    }
-    const baseNote = document.getElementById('baseUrlNote');
-    if (baseNote) {
-        baseNote.textContent = computeBaseUrl();
-    }
-
     document.getElementById('btnLogin').addEventListener('click', handleLogin);
     document.getElementById('btnRegister').addEventListener('click', handleRegister);
 });
