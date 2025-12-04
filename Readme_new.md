@@ -582,7 +582,7 @@ All integration tests connect to a real MySQL database instance. Tests use:
 - **Local Development:** MySQL running on `localhost:3306`
 - **GitHub CI:** MySQL 8.0 service container (see CI Integration section)
 - **Schema:** Database schema is initialized from `ops/sql/ledger_flow.sql`
-- **Test Data:** Initial seed data is loaded from `ops/sql/test_data_seed.sql`
+- **Test Data:** Integration tests create their own test data in `@BeforeEach` methods. The `ops/sql/test_data_seed.sql` file is optional and can be used for additional seed data if needed
 - **Isolation:** Each test is wrapped in `@Transactional` annotation, ensuring automatic rollback after test completion
 
 ### Redis
