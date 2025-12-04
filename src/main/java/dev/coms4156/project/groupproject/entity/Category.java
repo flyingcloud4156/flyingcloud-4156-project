@@ -3,9 +3,8 @@ package dev.coms4156.project.groupproject.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import lombok.Data;
-
 import java.time.LocalDateTime;
+import lombok.Data;
 
 /**
  * Entity representing a category in the ledger system. Categories are used to group transactions
