@@ -50,6 +50,7 @@ brew services start redis
 Export the following variables:
 
 ```bash
+kill -9 $(lsof -t -i :8081)
 export DB_URL="jdbc:mysql://localhost:3306/ledger?useSSL=false&serverTimezone=America/New_York&characterEncoding=utf8&allowPublicKeyRetrieval=true"
 export DB_USER="root"
 export DB_PASS="your_mysql_root_password"
@@ -69,6 +70,7 @@ cd /Users/Shared/BackendProject/flyingcloud-4156-project
 
 for example
 ```bash
+kill -9 $(lsof -t -i :8081)
 brew services start redis
 brew services start mysql
 
