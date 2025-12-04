@@ -42,10 +42,9 @@ class CorsConfigTest {
 
     assertNotNull(cfg);
 
-    // Origins
+    // Origins - now allows all patterns for server deployment
     assertNotNull(cfg.getAllowedOriginPatterns());
-    assertTrue(cfg.getAllowedOriginPatterns().contains("http://localhost:[*]"));
-    assertTrue(cfg.getAllowedOriginPatterns().contains("http://127.0.0.1:[*]"));
+    assertTrue(cfg.getAllowedOriginPatterns().contains("*"));
 
     // Methods
     assertNotNull(cfg.getAllowedMethods());
