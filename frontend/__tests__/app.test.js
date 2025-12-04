@@ -1,5 +1,5 @@
 /**
- * Unit tests for frontend/app.js using JSDOM.
+ * Unit tests for frontend/dashboard.js using JSDOM.
  *
  * External dependencies are fully mocked:
  * - fetch: mocked to return controlled JSON
@@ -49,17 +49,17 @@ function buildDom() {
 }
 
 function loadAppJs(window) {
-  const appPath = path.join(__dirname, "..", "app.js");
+  const appPath = path.join(__dirname, "..", "dashboard.js");
   const code = fs.readFileSync(appPath, "utf-8");
   window.eval(code);
 }
 
-describe("frontend/app.js", () => {
+describe("frontend/dashboard.js", () => {
   test("fmt: null/undefined -> '-', numeric string -> 2 decimals, NaN preserved", () => {
     const dom = buildDom();
     const { window } = dom;
 
-    // Mock minimal dependencies required by app.js bootstrap
+    // Mock minimal dependencies required by dashboard.js bootstrap
     window.fetch = jest.fn();
     window.Chart = jest.fn();
 

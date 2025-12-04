@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Ledger Dashboard</title>
+    <link rel="stylesheet" href="./style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div id="layout">
+    <!-- 左侧导航栏 -->
+    <aside class="sidebar">
+        <div class="sidebar-title">MENU</div>
+
+        <button id="btnSidebarNewLedger" class="sidebar-item sidebar-item-highlight">
+            Add new ledger
+        </button>
+
+        <div class="sidebar-section">
+            <div class="sidebar-label muted">Current user: </div>
+            <div id="currentUser" class="muted">Loading...</div>
+        </div>
+
+        <div class="sidebar-section">
+            <button id="btnLogout" class="secondary">Logout</button>
+        </div>
+    </aside>
+
+    <!-- 右侧主区域 -->
+    <main class="main">
+        <div id="app" class="container">
+            <!-- 顶部：ledger 选择 / 删除 / 管理成员 -->
+            <div class="card header-row">
+                <div class="header-item">
+                    <label class="header-label">Ledger</label>
+                    <div class="ledger-select-row">
+                        <select id="ledgerSelect"></select>
+                        <button id="btnReloadLedger" class="btn-icon" title="Reload">
+                            ⟳
+                        </button>
+                    </div>
+                    <div class="muted" id="ledgerMeta"></div>
+                </div>
+
+                <div class="header-item header-buttons">
+                    <button id="btnDeleteLedger" class="btn-danger">Cross-settlement Debts</button>
+                    <button id="btnManageMembers">Manage members</button>
+                </div>
+            </div>
+
+            <!-- Alert 条 -->
+            <div class="card alert-card" id="alertCard">
+                <div id="alertText" class="muted">
+                    No alerts yet. Once we detect over-budget or negative net, it will show up here.
+                </div>
+            </div>
+
+            <!-- 主内容两列布局 -->
+            <div class="content-grid">
+                <!-- 左侧：Transactions 列表 -->
+                <section class="card">
+                    <div class="section-header">
+                        <h2>Transactions</h2>
+                        <button id="btnOpenTxModal">Add transaction</button>
+                    </div>
+
+                    <div class="muted" id="txRangeInfo"></div>
+
+                    <div class="tx-filters">
+                        <div>
+                            <label>Date from</label>
+                            <input id="txFrom" type="date" />
+                        </div>
+                        <div>
+                            <label>Date to</label>
+                            <input id="txTo" type="date" />
+                        </div>
+                        <div>
+                            <label>Type</label>
+                            <select id="txTypeFilter">
+                                <option value="">All</option>
+                                <option value="EXPENSE">Expense</option>
+                                <option value="INCOME">Income</option>
+                                <option value="LOAN">Loan</option>
+                            </select>
+                        </div>
+                        <div class="align-end">
+                            <button id="btnLoadTx">Reload</button>
+                            <button id="btnClear">Clear</button>
+                        </div>
+                    </div>
+
+                    <div class="table-wrapper">
+                        <table id="txTable">
+                            <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Note</th>
+                                <th class="right">Amount</th>
+                                <th class="right">Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                        <div id="txEmpty" class="muted mt8 hidden">
+                            No transactions yet. Click “Add transaction” to create the first one.
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 右侧：收入/支出统计 + 分类饼图 -->
+                <section class="right-column">
+                    <div class="card">
+                        <div class="section-header">
+                            <h2>Income / Expense 统计</h2>
+                        </div>
+
+                        <div class="budget-banner" id="budgetBanner">
+                            <span id="budgetText">
+                                Budget: <span id="budgetValue">—</span>
+                            </span>
+
+                            <button id="editBudgetBtn" class="secondary small-btn">
+                                Edit
+                            </button>
+
+                            <form id="budgetForm" class="inline-form hidden">
+                                <input
+                                        type="number"
+                                        id="budgetInput"
+                                        min="0"
+                                        step="0.01"
+                                        placeholder="Set monthly budget"
+                                />
+                                <button type="submit">Save</button>
+                                <button type="button" id="cancelBudgetBtn">Cancel</button>
+                            </form>
+                        </div>
+
+
+                        <canvas id="incomeExpenseChart" height="140"></canvas>
+                    </div>
+
+                    <div class="card">
+                        <div class="section-header">
+                            <h2>Expense by Category</h2>
+                        </div>
+                        <canvas id="catChart" height="180"></canvas>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- 新建 transaction 弹层 -->
+<div id="txModal" class="overlay hidden">
+    <div class="overlay-backdrop"></div>
+    <div class="overlay-content card modal">
+        <div class="modal-header">
+            <h2>Create transaction</h2>
+            <button class="btn-icon" id="btnCloseTxModal">✕</button>
+        </div>
+
+        <div class="row">
+            <label>Type</label>
+            <select id="txType">
+                <option value="EXPENSE">Expense</option>
+                <option value="INCOME">Income</option>
+                <option value="LOAN">Loan</option>
+            </select>
+        </div>
+
+        <div class="row">
+            <label>Amount</label>
+            <input id="txAmount" type="number" step="0.01" />
+        </div>
+
+        <div class="row">
+            <label>Category</label>
+            <select id="txCategorySelect">
+                <option value="">Uncategorized</option>
+            </select>
+        </div>
+
+        <div class="row">
+            <label>Currency</label>
+            <input id="txCurrency" value="USD" />
+        </div>
+
+
+        <div class="row">
+            <label>Date / time</label>
+            <input id="txDatetime" type="datetime-local" />
+        </div>
+
+        <div class="row">
+            <label>Payer</label>
+            <select id="txPayerSelect"></select>
+        </div>
+
+        <div class="row">
+            <label>Note</label>
+            <input id="txNote" placeholder="e.g. Dinner, Uber..." />
+        </div>
+
+        <div class="row">
+            <label>Split method</label>
+            <select id="txSplitMethod">
+                <option value="EQUAL">Equal shares</option>
+                <option value="EXACT">Exact amounts</option>
+                <option value="PERCENT">Percent of total</option>
+                <option value="WEIGHT">Weighted shares</option>
+            </select>
+        </div>
+
+        <div class="modal-subtitle">Splits</div>
+        <div id="splitList" class="split-list"></div>
+
+
+        <div class="modal-footer">
+            <div id="txModalMsg" class="muted"></div>
+            <button id="btnSubmitTx">Create</button>
+        </div>
+    </div>
+</div>
+
+<!-- 新建 ledger 弹层 -->
+<div id="ledgerModal" class="overlay hidden">
+    <div class="overlay-backdrop"></div>
+    <div class="overlay-content card modal modal-medium">
+        <div class="modal-header">
+            <h2>Create new ledger</h2>
+            <button class="btn-icon" id="btnCloseLedgerModal">✕</button>
+        </div>
+
+        <div class="row">
+            <label>Name</label>
+            <input id="newLedgerName" placeholder="Family 2025" />
+        </div>
+
+        <div class="row">
+            <label>Type</label>
+            <select id="newLedgerType">
+                <option value="GROUP_BALANCE">GROUP_BALANCE</option>
+                <option value="ONE_TO_ONE">ONE_TO_ONE</option>
+            </select>
+        </div>
+
+        <div class="row">
+            <label>Base currency</label>
+            <input id="newLedgerCurrency" value="USD" />
+        </div>
+
+        <div class="row">
+            <label>Categories</label>
+            <div class="category-field">
+                <input
+                        id="newLedgerCategoryInput"
+                        placeholder="Type category and press Enter"
+                />
+                <div id="newLedgerCategoryChips" class="category-chips"></div>
+            </div>
+        </div>
+
+        <div class="row">
+            <label>Share start date</label>
+            <input id="newLedgerStartDate" type="date" />
+        </div>
+
+        <div class="modal-footer">
+            <div id="ledgerModalMsg" class="muted"></div>
+            <button id="btnCreateLedger">Create</button>
+        </div>
+    </div>
+</div>
+
+<!-- 成员管理弹层 -->
+<div id="memberModal" class="overlay hidden">
+    <div class="overlay-backdrop"></div>
+    <div class="overlay-content card modal modal-medium">
+        <div class="modal-header">
+            <h2>Manage members</h2>
+            <button class="btn-icon" id="btnCloseMemberModal">✕</button>
+        </div>
+
+        <div class="row">
+            <label>Add a member (email)</label>
+            <div class="inline-input">
+                <input id="memberEmail" placeholder="friend@example.com" />
+                <button id="btnAddMember">Add</button>
+            </div>
+        </div>
+
+        <div id="memberModalMsg" class="muted"></div>
+
+        <div class="modal-subtitle">Current members</div>
+        <div id="memberList" class="member-list"></div>
+    </div>
+</div>
+<!-- 结算方案弹层 -->
+<div id="settlementModal" class="overlay hidden">
+    <div class="overlay-backdrop"></div>
+    <div class="overlay-content card modal modal-medium">
+        <div class="modal-header">
+            <h2>Debt Settlement Plan</h2>
+            <button class="btn-icon" id="btnCloseSettlementModal">✕</button>
+        </div>
+
+        <!-- 模式切换：默认 / 高级 -->
+        <div class="settlement-mode-row">
+            <span class="settlement-mode-label">Use advanced options</span>
+            <label class="ios-switch">
+                <input type="checkbox" id="settlementAdvancedToggle" />
+                <span class="ios-slider"></span>
+            </label>
+        </div>
+
+        <!-- 提示 / 错误信息 -->
+        <div id="settlementModalMsg" class="muted"></div>
+
+        <!-- 可折叠的高级设置区 -->
+        <div id="settlementAdvancedPanel" class="settlement-advanced hidden collapsed">
+            <div class="settlement-advanced-header">
+                <span>Advanced settings</span>
+                <span class="arrow">&gt;</span>
+            </div>
+
+            <div class="settlement-advanced-body">
+                <!-- 1. Rounding strategy -->
+                <label class="field">
+                    <span>Rounding strategy</span>
+                    <select id="settlementRoundingStrategy">
+                        <option value="ROUND_HALF_UP">Round half up (default)</option>
+                        <option value="TRIM_TO_UNIT">Trim to unit</option>
+                        <option value="NONE">No rounding</option>
+                    </select>
+                </label>
+
+                <!-- 2. Max transfer amount -->
+                <label class="field">
+                    <span>Max transfer per transaction</span>
+                    <div class="input-with-addon">
+                        <span class="addon">$</span>
+                        <input
+                                id="settlementMaxTransfer"
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                placeholder="Empty = no cap"
+                        />
+                    </div>
+                </label>
+
+                <!-- 3. Force min-cost flow -->
+                <label class="field-inline">
+                    <input type="checkbox" id="settlementForceMinCostFlow" />
+                    <span id="algorithm-title">Force min-cost flow algorithm</span>
+                </label>
+
+                <!-- 4. Threshold for min-cost flow -->
+                <label class="field">
+                    <span>Fallback to min-cost flow if transfers &gt;</span>
+                    <input
+                            id="settlementMinCostFlowThreshold"
+                            type="number"
+                            min="1"
+                            step="1"
+                            placeholder="e.g., 10 (optional)"
+                    />
+                </label>
+            </div>
+        </div>
+
+        <!-- 生成按钮 -->
+        <div class="settlement-actions">
+            <button id="btnGenerateSettlement" class="primary full-width">
+                Generate settlement plan
+            </button>
+        </div>
+
+        <!-- 展示结果列表 -->
+        <div class="modal-subtitle">Settlement plan</div>
+        <ul id="settlementList" class="settlement-list"></ul>
+    </div>
+</div>
+
+<!-- 交易详情弹层（只读） -->
+<div id="txDetailModal" class="overlay hidden">
+    <div class="overlay-backdrop"></div>
+    <div class="overlay-content card modal modal-medium">
+        <div class="modal-header">
+            <h2>Transaction details</h2>
+            <button class="btn-icon" id="btnCloseTxDetailModal">✕</button>
+        </div>
+
+        <div class="row">
+            <label>Type</label>
+            <div id="txDetailType" class="muted"></div>
+        </div>
+
+        <div class="row">
+            <label>Amount</label>
+            <div id="txDetailAmount" class="muted"></div>
+        </div>
+
+        <div class="row">
+            <label>Currency</label>
+            <div id="txDetailCurrency" class="muted"></div>
+        </div>
+
+        <div class="row">
+            <label>Date / time</label>
+            <div id="txDetailDatetime" class="muted"></div>
+        </div>
+
+        <div class="row">
+            <label>Payer</label>
+            <div id="txDetailPayer" class="muted"></div>
+        </div>
+
+        <div class="row">
+            <label>Category</label>
+            <div id="txDetailCategory" class="muted"></div>
+        </div>
+
+        <div class="row">
+            <label>Note</label>
+            <div id="txDetailNote" class="muted"></div>
+        </div>
+
+        <div class="modal-subtitle">Splits</div>
+        <div id="txDetailSplits" class="split-list"></div>
+    </div>
+</div>
+
+<script src="./dashboard.js"></script>
+</body>
+</html>
