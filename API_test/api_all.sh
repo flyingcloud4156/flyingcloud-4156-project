@@ -62,7 +62,8 @@ if [[ -n "$DB_PASS" ]]; then
 fi
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
-PROJECT_ROOT=$(cd "${SCRIPT_DIR}/../.." && pwd)
+# Repo root: one level up from API_test (works locally and in GitHub Actions)
+PROJECT_ROOT=$(cd "${SCRIPT_DIR}/.." && pwd)
 
 DB_BIG_SEED_FILE="${PROJECT_ROOT}/ops/sql/backup/ledger_big_seed.sql"
 SCHEMA_FILE="${PROJECT_ROOT}/ops/sql/ledger_flow.sql"
