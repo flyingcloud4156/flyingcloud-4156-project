@@ -307,7 +307,7 @@ This document details all equivalence partitions tested for each API endpoint in
 
 | Partition ID | Partition Type | Input Description | Test Case | Expected Result | Test File |
 |--------------|----------------|-------------------|-----------|-----------------|-----------|
-| ANALYTICS-V1 | Valid | Valid months (1-24) | ANALYTICS-OVERVIEW-VALID | HTTP 200, analytics data | api_negative.sh |
+| ANALYTICS-V1 | Valid | Valid months (1-24) | ANALYTICS-OVERVIEW-VALID | HTTP 200, analytics data | api_negative.sh, API_test/api_all.sh |
 | ANALYTICS-B1 | Boundary | months=0 (clamp to 3) | ANALYTICS-MONTHS-ZERO | HTTP 200, 3 periods | api_negative.sh |
 | ANALYTICS-B2 | Boundary | months>24 (clamp to 24) | ANALYTICS-MONTHS-ABOVE-MAX | HTTP 200, 24 periods | api_negative.sh |
 | ANALYTICS-I1 | Invalid | Non-member access | ANALYTICS-AS-NON-MEMBER | HTTP 403, forbidden | api_negative.sh |
@@ -371,19 +371,19 @@ All tests can be run with:
 
 ```bash
 # Test Suite for first iteration. Other 4 tests files are for second iterations.
-bash ops/test/api_tests_iteration1.sh
+bash API_test/api_tests_iteration1.sh
 
 # Negative and boundary tests
-HOST=http://localhost:8081 bash ops/test/api_negative.sh
+HOST=http://localhost:8081 bash API_test/api_negative.sh
 
 # Budget API tests
-HOST=http://localhost:8081 bash ops/test/api_budget_tests.sh
+HOST=http://localhost:8081 bash API_test/api_budget_tests.sh
 
 # Settlement execution tests
-HOST=http://localhost:8081 bash ops/test/api_settlement_execution_tests.sh
+HOST=http://localhost:8081 bash API_test/api_settlement_execution_tests.sh
 
-# Automated suite with DB reset
-HOST=http://localhost:8081 bash ops/test/api_all.sh
+# Automated suite with DB reset (covers analytics overview happy-path)
+HOST=http://localhost:8081 bash API_test/api_all.sh
 ```
 
 
