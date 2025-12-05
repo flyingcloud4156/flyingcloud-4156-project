@@ -1,13 +1,30 @@
+# COMS-4156-Project
+This is the GitHub repository for the **service portion** of the Team Project associated with COMS 4156 Advanced Software Engineering. Our team name is flycloud and the following are our members: Ziheng Huang, Zhelin Fan, Jingyi Wang, and Haokun Wu.
+
 # 1. Project Overview
+It is a financial management and settlement service that streamlines expense tracking, budgeting, and multi-party debt settlement(). 
+  It allows users to record, categorize, and analyze transactions through a unified API that supports different clients—from personal trip-splitting and dorm bill apps to workplace reimbursement systems. 
+  Built with Java 17 and Spring Boot, it integrates PostgreSQL/MySQL databases, offers documented RESTful APIs via Swagger UI, and supports automated testing and deployment through Docker and Google Cloud.
 
-（原章节保留，扩展以下要点）
+The following summarizes the implementation status relative to our original proposal. Detailed descriptions of each feature remain in the original proposal document.
+### **Implemented**
 
-- 服务简介（现有内容保留）
-- 本服务如何满足课程五大前提要求（useful computation、多客户端、persistent datastore、API、logging）
-- 第二次迭代新增/变更的功能说明（若有）
-- 若某些第一迭代提案内容被删减，需在本节解释原因（课程要求）
+- Budget management & alerts
+- Cross-settlement for N-party debts
+- Analytics & visualization
+- Rule-based recommendations (non-AI)
 
-------
+### **Not Implemented / Removed**
+
+- Bill parsing (OCR / AI-based)
+- Automatic categorization (AI-based)
+
+### **Reason for Removing AI Components**
+
+We removed all AI-dependent features because they introduce non-deterministic behavior and make rigorous testing difficult, which is not aligned with the course requirements.
+The remaining feature set fully supports a complete and testable workflow.
+We have consulted the professor regarding this adjustment, and received approval to proceed with removing the AI components.
+
 
 # 2. Building and Running Instructions
 
@@ -35,7 +52,6 @@
 - 如何验证部署在云端的实例正在运行
 - 导师访问方式（无需账号则说明）
 
-------
 
 # 3. API Documentation
 
@@ -254,62 +270,272 @@
 
 # 4. Client Application
 
-（课程要求新加入，原 README 中没有，需要作为一级大节加入）
 
 ## 4.1 Where the Client Code Lives
 
-- 如果客户端代码在同 repo：给出路径（如 `/frontend`）
-- 如果单独 repo：提供 URL
+You can find the client code in 'flyingcloud-4156-project/frontend'.
+
+![img.png](images/client_code_place.png)
 
 ## 4.2 What the Client Does
 
-- 描述 UI、登录流程、ledger 选择、添加交易、预算可视化等
-- 描述客户端依赖哪些 API
+The client is a lightweight web application that demonstrates how users interact with the service.
+It provides:
+
+- **User authentication** (login flow using the service’s auth API)
+- **Ledger selection and management**
+- **Creating and viewing transactions**, including split details
+- **Budget visualization**, showing spending and alert messages returned from the API
+- **Analytics display** such as category breakdowns and spending trends
+- **Flexible Settlement plan rendering** based on backend-generated results
+
+These interactions are all performed by invoking the service’s REST API endpoints.
 
 ## 4.3 Building & Running the Client
 
-- 如何启动前端（例如 `serve .`）
-- 如何配置 base URL 指向：
-  - 本地后端
-  - 云端后端
-- 同时运行多个客户端实例的方法（rubric 要求）
+From the frontend directory, you may start a local development server using any static file server.
+
+```
+npm start
+```
+If you use the frontend on the cloud side, just use the link(http://136.114.83.248:3000/) to enter the login page
 
 ## 4.4 How Multiple Client Instances Interact with the Service
 
-- 服务如何识别不同客户端（access token → user identity）
-- 多客户端对共享 ledger 的读写方式说明
+- Client identification
+Each client instance obtains its own access token after login.
+The service distinguishes clients entirely based on the access token, which encodes user identity.
+No client-side session sharing is required.
+- How to test multiple instances of the client connect to the service at the same time 
+Remember to use **two different browser** to test due to that a browser will have a same localStorage.
+When you refresh a browser. Two windows(login with different user info) will become one user's window.
+- Shared ledger interactions
+Multiple clients can view or modify the same ledger concurrently.
+The service ensures consistency through persistent storage (MySQL/Cloud SQL), so updates from one client become visible to others when they refresh or make subsequent API calls.
 
-------
 
 # 5. End-to-End Client/Service Testing
 
-（课程要求，原 README 部分内容需迁移整理）
 
 ## 5.1 Purpose
 
-- 客户端如何调用服务端形成 E2E 测试
-- 手动/半自动均可（rubric 允许）
+The goal of our end-to-end (E2E) tests is to validate the **entire workflow** from the user's perspective:
 
-## 5.2 E2E Test Checklist（必须有）
+- A user interacts only with the **HTML/JavaScript client** (`index.html` for login and `dashboard.html` for the main UI).
+- The client issues real HTTP requests (via `fetch`) to the deployed service API.
+- The service executes the full business logic, persists data in the database, and returns results.
+- The client renders these results back into the UI (tables, charts, budget banner, settlement modal, etc.).
 
-例如：
+These tests treat the system as a **black box**: we do not call service methods or APIs directly during E2E testing.
+Instead, we drive the browser UI and observe the visible outcomes. The tests are **manual but deterministic**, as allowed by the course requirements.
 
-1. 注册用户 A、B
-2. Login
-3. A 创建 ledger
-4. 添加成员 B
-5. A 创建一笔 expense
-6. 客户端 UI 显示交易列表
-7. 客户端显示预算状态
-8. 客户端点击 settlement → 调用 settlement API
 
-## 5.3 How to Run E2E Tests
+## 5.2 E2E Test Checklist
 
-- 先启动后端
-- 再启动客户端
-- 手动执行 checklist
+The following scenarios form our manual E2E regression checklist. They are designed to be followed step-by-step in a browser.
 
-------
+#### Scenario A – Single-User Ledger & Analytics Workflow
+
+1. **Open the login page**
+
+    - Local: 
+      Use link(http://localhost:3000) to enter the login page.
+    - Cloud:
+      Use link() to enter the login page. 
+2. **Log in as an existing user (e.g., Alice)**
+
+    - Enter a valid email and password(Set as ‘Passw0rd!’).
+    - Click **Login**.
+    - Verify that the client redirects to `dashboard.html`.
+
+3. **Verify current user**
+
+    - On the left sidebar, check **“Current user:”**.
+    - Confirm it shows `Alice` (or the logged-in user name), proving the token is valid and the client can fetch user info.
+
+4. **Create a new ledger**
+
+    - In the left sidebar, click **“Add new ledger”**.
+    - The **“Create new ledger”** modal appears in the center.
+    - Fill in the form:
+        - **Name:** e.g., `Family 2025`
+        - **Type:** `GROUP_BALANCE`
+        - **Base currency:** `USD`
+        - **Categories:** type category names such as `Food`, `Gas`, `Entertainment`, pressing Enter after each
+        - **Share start date:** keep the default date
+    - Click **Create**.
+    - Verify:
+        - The new ledger appears in the **“Ledger”** dropdown at the top.
+        - The ledger info box shows the correct type (`GROUP_BALANCE`), currency (`USD`), and role (`OWNER`).
+
+5. **Create a new expense transaction**
+
+    - Ensure the newly created ledger is selected in the **“Ledger”** dropdown.
+    - Click **“Add transaction”** on the **Transactions** panel.
+    - The **“Create transaction”** modal appears.
+    - Fill in:
+        - **Type:** `Expense`
+        - **Amount:** e.g., `100`
+        - **Category:** choose one of the categories (e.g., `Gas`)
+        - **Currency:** `USD`
+        - **Date / time:** keep the pre-filled current date/time
+        - **Payer:** `Alice`
+        - **Note:** e.g., `Gas – Nov 18`
+        - **Split method:** `Equal shares`
+        - **Splits:** make sure all members are checked in the list (Alice, Bob, Charlie, Diana if present)
+    - Click **Create**.
+    - Verify:
+        - The modal closes without error.
+        - A new row appears in the **Transactions** table with the correct **Date**, **Type = EXPENSE**, **Note**, and **Amount**.
+
+6. **Inspect transaction details**
+
+    - In the **Transactions** table, find the row just created.
+    - Click the **“View”** button in the **Actions** column.
+    - The **“Transaction details”** modal appears.
+    - Verify:
+        - Type, Amount, Currency, Date/time, Payer, Category, and Note match what was entered.
+        - The **Splits** list shows each user with the correct share (e.g., 25.00 USD each for four users with equal shares).
+
+7. **Verify budget banner**
+
+    - Above the Transactions panel, look at the **budget / status banner** (e.g., `Budget: …` or `SPEND_TOO_HIGH: Expenses …`).
+    - When a new ledger is created, its original budget is 0. User can set it after creation.
+    - Verify that:
+        - The total expense value includes the newly created transaction.
+        - If thresholds are configured, the status text changes appropriately (e.g., from normal to `SPEND_TOO_HIGH`).
+
+8. **Edit ledger budget** *(from original Scenario C)*
+
+   - Click **Edit** on the budget banner
+   - Enter a new amount (e.g., 300)
+   - Save
+   - Verify:
+       - Banner updates
+       - Status text recalculated
+       - Charts still correct after budget changes
+     
+9. **Verify analytics charts**
+
+    - On the right side of the dashboard:
+        - Check the **“Income / Expense Analytics”** line chart:
+            - The **Expense** line should include the new split expense(total 100 USD) in the appropriate month.
+        - Check the **“Expense by Category”** pie chart:
+            - The `Gas` part value is changed(You can compare with the value before a new transaction is added).
+    - This confirms that analytics endpoints are called and the client correctly visualizes the returned data.
+
+10. **Logout**
+
+    - In the left sidebar, click **Logout**.
+    - Verify that:
+        - The access token is cleared (no authenticated requests succeed afterward).
+        - The browser is redirected back to `index.html`.
+
+
+#### Scenario B – Members & Debt Settlement Workflow
+
+1. **Log in and select an existing shared ledger**
+
+    - Log in again as **Alice** and go to `dashboard.html`.
+    - In the **“Ledger”** dropdown, select a ledger that already has multiple members and transactions (e.g., `Road Trip Demo (USD)`).
+
+2. **Manage members**(Only `OWNER` has this right.)
+
+    - Click the **“Manage members”** button at the top right of the ledger section.
+    - The **“Manage members”** modal appears.
+    - In **“Add a member (email)”**, enter a valid email (e.g., `gina@example.com`) and click **Add**.
+    - Verify:
+        - The new member appears in the **Current members** list with the appropriate role (e.g., `EDITOR`).
+    - In the same modal, **Remove an existing member**
+        - In the same modal, click ✕ next to a non-owner member
+        - Confirm dialog
+        - Verify the member disappears from the list
+3. **Delete an existing transaction** *(from original Scenario C)*
+
+   - In the **Transactions** table, click **✕** on `Expense` transaction
+   - Confirm deletion
+   - Verify:
+       - Row disappears
+       - Budget banner updates
+       - Analytics charts update accordingly
+
+4. **Open the settlement plan**
+
+    - Click the **“Cross-settlement Debts”** button.
+    - The **“Debt Settlement Plan”** modal appears.
+    - Verify:
+        - The header shows the ledger currency and number of transfers.
+        - A default settlement plan is shown at the bottom (list of “X → Y – amount” rows) based on current balances.
+
+5. **Use advanced settlement options**
+
+    - Toggle **“Use advanced options”** to ON.
+    - In **Advanced settings**, adjust:
+        - **Rounding strategy** (e.g., `Round half up (default)`).
+        - **Max transfer per transaction** (optional; leave empty for no cap; e.g., `50`).
+        - Optionally check **“Force min-cost flow algorithm”** or set a threshold for fallback.
+    - Click **“Generate settlement plan”**.
+    - Verify:
+        - A settlement plan is regenerated.
+        - The list of transfers at the bottom updates and remains consistent (total paid by debtors equals total received by creditors).
+
+6. **Close all modals**
+
+    - Close the **Debt Settlement Plan** modal.
+    - Confirm the dashboard returns to the normal state without errors.
+
+
+
+#### APIs Exercised by the E2E Tests
+
+The manual E2E scenarios above exercise the following plausible service endpoints:
+
+1. **POST** `/api/v1/auth/login` – user login
+2. **GET** `/api/v1/users/me` – fetch current user profile
+3. **GET** `/api/v1/user-lookup` – look up a user by email before adding as member
+4. **POST** `/api/v1/auth/logout` - user logout
+5. **GET** `/api/v1/ledgers/mine` – list ledgers the user belongs to
+6. **POST** `/api/v1/ledgers` – create a new ledger
+7. **GET** `/api/v1/ledgers/{ledgerId}` – fetch ledger metadata
+8. **GET** `/api/v1/ledgers/{ledgerId}/transactions` – list transactions for the ledger
+9. **POST** `/api/v1/ledgers/{ledgerId}/transactions` – create a new transaction with splits
+10. **GET** `/api/v1/ledgers/{ledgerId}/transactions/{txId}` – view full transaction details
+11. **DELETE** `/api/v1/ledgers/{ledgerId}/transactions/{txId}` – delete a transaction
+12. **GET** `/api/v1/ledgers/{ledgerId}/members` – list ledger members
+13. **POST** `/api/v1/ledgers/{ledgerId}/members` – add a member to the ledger
+14. **DELETE** `/api/v1/ledgers/{ledgerId}/members/{userId}` – remove a member
+15. **GET** `/api/v1/ledgers/{ledgerId}/settlement-plan` – fetch default settlement plan
+16. **POST** `/api/v1/ledgers/{ledgerId}/settlement-plan` – generate advanced settlement plan with custom config
+17. **POST** `/api/v1/ledgers/{ledgerId}/budgets` – set or update the monthly budget
+18. **GET** `/api/v1/ledgers/{ledgerId}/budgets/status?year={YYYY}&month={MM}` – retrieve current month budget status
+19. **GET** `/api/v1/ledgers/{ledgerId}/analytics/overview?months=3` – fetch analytics overview for dashboard charts
+20. **POST** `/api/v1/auth/register` - user register(implemented and test well but hard to contain it in workflow)
+
+### 5.3 How to Run E2E Tests
+
+1. **Start the backend and client**
+    - Local:
+      Use the following command to start the backend:
+      ```bash
+      ./mvnw spring-boot:run
+      ```
+      Use the following command to start the frontend. Then use link(http://localhost:3000) to enter the login page.
+      ```bash
+      npm start
+      ```
+   - Cloud:
+     Use link() to enter the login page.
+
+2. **Execute the scenarios**
+    - Follow **Scenario A** and **Scenario B** step-by-step.
+
+3. **See Interaction between clients**
+    - Remember to use **two different browser** to test due to that a browser will have a same localStorage.
+      When you refresh a browser. Two windows(login with different user info) will become one user's window.
+
+These scenarios together constitute our manual E2E test suite and can be re-run after changes to verify the full client–service workflow.
+
+
 
 # 6. Unit Testing
 
