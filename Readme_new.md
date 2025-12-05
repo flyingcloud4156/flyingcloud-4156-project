@@ -897,16 +897,9 @@ We used the command <code>mvn checktyle:check</code> to check the style of our c
 
 # 12. Project Management
 
-（原 README 缺乏 → 需要补充）
+We use Github Project for project management and created tasks for each team member at the start of sprint. And use status including backlog, ready, in progress, in review, and done to illustrate the progress of the task.
 
-## 12.1 Tool Used
-
-- GitHub Projects / Jira / Trello（你们团队使用哪一个）
-
-## 12.2 Workflow
-
-- To-do → In progress → Done
-- 每位成员负责内容（rubric 要求）
+The Kanban board is here: https://github.com/orgs/flyingcloud4156/projects/4
 
 ------
 
