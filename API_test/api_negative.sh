@@ -68,13 +68,16 @@ need mvn
 start_spring_app() {
   echo "Starting Spring Boot application in background..."
   echo "Working directory: $PROJECT_ROOT"
-  echo "Profile: $SPRING_PROFILES"
+  echo "Profile: ${SPRING_PROFILES:-test}"
+
+  # Avoid set -u trap after unset: capture profile first
+  local PROFILE_VAL="${SPRING_PROFILES:-test}"
 
   # [IMPORTANT] Avoid legacy SPRING_PROFILES property (invalid in Boot 3)
   unset SPRING_PROFILES
 
   # Set environment variables for Spring Boot (use standard Spring props)
-  export SPRING_PROFILES_ACTIVE="$SPRING_PROFILES"
+  export SPRING_PROFILES_ACTIVE="$PROFILE_VAL"
   export SPRING_DATASOURCE_URL="${SPRING_DATASOURCE_URL:-jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?useSSL=false&serverTimezone=America/New_York&characterEncoding=utf8&allowPublicKeyRetrieval=true}"
   export SPRING_DATASOURCE_USERNAME="${SPRING_DATASOURCE_USERNAME:-$DB_USER}"
   export SPRING_DATASOURCE_PASSWORD="${SPRING_DATASOURCE_PASSWORD:-$DB_PASS}"
