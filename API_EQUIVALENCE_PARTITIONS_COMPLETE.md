@@ -307,13 +307,17 @@ This document details all equivalence partitions tested for each API endpoint in
 
 | Partition ID | Partition Type | Input Description | Test Case | Expected Result | Test File |
 |--------------|----------------|-------------------|-----------|-----------------|-----------|
-| ANALYTICS-V1 | Valid | Valid months (1-24) | ANALYTICS-OVERVIEW-VALID | HTTP 200, analytics data | api_negative.sh, API_test/api_all.sh |
-| ANALYTICS-B1 | Boundary | months=0 (clamp to 3) | ANALYTICS-MONTHS-ZERO | HTTP 200, 3 periods | api_negative.sh |
-| ANALYTICS-B2 | Boundary | months>24 (clamp to 24) | ANALYTICS-MONTHS-ABOVE-MAX | HTTP 200, 24 periods | api_negative.sh |
+| ANALYTICS-V1 | Valid (Typical) | months within 1-24; member; public txns | ANALYTICS-OVERVIEW-VALID | HTTP 200, totals/trend/category/arap returned | api_negative.sh, API_test/api_all.sh |
+| ANALYTICS-B1 | Boundary | months=0 (default to 3) | ANALYTICS-MONTHS-ZERO | HTTP 200, exactly 3 periods | api_negative.sh |
+| ANALYTICS-B2 | Boundary | months>24 (cap to 24) | ANALYTICS-MONTHS-ABOVE-MAX | HTTP 200, exactly 24 periods | api_negative.sh |
+| ANALYTICS-F1 | Functional | Expense > income triggers recommendation | ANALYTICS-SPEND-TOO-HIGH | HTTP 200, recommendations includes SPEND_TOO_HIGH | api_negative.sh, API_test/api_all.sh |
+| ANALYTICS-F2 | Functional | Category name blank/null => “Uncategorized”, ratio zero when totalExpense=0 | ANALYTICS-CATEGORY-UNCAT | HTTP 200, category list normalized | api_negative.sh |
+| ANALYTICS-F3 | Functional | AR/AP merge + sort (AR-AP desc) with disjoint AR/AP users | ANALYTICS-ARAP-MERGE | HTTP 200, users merged and sorted by net | api_negative.sh |
+| ANALYTICS-P1 | Privacy | Private txn created by others excluded | ANALYTICS-PRIVACY-FILTER | HTTP 200, private rows filtered | api_negative.sh |
 | ANALYTICS-I1 | Invalid | Non-member access | ANALYTICS-AS-NON-MEMBER | HTTP 403, forbidden | api_negative.sh |
 | ANALYTICS-I2 | Invalid | Unknown ledger | ANALYTICS-UNKNOWN-LEDGER | HTTP 404, not found | api_negative.sh |
 
-**Total Partitions**: 5 (1 valid, 2 boundary, 2 invalid)
+**Total Partitions**: 9 (4 functional/valid, 2 boundary, 1 privacy, 2 invalid)
 
 ---
 
@@ -384,6 +388,22 @@ HOST=http://localhost:8081 bash API_test/api_settlement_execution_tests.sh
 
 # Automated suite with DB reset (covers analytics overview happy-path)
 HOST=http://localhost:8081 bash API_test/api_all.sh
+
+# Full CI pipeline (runs API scripts + mvn verify with integration tests)
+gh workflow run ci.yml   # or push/PR triggers
 ```
+
+---
+
+## CI & Integration Coverage
+
+- GitHub Actions workflow `.github/workflows/ci.yml` provisions MySQL + Redis, loads schema/seed, runs all API bash suites (`api_all.sh`, `api_negative.sh`, `api_budget_tests.sh`, `api_settlement_execution_tests.sh`, `api_tests_iteration1.sh`, `test_ledger_filtering.sh`), then executes `mvn clean verify` which includes Surefire (unit) + Failsafe (integration) tests.
+- Integration tests hitting shared data paths:
+  - `integration/AnalyticsDatabaseIntegrationTest`: AnalyticsService → AnalyticsAggMapper → DB (income/expense, trend, categories, AR/AP, multi-user joins).
+  - `integration/TransactionDatabaseIntegrationTest`, `TransactionBudgetIntegrationTest`: transaction write paths, budget linkage.
+  - `LedgerDatabaseIntegrationTest`, `LedgerMemberDatabaseIntegrationTest`, `UserDatabaseIntegrationTest`, `CurrencyDatabaseIntegrationTest`, `BudgetMapperDatabaseIntegrationTest`: ledger/membership/user/currency/budget cross-table flows.
+  - `controller/AnalyticsControllerLoggingTest`: MockMvc with AuthInterceptor + AccessLogInterceptor (token->Redis) for analytics endpoint.
+
+These ensure the patched analytics endpoint and related cross-class/shared-data flows are exercised automatically in CI.
 
 
