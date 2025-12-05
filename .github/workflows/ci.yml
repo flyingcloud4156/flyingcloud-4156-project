@@ -124,6 +124,28 @@ jobs:
           SPRING_REDIS_HOST: 127.0.0.1
           SPRING_REDIS_PORT: 6379
 
+      - name: Run API tests (api_all)
+        run: |
+          cd API_test
+          HOST=http://127.0.0.1:8081 \
+          DB_HOST=127.0.0.1 \
+          DB_PORT=3306 \
+          DB_USER=root \
+          DB_PASS=root \
+          SPRING_PROFILES=test \
+          ./api_all.sh
+
+      - name: Run API tests (api_negative)
+        run: |
+          cd API_test
+          HOST=http://127.0.0.1:8081 \
+          DB_HOST=127.0.0.1 \
+          DB_PORT=3306 \
+          DB_USER=root \
+          DB_PASS=root \
+          SPRING_PROFILES=test \
+          ./api_negative.sh
+
       - name: Upload test and coverage reports
         uses: actions/upload-artifact@v4
         with:
