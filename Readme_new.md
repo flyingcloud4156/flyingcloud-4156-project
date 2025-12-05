@@ -703,7 +703,13 @@ HOST=http://localhost:8081 ./api_all.sh
 HOST=http://localhost:8081 ./api_negative.sh
 ```
 
-CI automation: GitHub Actions now runs `api_all.sh` and `api_negative.sh` in `.github/workflows/ci.yml` (with MySQL/Redis services) after `mvn clean verify`.
+CI automation: GitHub Actions runs all API suites in `.github/workflows/ci.yml` (MySQL/Redis services), before `mvn clean verify`, each exactly once:
+- `api_all.sh`
+- `api_negative.sh`
+- `api_budget_tests.sh`
+- `api_settlement_execution_tests.sh`
+- `api_tests_iteration1.sh`
+- `test_ledger_filtering.sh`
 
 Historic Postman collection (reference only, not maintained for CI): https://swjy1412-6196945.postman.co/workspace/Jinyi-Wang's-Workspace~67097b2f-bdc0-4997-8ef5-9b20805b25b5/collection/49421217-e21193f8-cfc5-4f6b-bef2-d9b136d6f83d?action=share&source=copy-link&creator=49421217
 
