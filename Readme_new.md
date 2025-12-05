@@ -687,7 +687,7 @@ Unit tests will be run by CI automatically on push.
 
 # 7. API Testing
 
- 
+The entire collection of API tests run automatically during CI on push or pull request.
 
 ## 7.1 Automated API Test Scripts
 
