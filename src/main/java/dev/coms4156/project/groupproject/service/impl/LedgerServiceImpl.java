@@ -104,23 +104,7 @@ public class LedgerServiceImpl extends ServiceImpl<LedgerMapper, Ledger> impleme
     ledgerMemberMapper.insert(member);
 
     // Query categories for this ledger
-    List<Category> categories =
-        categoryMapper.selectList(
-            new LambdaQueryWrapper<Category>()
-                .eq(Category::getLedgerId, ledger.getId())
-                .orderByAsc(Category::getName));
-
-    List<CategoryResponse> categoryResponses =
-        categories.stream()
-            .map(
-                cat ->
-                    new CategoryResponse(
-                        cat.getId(),
-                        cat.getLedgerId(),
-                        cat.getName(),
-                        cat.getKind(),
-                        cat.getIsActive()))
-            .collect(Collectors.toList());
+    List<CategoryResponse> categoryResponses = getCategoryResponses(ledger.getId());
 
     return new LedgerResponse(
         ledger.getId(),
@@ -178,23 +162,7 @@ public class LedgerServiceImpl extends ServiceImpl<LedgerMapper, Ledger> impleme
     AuthUtils.checkMembership(member != null);
 
     // Query categories for this ledger
-    List<Category> categories =
-        categoryMapper.selectList(
-            new LambdaQueryWrapper<Category>()
-                .eq(Category::getLedgerId, ledgerId)
-                .orderByAsc(Category::getName));
-
-    List<CategoryResponse> categoryResponses =
-        categories.stream()
-            .map(
-                cat ->
-                    new CategoryResponse(
-                        cat.getId(),
-                        cat.getLedgerId(),
-                        cat.getName(),
-                        cat.getKind(),
-                        cat.getIsActive()))
-            .collect(Collectors.toList());
+    List<CategoryResponse> categoryResponses = getCategoryResponses(ledgerId);
 
     return new LedgerResponse(
         ledger.getId(),
@@ -570,16 +538,7 @@ public class LedgerServiceImpl extends ServiceImpl<LedgerMapper, Ledger> impleme
           continue;
         }
 
-        BigDecimal transferAmount = creditor.getAmount().min(debtor.getAmount());
-
-        // Apply cap if configured
-        if (config.getMaxTransferAmount() != null
-            && transferAmount.compareTo(config.getMaxTransferAmount()) > 0) {
-          transferAmount = config.getMaxTransferAmount();
-        }
-
-        // Apply rounding
-        transferAmount = applyRounding(transferAmount, config, baseCurrency);
+        BigDecimal transferAmount = calculateTransferAmount(creditor, debtor, config, baseCurrency);
 
         if (transferAmount.compareTo(BigDecimal.ZERO) > 0) {
           SettlementPlanResponse.TransferItem transfer =
@@ -663,16 +622,7 @@ public class LedgerServiceImpl extends ServiceImpl<LedgerMapper, Ledger> impleme
         continue;
       }
 
-      BigDecimal transferAmount = creditor.getAmount().min(debtor.getAmount());
-
-      // Apply cap if configured
-      if (config.getMaxTransferAmount() != null
-          && transferAmount.compareTo(config.getMaxTransferAmount()) > 0) {
-        transferAmount = config.getMaxTransferAmount();
-      }
-
-      // Apply rounding
-      transferAmount = applyRounding(transferAmount, config, baseCurrency);
+      BigDecimal transferAmount = calculateTransferAmount(creditor, debtor, config, baseCurrency);
 
       if (transferAmount.compareTo(BigDecimal.ZERO) > 0) {
         SettlementPlanResponse.TransferItem transfer =
@@ -732,6 +682,55 @@ public class LedgerServiceImpl extends ServiceImpl<LedgerMapper, Ledger> impleme
 
     // Empty set means blocked, non-empty set means allowed (with those channels)
     return !allowedChannels.isEmpty();
+  }
+
+  /**
+   * Get category responses for a ledger.
+   *
+   * @param ledgerId ledger ID
+   * @return list of category responses
+   */
+  private List<CategoryResponse> getCategoryResponses(Long ledgerId) {
+    List<Category> categories =
+        categoryMapper.selectList(
+            new LambdaQueryWrapper<Category>()
+                .eq(Category::getLedgerId, ledgerId)
+                .orderByAsc(Category::getName));
+
+    return categories.stream()
+        .map(
+            cat ->
+                new CategoryResponse(
+                    cat.getId(),
+                    cat.getLedgerId(),
+                    cat.getName(),
+                    cat.getKind(),
+                    cat.getIsActive()))
+        .collect(Collectors.toList());
+  }
+
+  /**
+   * Calculate transfer amount with cap and rounding applied.
+   *
+   * @param creditor creditor balance entry
+   * @param debtor debtor balance entry
+   * @param config settlement configuration
+   * @param baseCurrency base currency for rounding
+   * @return calculated transfer amount
+   */
+  private BigDecimal calculateTransferAmount(
+      BalanceEntry creditor, BalanceEntry debtor, SettlementConfig config, String baseCurrency) {
+    BigDecimal transferAmount = creditor.getAmount().min(debtor.getAmount());
+
+    // Apply cap if configured
+    if (config != null
+        && config.getMaxTransferAmount() != null
+        && transferAmount.compareTo(config.getMaxTransferAmount()) > 0) {
+      transferAmount = config.getMaxTransferAmount();
+    }
+
+    // Apply rounding
+    return applyRounding(transferAmount, config, baseCurrency);
   }
 
   /**
