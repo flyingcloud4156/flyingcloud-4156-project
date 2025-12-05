@@ -105,6 +105,62 @@ assert_not_null() {
     fi
 }
 
+# Spring Boot app management
+SPRING_PROFILES="${SPRING_PROFILES:-test}"
+APP_START_TIMEOUT="${APP_START_TIMEOUT:-120}"
+SPRING_PID=""
+
+start_spring_app() {
+    echo "Starting Spring Boot application in background..."
+    echo "Working directory: $PROJECT_ROOT"
+    echo "Profile: ${SPRING_PROFILES:-test}"
+
+    local PROFILE_VAL="${SPRING_PROFILES:-test}"
+    unset SPRING_PROFILES
+
+    export SPRING_PROFILES_ACTIVE="$PROFILE_VAL"
+    export SPRING_DATASOURCE_URL="${SPRING_DATASOURCE_URL:-jdbc:mysql://127.0.0.1:3306/ledger?useSSL=false&serverTimezone=America/New_York&characterEncoding=utf8&allowPublicKeyRetrieval=true}"
+    export SPRING_DATASOURCE_USERNAME="${SPRING_DATASOURCE_USERNAME:-root}"
+    export SPRING_DATASOURCE_PASSWORD="${SPRING_DATASOURCE_PASSWORD:-root}"
+    export SPRING_REDIS_HOST="${SPRING_REDIS_HOST:-127.0.0.1}"
+    export SPRING_REDIS_PORT="${SPRING_REDIS_PORT:-6379}"
+
+    cd "$PROJECT_ROOT"
+    mvn spring-boot:run -Dskip.npm -Dskip.installnodenpm -DskipTests > spring-boot.log 2>&1 &
+    SPRING_PID=$!
+
+    echo "Spring Boot started with PID: $SPRING_PID"
+    echo "Waiting for app to be ready..."
+
+    local count=0
+    while [[ $count -lt $APP_START_TIMEOUT ]]; do
+        local http_code
+        http_code=$(curl -s -o /dev/null -w "%{http_code}" "$HOST/api/v1/auth/login" 2>/dev/null || echo "000")
+        if [[ "$http_code" == "405" ]]; then
+            echo "[OK] Spring Boot app is ready!"
+            return 0
+        fi
+        sleep 2
+        count=$((count + 2))
+        echo "Waiting... ($count/$APP_START_TIMEOUT seconds) - HTTP code: $http_code"
+    done
+
+    echo "[ERROR] Spring Boot app did not become ready within $APP_START_TIMEOUT seconds"
+    echo "Check spring-boot.log for details"
+    tail -n 200 spring-boot.log || true
+    exit 1
+}
+
+cleanup() {
+    if [[ -n "$SPRING_PID" ]]; then
+        echo "Stopping Spring Boot application (PID: $SPRING_PID)..."
+        kill "$SPRING_PID" 2>/dev/null || true
+        wait "$SPRING_PID" 2>/dev/null || true
+        SPRING_PID=""
+    fi
+}
+trap cleanup EXIT
+
 # Global variables
 USER1_TOKEN=""
 USER2_TOKEN=""
@@ -136,6 +192,9 @@ echo " Loading seed data..."
 mysql -u root ledger < "$DB_SEED_FILE"
 
 echo " Database reset successfully!"
+
+# Start Spring Boot application
+start_spring_app
 
 # =======================================================================================
 # 1. USER REGISTRATION API TESTS  

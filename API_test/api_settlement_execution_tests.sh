@@ -29,6 +29,10 @@ if [[ -n "$DB_PASS" ]]; then
   MYSQL_ARGS+=(-p"$DB_PASS")
 fi
 
+# Spring Boot app configuration
+SPRING_PROFILES="${SPRING_PROFILES:-test}"
+APP_START_TIMEOUT="${APP_START_TIMEOUT:-120}"  # seconds
+
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 # Prefer git root if available; fallback to parent of API_test
 PROJECT_ROOT=$((git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null) || true)
@@ -40,6 +44,7 @@ SCHEMA_FILE="${PROJECT_ROOT}/ops/sql/ledger_flow.sql"
 SEED_FILE="${PROJECT_ROOT}/ops/sql/backup/ledger_big_seed.sql"
 
 HTTP_CODE_FILE="/tmp/api_settlement_test_http_code_$$"
+SPRING_PID=""
 
 need() {
   command -v "$1" >/dev/null 2>&1 || {
@@ -53,9 +58,57 @@ need curl
 need jq
 
 cleanup() {
+  if [[ -n "$SPRING_PID" ]]; then
+    echo "Stopping Spring Boot application (PID: $SPRING_PID)..."
+    kill "$SPRING_PID" 2>/dev/null || true
+    wait "$SPRING_PID" 2>/dev/null || true
+    SPRING_PID=""
+  fi
   [[ -f "$HTTP_CODE_FILE" ]] && rm -f "$HTTP_CODE_FILE"
 }
 trap cleanup EXIT
+
+start_spring_app() {
+  echo "Starting Spring Boot application in background..."
+  echo "Working directory: $PROJECT_ROOT"
+  echo "Profile: ${SPRING_PROFILES:-test}"
+
+  local PROFILE_VAL="${SPRING_PROFILES:-test}"
+  unset SPRING_PROFILES
+
+  export SPRING_PROFILES_ACTIVE="$PROFILE_VAL"
+  export SPRING_DATASOURCE_URL="${SPRING_DATASOURCE_URL:-jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?useSSL=false&serverTimezone=America/New_York&characterEncoding=utf8&allowPublicKeyRetrieval=true}"
+  export SPRING_DATASOURCE_USERNAME="${SPRING_DATASOURCE_USERNAME:-$DB_USER}"
+  export SPRING_DATASOURCE_PASSWORD="${SPRING_DATASOURCE_PASSWORD:-$DB_PASS}"
+  export SPRING_REDIS_HOST="${SPRING_REDIS_HOST:-${REDIS_HOST:-localhost}}"
+  export SPRING_REDIS_PORT="${SPRING_REDIS_PORT:-${REDIS_PORT:-6379}}"
+  export SPRING_REDIS_PASSWORD="${SPRING_REDIS_PASSWORD:-${REDIS_PASSWORD:-}}"
+
+  cd "$PROJECT_ROOT"
+  mvn spring-boot:run -Dskip.npm -Dskip.installnodenpm -DskipTests > spring-boot.log 2>&1 &
+  SPRING_PID=$!
+
+  echo "Spring Boot started with PID: $SPRING_PID"
+  echo "Waiting for app to be ready..."
+
+  local count=0
+  while [[ $count -lt $APP_START_TIMEOUT ]]; do
+    local http_code
+    http_code=$(curl -s -o /dev/null -w "%{http_code}" "$HOST/api/v1/auth/login" 2>/dev/null || echo "000")
+    if [[ "$http_code" == "405" ]]; then
+      echo "[OK] Spring Boot app is ready!"
+      return 0
+    fi
+    sleep 2
+    count=$((count + 2))
+    echo "Waiting... ($count/$APP_START_TIMEOUT seconds) - HTTP code: $http_code"
+  done
+
+  echo "[ERROR] Spring Boot app did not become ready within $APP_START_TIMEOUT seconds"
+  echo "Check spring-boot.log for details"
+  tail -n 200 spring-boot.log || true
+  exit 1
+}
 
 mysql_server_exec() {
   local sql="$1"
@@ -172,6 +225,9 @@ echo "Loading seed data: $SEED_FILE"
 mysql "${MYSQL_ARGS[@]}" "$DB_NAME" < "$SEED_FILE"
 
 echo "[OK] Database initialized."
+
+# Start Spring Boot application
+start_spring_app
 
 RAND="$(date +%s)"
 ALICE_EMAIL="alice@gmail.com"
