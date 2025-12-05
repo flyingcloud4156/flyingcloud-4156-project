@@ -866,7 +866,7 @@ After fixing the bug, now `mvn pmd:pmd` generate clean report.
 
 ## 10.2 Style Checking
 
-We used the command <code>mvn checktyle:check</code> to check the style of our code and generate style checking. 
+We used the command <code> mvn checkstyle:check </code> to check the style of our code and generate style checking. 
 ![check style](images/checkstyle2.png)
 
 ------

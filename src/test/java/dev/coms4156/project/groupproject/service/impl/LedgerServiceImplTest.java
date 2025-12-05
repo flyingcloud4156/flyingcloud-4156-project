@@ -59,6 +59,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
  * typical/atypical/invalid paths with AAA structure.
  */
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("unchecked")
 class LedgerServiceImplTest {
 
   @Mock private LedgerMemberMapper ledgerMemberMapper;
@@ -1396,7 +1397,8 @@ class LedgerServiceImplTest {
 
   @Test
   @DisplayName(
-      "getSettlementPlan: generateSettlementPlan - minCostFlowThreshold triggered but minCost not better")
+      "getSettlementPlan: generateSettlementPlan - minCostFlowThreshold triggered "
+          + "but minCost not better")
   void getSettlementPlan_minCostFlowThresholdNotBetter() {
     CurrentUserContext.set(new UserView(1L, "Alice"));
     Ledger ledger = ledger(10L, "USD");
@@ -1942,13 +1944,13 @@ class LedgerServiceImplTest {
     Currency usdCurrency = currency("USD", 2);
     doReturn(usdCurrency).when(currencyMapper).selectById("USD");
 
-    SettlementConfig config = new SettlementConfig();
     Map<String, Set<String>> channels = new HashMap<>();
     // Block all channels to trigger triedPairs limit
     channels.put("1-2", Collections.emptySet());
     channels.put("2-1", Collections.emptySet());
     channels.put("3-4", Collections.emptySet());
     channels.put("4-3", Collections.emptySet());
+    SettlementConfig config = new SettlementConfig();
     config.setPaymentChannels(channels);
 
     SettlementPlanResponse resp = service.getSettlementPlan(10L, config);

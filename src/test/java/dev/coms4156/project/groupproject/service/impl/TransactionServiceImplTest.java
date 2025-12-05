@@ -56,6 +56,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
  * methods are exercised via public methods to validate behavior, interactions, and state effects.
  */
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("unchecked")
 class TransactionServiceImplTest {
 
   @Mock private TransactionMapper transactionMapper;
@@ -941,7 +942,8 @@ class TransactionServiceImplTest {
 
   @Test
   @DisplayName(
-      "createTransaction: applyRoundingAndTailAllocation - invalid rounding strategy -> uses default")
+      "createTransaction: applyRoundingAndTailAllocation - invalid rounding "
+          + "strategy -> uses default")
   void createTransaction_applyRoundingInvalidStrategy() {
     CurrentUserContext.set(new UserView(1L, "U1"));
     doReturn(ledger(1L, "USD", "GROUP_BALANCE")).when(ledgerMapper).selectById(1L);
@@ -2157,7 +2159,8 @@ class TransactionServiceImplTest {
 
   @Test
   @DisplayName(
-      "createTransaction: generateDebtEdges - INCOME with multiple participants -> creates reverse edges")
+      "createTransaction: generateDebtEdges - INCOME with multiple participants "
+          + "-> creates reverse edges")
   void createTransaction_incomeMultipleParticipants_createsReverseEdges() {
     CurrentUserContext.set(new UserView(1L, "U1"));
     doReturn(ledger(1L, "USD", "GROUP_BALANCE")).when(ledgerMapper).selectById(1L);
@@ -2628,20 +2631,17 @@ class TransactionServiceImplTest {
     req.setTailAllocation("PAYER");
     req.setTxnAt(LocalDateTime.now());
 
-    List<SplitItem> splits = new ArrayList<>();
     SplitItem s1 = new SplitItem();
     s1.setUserId(1L);
     s1.setSplitMethod("EQUAL");
     s1.setShareValue(BigDecimal.ZERO);
     s1.setIncluded(false); // Not included
-    splits.add(s1);
     SplitItem s2 = new SplitItem();
     s2.setUserId(2L);
     s2.setSplitMethod("EQUAL");
     s2.setShareValue(BigDecimal.ZERO);
     s2.setIncluded(true); // Included
-    splits.add(s2);
-    req.setSplits(splits);
+    req.setSplits(List.of(s1, s2));
 
     service.createTransaction(1L, req);
 
@@ -2719,7 +2719,8 @@ class TransactionServiceImplTest {
 
   @Test
   @DisplayName(
-      "createTransaction: generateDebtEdges - EXPENSE with payer equals participant -> no self-edge")
+      "createTransaction: generateDebtEdges - EXPENSE with payer equals participant "
+          + "-> no self-edge")
   void createTransaction_expensePayerEqualsParticipant_noSelfEdge() {
     CurrentUserContext.set(new UserView(1L, "U1"));
     doReturn(ledger(1L, "USD", "GROUP_BALANCE")).when(ledgerMapper).selectById(1L);
@@ -2919,20 +2920,17 @@ class TransactionServiceImplTest {
     req.setTailAllocation("PAYER");
     req.setTxnAt(LocalDateTime.now());
 
-    List<SplitItem> splits = new ArrayList<>();
     SplitItem s1 = new SplitItem();
     s1.setUserId(1L);
     s1.setSplitMethod("INVALID_METHOD"); // Invalid method
     s1.setShareValue(BigDecimal.ZERO);
     s1.setIncluded(true);
-    splits.add(s1);
     SplitItem s2 = new SplitItem();
     s2.setUserId(2L);
     s2.setSplitMethod("INVALID_METHOD");
     s2.setShareValue(BigDecimal.ZERO);
     s2.setIncluded(true);
-    splits.add(s2);
-    req.setSplits(splits);
+    req.setSplits(List.of(s1, s2));
 
     RuntimeException ex =
         assertThrows(RuntimeException.class, () -> service.createTransaction(1L, req));
