@@ -1348,8 +1348,8 @@ Prompt examples (summarized):
 
 # 15. Submission Notes
 
-（新增最后小节）
-
-- 提交的 tag 名称
-- 提交的 repo URL
-- 声明：只评分 main branch + tag（rubric 要求）
+ 
+- Tag name: `checkpoint2` (graded snapshot).
+- Repo URL: https://github.com/flyingcloud4156/flyingcloud-4156-project
+git clone git@github.com:flyingcloud4156/flyingcloud-4156-project.git
+ 
