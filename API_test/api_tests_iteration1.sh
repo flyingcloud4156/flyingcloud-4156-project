@@ -14,6 +14,12 @@ IFS=$'\n\t'
 
 # --- Configuration ---
 HOST="${HOST:-http://127.0.0.1:8081}"
+# DB config (TCP, not socket)
+DB_HOST="${DB_HOST:-127.0.0.1}"
+DB_PORT="${DB_PORT:-3306}"
+DB_USER="${DB_USER:-root}"
+DB_PASS="${DB_PASS:-}"
+DB_NAME="${DB_NAME:-ledger}"
 
 # Resolve repo root (prefer git, fallback to parent of API_test)
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
@@ -24,6 +30,11 @@ fi
 
 DB_SCHEMA_FILE="${PROJECT_ROOT}/ops/sql/ledger_flow.sql"
 DB_SEED_FILE="${PROJECT_ROOT}/ops/sql/backup/ledger.sql"
+
+MYSQL_ARGS=(-h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER")
+if [[ -n "$DB_PASS" ]]; then
+  MYSQL_ARGS+=(-p"$DB_PASS")
+fi
 
 # Test users
 NEW_USER1_EMAIL="alex.chen.eng2025@gmail.com"
@@ -119,9 +130,9 @@ start_spring_app() {
     unset SPRING_PROFILES
 
     export SPRING_PROFILES_ACTIVE="$PROFILE_VAL"
-    export SPRING_DATASOURCE_URL="${SPRING_DATASOURCE_URL:-jdbc:mysql://127.0.0.1:3306/ledger?useSSL=false&serverTimezone=America/New_York&characterEncoding=utf8&allowPublicKeyRetrieval=true}"
-    export SPRING_DATASOURCE_USERNAME="${SPRING_DATASOURCE_USERNAME:-root}"
-    export SPRING_DATASOURCE_PASSWORD="${SPRING_DATASOURCE_PASSWORD:-root}"
+    export SPRING_DATASOURCE_URL="${SPRING_DATASOURCE_URL:-jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?useSSL=false&serverTimezone=America/New_York&characterEncoding=utf8&allowPublicKeyRetrieval=true}"
+    export SPRING_DATASOURCE_USERNAME="${SPRING_DATASOURCE_USERNAME:-$DB_USER}"
+    export SPRING_DATASOURCE_PASSWORD="${SPRING_DATASOURCE_PASSWORD:-$DB_PASS}"
     export SPRING_REDIS_HOST="${SPRING_REDIS_HOST:-127.0.0.1}"
     export SPRING_REDIS_PORT="${SPRING_REDIS_PORT:-6379}"
 
@@ -180,16 +191,16 @@ TRANSACTION_ID=""
 echo_title "0. RESETTING DATABASE TO CLEAN STATE"
 
 echo " Dropping existing database..."
-mysql -u root -e "DROP DATABASE IF EXISTS ledger;" 2>/dev/null || true
+mysql "${MYSQL_ARGS[@]}" -e "DROP DATABASE IF EXISTS \`$DB_NAME\`;" 2>/dev/null || true
 
 echo " Creating new database..."
-mysql -u root -e "CREATE DATABASE ledger;"
+mysql "${MYSQL_ARGS[@]}" -e "CREATE DATABASE \`$DB_NAME\` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;"
 
 echo " Loading schema..."
-mysql -u root ledger < "$DB_SCHEMA_FILE"
+mysql "${MYSQL_ARGS[@]}" "$DB_NAME" < "$DB_SCHEMA_FILE"
 
 echo " Loading seed data..."
-mysql -u root ledger < "$DB_SEED_FILE"
+mysql "${MYSQL_ARGS[@]}" "$DB_NAME" < "$DB_SEED_FILE"
 
 echo " Database reset successfully!"
 
@@ -771,15 +782,15 @@ echo " Ledger membership verification completed"
 
 echo_subtitle "16.3 Database final state check"
 echo "Users in database:"
-mysql -u root ledger -e "SELECT id, email, name FROM users ORDER BY id DESC LIMIT 10;" || echo "Database query failed"
+mysql "${MYSQL_ARGS[@]}" "$DB_NAME" -e "SELECT id, email, name FROM users ORDER BY id DESC LIMIT 10;" || echo "Database query failed"
 
 echo ""
 echo "Ledgers created:"
-mysql -u root ledger -e "SELECT id, name, owner_id, ledger_type FROM ledgers ORDER BY id DESC LIMIT 5;" || echo "Database query failed"
+mysql "${MYSQL_ARGS[@]}" "$DB_NAME" -e "SELECT id, name, owner_id, ledger_type FROM ledgers ORDER BY id DESC LIMIT 5;" || echo "Database query failed"
 
 echo ""
 echo "Transactions in main ledger:"
-mysql -u root ledger -e "SELECT id, type, amount_total, note FROM transactions WHERE ledger_id=$LEDGER_ID ORDER BY id DESC LIMIT 10;" 2>/dev/null || echo "No transactions or query failed"
+mysql "${MYSQL_ARGS[@]}" "$DB_NAME" -e "SELECT id, type, amount_total, note FROM transactions WHERE ledger_id=$LEDGER_ID ORDER BY id DESC LIMIT 10;" 2>/dev/null || echo "No transactions or query failed"
 
 # =======================================================================================
 # Test Suite Summary
