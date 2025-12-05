@@ -422,7 +422,6 @@ The following scenarios form our manual E2E regression checklist. They are desig
        - Banner updates
        - Status text recalculated
        - Charts still correct after budget changes
-     
 9. **Verify analytics charts**
 
     - On the right side of the dashboard:
@@ -681,6 +680,27 @@ For each major unit:
 - `BudgetServiceImplTest`
 - `TransactionBudgetIntegrationTest` (integration test, verifies automatic budget check when transaction is created)
 
+### 6.2.4 AnalyticsService.overview()
+
+**Inputs:** `ledgerId`, `months`
+
+**Valid/Functional partitions:**
+- Signed-in ledger member, `months` between 1 and 24 returns totals, trend, categories, AR/AP, merchants.
+- If expenses exceed income, a warning recommendation is included; otherwise, no recommendation.
+- Category names that are blank or null are rendered as "Uncategorized"; ratios stay safe when total expense is zero.
+- AR/AP rows from different users are merged and sorted by net (AR minus AP).
+- Trend fills missing months with zero income/expense to keep continuity.
+
+**Invalid/Boundary partitions:**
+- No current user: rejects with `AUTH_REQUIRED`.
+- Ledger does not exist: rejects with `LEDGER_NOT_FOUND`.
+- User is not a member: membership check fails.
+- `months` is null or ≤0: defaults to 3; `months` > 24: capped to 24.
+
+**Test Class:** `AnalyticsServiceImplTest`
+
+
+
 ## 6.3 How to Run Unit Tests
 
 ```
@@ -689,9 +709,13 @@ mvn clean test
 
 ## 6.4 Unit Tests in CI
 
-Unit tests will be run by CI automatically on push.
+CI (`.github/workflows/ci.yml`) provisions MySQL/Redis and runs `mvn clean verify`, which triggers:
+- Backend unit tests (Surefire)
+- Frontend Jest tests via `frontend-maven-plugin` (npm test in `frontend/`)
+- Integration/Failsafe tests and coverage
+This runs automatically on push/PR to main/ddl branches.
 
-------
+
 
 # 7. API Testing
 
