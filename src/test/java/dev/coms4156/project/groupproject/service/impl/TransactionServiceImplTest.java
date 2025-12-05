@@ -3058,6 +3058,6 @@ class TransactionServiceImplTest {
 
     RuntimeException ex =
         assertThrows(RuntimeException.class, () -> service.createTransaction(1L, req));
-    assertTrue(ex.getMessage().contains("participants must be ledger members"));
+    assertTrue(ex.getMessage().contains("not members of the ledger"));
   }
 }
