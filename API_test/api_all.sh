@@ -42,7 +42,7 @@ DB_NAME="${DB_NAME:-ledger}"
 
 # Spring Boot app configuration
 SPRING_PROFILES="${SPRING_PROFILES:-test}"
-APP_START_TIMEOUT="${APP_START_TIMEOUT:-180}"  # seconds to wait for app to be ready
+APP_START_TIMEOUT="${APP_START_TIMEOUT:-120}"  # seconds to wait for app to be ready
 
 # API logging: 0 = no logs, 1 = log requests and responses
 VERBOSE="${VERBOSE:-1}"

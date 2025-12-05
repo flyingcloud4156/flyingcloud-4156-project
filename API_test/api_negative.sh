@@ -32,7 +32,7 @@ DB_NAME="${DB_NAME:-ledger}"
 
 # Spring Boot app configuration
 SPRING_PROFILES="${SPRING_PROFILES:-test}"
-APP_START_TIMEOUT="${APP_START_TIMEOUT:-180}"  # seconds to wait for app to start
+APP_START_TIMEOUT="${APP_START_TIMEOUT:-120}"  # seconds to wait for app to start
 
 MYSQL_ARGS=(-h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER")
 if [[ -n "$DB_PASS" ]]; then
