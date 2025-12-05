@@ -1326,8 +1326,9 @@ N/A
  
 
 # 14. AI Documentation
+We used AI to assist with parts of the HTML and CSS in the frontend, but all API calls, response parsing, and data rendering were implemented and reviewed by us; even when AI was involved, its output was carefully checked and refined.
 
-We used AI assistance in the following areas:
+Besides,we used AI assistance in the following areas:
 
 - Documentation and comments: drafting and polishing markdown sections,  comments, and test descriptions.
 - Style fixes: helping spot and correct Checkstyle/PMD warnings (line length, declaration usage distance).
