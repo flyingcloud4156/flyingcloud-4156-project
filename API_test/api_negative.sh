@@ -32,7 +32,7 @@ DB_NAME="${DB_NAME:-ledger}"
 
 # Spring Boot app configuration
 SPRING_PROFILES="${SPRING_PROFILES:-test}"
-APP_START_TIMEOUT="${APP_START_TIMEOUT:-60}"  # seconds to wait for app to start
+APP_START_TIMEOUT="${APP_START_TIMEOUT:-120}"  # seconds to wait for app to start
 
 MYSQL_ARGS=(-h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER")
 if [[ -n "$DB_PASS" ]]; then
@@ -40,7 +40,8 @@ if [[ -n "$DB_PASS" ]]; then
 fi
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
-PROJECT_ROOT=$(cd "${SCRIPT_DIR}/../.." && pwd)
+# Repo root: one level up from API_test (works locally and in GitHub Actions)
+PROJECT_ROOT=$(cd "${SCRIPT_DIR}/.." && pwd)
 
 DB_BIG_SEED_FILE="${PROJECT_ROOT}/ops/sql/backup/ledger_big_seed.sql"
 SCHEMA_FILE="${PROJECT_ROOT}/ops/sql/ledger_flow.sql"
@@ -67,21 +68,26 @@ need mvn
 start_spring_app() {
   echo "Starting Spring Boot application in background..."
   echo "Working directory: $PROJECT_ROOT"
-  echo "Profile: $SPRING_PROFILES"
+  echo "Profile: ${SPRING_PROFILES:-test}"
 
-  # Set environment variables for Spring Boot
-  export SPRING_PROFILES_ACTIVE="$SPRING_PROFILES"
+  # Avoid set -u trap after unset: capture profile first
+  local PROFILE_VAL="${SPRING_PROFILES:-test}"
+
+  # [IMPORTANT] Avoid legacy SPRING_PROFILES property (invalid in Boot 3)
+  unset SPRING_PROFILES
+
+  # Set environment variables for Spring Boot (use standard Spring props)
+  export SPRING_PROFILES_ACTIVE="$PROFILE_VAL"
+  export SPRING_DATASOURCE_URL="${SPRING_DATASOURCE_URL:-jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?useSSL=false&serverTimezone=America/New_York&characterEncoding=utf8&allowPublicKeyRetrieval=true}"
+  export SPRING_DATASOURCE_USERNAME="${SPRING_DATASOURCE_USERNAME:-$DB_USER}"
+  export SPRING_DATASOURCE_PASSWORD="${SPRING_DATASOURCE_PASSWORD:-$DB_PASS}"
+  export SPRING_REDIS_HOST="${SPRING_REDIS_HOST:-${REDIS_HOST:-localhost}}"
+  export SPRING_REDIS_PORT="${SPRING_REDIS_PORT:-${REDIS_PORT:-6379}}"
+  export SPRING_REDIS_PASSWORD="${SPRING_REDIS_PASSWORD:-${REDIS_PASSWORD:-}}"
 
   # Start the app in background (skip frontend plugins to speed up startup)
   cd "$PROJECT_ROOT"
-  export SPRING_PROFILES_ACTIVE=test
-  export DB_URL="${DB_URL:-jdbc:mysql://localhost:3306/ledger?useSSL=false&serverTimezone=America/New_York&characterEncoding=utf8&allowPublicKeyRetrieval=true}"
-  export DB_USER="${DB_USER:-root}"
-  export DB_PASS="${DB_PASS:-}"
-  export REDIS_HOST="${REDIS_HOST:-localhost}"
-  export REDIS_PORT="${REDIS_PORT:-6379}"
-  export REDIS_PASSWORD="${REDIS_PASSWORD:-}"
-  mvn spring-boot:run -Dskip.npm -Dskip.installnodenpm > spring-boot.log 2>&1 &
+  mvn spring-boot:run -Dskip.npm -Dskip.installnodenpm -DskipTests > spring-boot.log 2>&1 &
   SPRING_PID=$!
 
   echo "Spring Boot started with PID: $SPRING_PID"
@@ -103,6 +109,7 @@ start_spring_app() {
 
   echo "[ERROR] Spring Boot app failed to start within $APP_START_TIMEOUT seconds"
   echo "Check spring-boot.log for details"
+  tail -n 200 spring-boot.log || true
   kill_spring_app
   exit 1
 }
@@ -336,11 +343,9 @@ ledger_payload_valid=$(jq -n --arg name "API Negative Test Ledger $RAND" '{
   name: $name,
   ledger_type: "GROUP_BALANCE",
   base_currency: "USD",
-  category: {
-    name: "Test Category",
-    kind: "EXPENSE",
-    is_active: true
-  }
+  categories: [
+    { name: "Test Category", kind: "EXPENSE" }
+  ]
 }')
 ledger_body=$(api_call POST "/api/v1/ledgers" "$ledger_payload_valid" "$ALICE_TOKEN")
 assert_success "$ledger_body"
@@ -349,7 +354,10 @@ LEDGER_ID="$(echo "$ledger_body" | jq -r '.data.ledger_id')"
 sub "[LEDGER-CREATE-MISSING-NAME] Create ledger with missing name"
 ledger_payload_missing_name=$(jq -n '{
   ledger_type: "GROUP_BALANCE",
-  base_currency: "USD"
+  base_currency: "USD",
+  categories: [
+    { name: "Test Category", kind: "EXPENSE" }
+  ]
 }')
 body=$(api_call POST "/api/v1/ledgers" "$ledger_payload_missing_name" "$ALICE_TOKEN")
 assert_failure "$body"
@@ -358,7 +366,10 @@ sub "[LEDGER-CREATE-INVALID-TYPE] Create ledger with invalid ledger_type"
 ledger_payload_bad_type=$(jq -n --arg name "Bad Type Ledger $RAND" '{
   name: $name,
   ledger_type: "INVALID_TYPE",
-  base_currency: "USD"
+  base_currency: "USD",
+  categories: [
+    { name: "Test Category", kind: "EXPENSE" }
+  ]
 }')
 body=$(api_call POST "/api/v1/ledgers" "$ledger_payload_bad_type" "$ALICE_TOKEN")
 assert_failure "$body"
@@ -367,7 +378,10 @@ sub "[LEDGER-CREATE-INVALID-CURRENCY] Create ledger with unknown base_currency"
 ledger_payload_bad_currency=$(jq -n --arg name "Bad Currency Ledger $RAND" '{
   name: $name,
   ledger_type: "GROUP_BALANCE",
-  base_currency: "XYZ"
+  base_currency: "XYZ",
+  categories: [
+    { name: "Test Category", kind: "EXPENSE" }
+  ]
 }')
 body=$(api_call POST "/api/v1/ledgers" "$ledger_payload_bad_currency" "$ALICE_TOKEN")
 assert_failure "$body"

@@ -1,0 +1,20 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ---------------< dev.coms4156.project:individualproject >---------------
+[INFO] Building individualproject 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- pmd:3.21.2:pmd (default-cli) @ individualproject ---
+[INFO] PMD version: 6.55.0
+[WARNING] Error during type resolution of field 'aggMapper' in class dev.coms4156.project.groupproject.service.impl.AnalyticsServiceImpl due to: java.lang.NoClassDefFoundError: LedgerMapper
+[WARNING] Error during type resolution of field 'ledgerMapper' in class dev.coms4156.project.groupproject.service.impl.AnalyticsServiceImpl due to: java.lang.NoClassDefFoundError: LedgerMapper
+[WARNING] Error during type resolution of field 'ledgerMemberMapper' in class dev.coms4156.project.groupproject.service.impl.AnalyticsServiceImpl due to: java.lang.NoClassDefFoundError: LedgerMapper
+[WARNING] Error during type resolution of field 'userMapper' in class dev.coms4156.project.groupproject.service.impl.AnalyticsServiceImpl due to: java.lang.NoClassDefFoundError: LedgerMapper
+[INFO] Rendering content with org.apache.maven.skins:maven-default-skin:jar:1.3 skin.
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  3.059 s
+[INFO] Finished at: 2025-12-04T16:55:47-05:00
+[INFO] ------------------------------------------------------------------------

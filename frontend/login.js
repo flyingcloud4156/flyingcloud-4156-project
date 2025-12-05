@@ -1,7 +1,14 @@
 // login.js
 
+function computeBaseUrl() {
+    const loc = window.location;
+    const proto = loc.protocol === 'file:' ? 'http:' : loc.protocol;
+    const host = loc.hostname || 'localhost';
+    return `${proto}//${host}:8081`;
+}
+
 function getBaseUrl() {
-    return document.getElementById('baseUrl').value.trim().replace(/\/$/, '');
+    return computeBaseUrl();
 }
 
 async function callApi(path, body) {
@@ -51,7 +58,6 @@ async function handleLogin() {
             return;
         }
 
-        localStorage.setItem('ledger_base_url', getBaseUrl());
         localStorage.setItem('ledger_access_token', token);
 
         statusEl.textContent = 'Login success. Redirecting...';
@@ -93,12 +99,6 @@ async function handleRegister() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 恢复 baseUrl
-    const storedBase = localStorage.getItem('ledger_base_url');
-    if (storedBase) {
-        document.getElementById('baseUrl').value = storedBase;
-    }
-
     document.getElementById('btnLogin').addEventListener('click', handleLogin);
     document.getElementById('btnRegister').addEventListener('click', handleRegister);
 });

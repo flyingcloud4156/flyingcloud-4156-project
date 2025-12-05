@@ -19,15 +19,21 @@ const state = {
     newLedgerCategories: []
 };
 
+function computeBaseUrl() {
+    const loc = window.location;
+    const proto = loc.protocol === 'file:' ? 'http:' : loc.protocol;
+    const host = loc.hostname || 'localhost';
+    return `${proto}//${host}:8081`;
+}
+
 function ensureAuthOrRedirect() {
-    const baseUrl = localStorage.getItem('ledger_base_url');
     const token = localStorage.getItem('ledger_access_token');
 
-    if (!baseUrl || !token) {
+    if (!token) {
         window.location.href = 'index.html';
         return false;
     }
-    state.baseUrl = baseUrl.replace(/\/$/, '');
+    state.baseUrl = computeBaseUrl().replace(/\/$/, '');
     state.accessToken = token;
     return true;
 }
