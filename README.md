@@ -1350,7 +1350,16 @@ Prompt examples (summarized):
 
 
 
-# 15. Submission Notes
+# 15. API Access Logging
+All API entrypoints are logged by the `AccessLogInterceptor`, registered in `WebMvcConfig` for `/api/v1/**` (Swagger and actuator paths excluded). Each request receives a UUID `requestId` stored in MDC; 
+on completion the interceptor emits a  structured line with method, URI, sanitized query params (passwords redacted), handler, HTTP status, duration in ms, user (from `CurrentUserContext`, defaults to `anonymous`), and any exception type.
+
+- Log topic/level: `dev.coms4156.project.groupproject.access` at INFO (see `logging.level` in `src/main/resources/application.yaml`).
+- Output location: stdout/stderr. View locally in the console when running `mvn spring-boot:run` or `java -jar ...`; in Docker use `docker logs <container>`; in Cloud Run/VMs read the platform log stream.
+- Example shape: `event=ACCESS requestId=... method=POST uri=/api/v1/ledgers params={...} handler=... status=201 durationMs=45 user=alice exception=none`.
+
+
+# 16. Submission Notes
 
  
 - Tag name: `checkpoint2` (graded snapshot).
