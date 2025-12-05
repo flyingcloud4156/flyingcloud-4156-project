@@ -59,6 +59,10 @@ Must include:
     - fay@gmail.com
     - gina@gmail.com
 
+## 2.4 Deploying on Linux Servers
+
+For Linux deployment (VM/bare metal), follow the step-by-step guide in `RUNBOOK.md`. It contains the full commands for bringing up the backend with the required services (MySQL/Redis), environment configuration, and common troubleshooting notes specific to Linux environments.
+
 
 # 3. API Documentation
 
