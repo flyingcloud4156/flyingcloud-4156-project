@@ -84,6 +84,9 @@ start_spring_app() {
   echo "Working directory: $PROJECT_ROOT"
   echo "Profile: $SPRING_PROFILES"
 
+  # [IMPORTANT] Avoid legacy SPRING_PROFILES property (invalid in Boot 3)
+  unset SPRING_PROFILES
+
   # Set environment variables for Spring Boot (use standard Spring props)
   export SPRING_PROFILES_ACTIVE="$SPRING_PROFILES"
   export SPRING_DATASOURCE_URL="${SPRING_DATASOURCE_URL:-jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?useSSL=false&serverTimezone=America/New_York&characterEncoding=utf8&allowPublicKeyRetrieval=true}"

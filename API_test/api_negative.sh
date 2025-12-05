@@ -32,7 +32,7 @@ DB_NAME="${DB_NAME:-ledger}"
 
 # Spring Boot app configuration
 SPRING_PROFILES="${SPRING_PROFILES:-test}"
-APP_START_TIMEOUT="${APP_START_TIMEOUT:-120}"  # seconds to wait for app to start
+APP_START_TIMEOUT="${APP_START_TIMEOUT:-180}"  # seconds to wait for app to start
 
 MYSQL_ARGS=(-h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER")
 if [[ -n "$DB_PASS" ]]; then
@@ -69,6 +69,9 @@ start_spring_app() {
   echo "Starting Spring Boot application in background..."
   echo "Working directory: $PROJECT_ROOT"
   echo "Profile: $SPRING_PROFILES"
+
+  # [IMPORTANT] Avoid legacy SPRING_PROFILES property (invalid in Boot 3)
+  unset SPRING_PROFILES
 
   # Set environment variables for Spring Boot (use standard Spring props)
   export SPRING_PROFILES_ACTIVE="$SPRING_PROFILES"
