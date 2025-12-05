@@ -760,7 +760,6 @@ For each major unit:
 - `BudgetServiceImplTest`
 - `TransactionBudgetIntegrationTest` (integration test, verifies automatic budget check when transaction is created)
 
-<<<<<<< HEAD
 ### 6.2.4 TransactionService.createTransaction()
 
 **Input Parameters:**
