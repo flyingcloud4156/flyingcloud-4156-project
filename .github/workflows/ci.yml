@@ -110,6 +110,28 @@ jobs:
           mysql -h 127.0.0.1 -P 3306 -u root -proot ledger < ops/sql/ledger_flow.sql
           mysql -h 127.0.0.1 -P 3306 -u root -proot ledger < ops/sql/test_data_seed.sql
 
+      - name: Run API tests (api_all)
+        run: |
+          cd API_test
+          HOST=http://127.0.0.1:8081 \
+          DB_HOST=127.0.0.1 \
+          DB_PORT=3306 \
+          DB_USER=root \
+          DB_PASS=root \
+          SPRING_PROFILES_ACTIVE=test \
+          ./api_all.sh
+
+      - name: Run API tests (api_negative)
+        run: |
+          cd API_test
+          HOST=http://127.0.0.1:8081 \
+          DB_HOST=127.0.0.1 \
+          DB_PORT=3306 \
+          DB_USER=root \
+          DB_PASS=root \
+          SPRING_PROFILES_ACTIVE=test \
+          ./api_negative.sh
+
       # This command:
       # - runs backend unit tests (Surefire)
       # - runs any API/integration tests bound to integration-test/verify
