@@ -905,25 +905,25 @@ We used the command <code> mvn checkstyle:check </code> to check the style of ou
 
 # 11. Continuous Integration
 
-（原 README 缺乏，需要补充）
-
 ## 11.1 CI Pipeline Overview
 
-- CI 自动执行内容：
-  - Style check
-  - PMD
-  - Unit tests
-  - API tests（若不能自动化则解释）
-  - Integration tests
-  - Coverage
+GitHub Actions workflow `/.github/workflows/ci.yml` runs on push/PR to `main`, `ddl`, `ddl_main` (markdown paths ignored). It has two jobs:
+- **Style & Static Analysis:** Spotless, Checkstyle, PMD, CPD (tests skipped in this job).
+- **Test & Coverage:** Spins up MySQL + Redis, loads schema/seed, runs all API bash suites (`api_all.sh`, `api_negative.sh`, `api_budget_tests.sh`, `api_settlement_execution_tests.sh`, `api_tests_iteration1.sh`, `test_ledger_filtering.sh`), then `mvn clean verify` (backend unit tests, integration/Failsafe tests, frontend Jest via frontend-maven-plugin, JaCoCo coverage).
 
 ## 11.2 CI Configuration Files
 
-- `.github/workflows/ci.yml`
+- `/.github/workflows/ci.yml` (contains the full job definitions and commands above).
 
-## 11.3 Sample CI Output
+## 11.3 Sample CI Output 
 
-- 截图或文本文件（rubric 要求）
+Artifacts per run:
+- Style/static analysis: `**/target/site/checkstyle*/**`, `**/target/site/pmd*/**`, `**/target/site/cpd*/**`
+- Tests & coverage: `**/target/site/jacoco/**`, `**/target/surefire-reports/**`, `**/target/failsafe-reports/**`
+
+Download these from the workflow run page to view detailed HTML and XML reports (rubric evidence).
+
+Please check [CI-CD-API-tests-images.pdf](images/CI-CD-API-tests-images.pdf)
 
 ------
 
