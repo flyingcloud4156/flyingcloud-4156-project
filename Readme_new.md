@@ -1135,7 +1135,7 @@ Historic Postman collection (reference only, not maintained for CI): https://swj
 
 Equivalence Pratitions for each api endpoints are documented in this file: `flyingcloud-4156-project/API_EQUIVALENCE_PARTITIONS_COMPLETE.md`
 
-------
+
 
 # 8. Integration Testing
 
@@ -1259,7 +1259,7 @@ mvn test -Dtest="dev.coms4156.project.groupproject.integration.*Test"
 
 Integration tests are automatically executed in GitHub Actions CI for every push and pull request (`mvn clean verify` + MySQL/Redis services). API suites `api_all.sh` and `api_negative.sh` also run in CI.
 
-------
+
 
 # 9. Branch Coverage Report
 
@@ -1287,7 +1287,7 @@ After fixing the bug, now `mvn pmd:pmd` generate clean report.
 We used the command <code> mvn checkstyle:check </code> to check the style of our code and generate style checking. 
 ![check style](images/checkstyle2.png)
 
-------
+
 
 # 11. Continuous Integration
 
@@ -1311,7 +1311,7 @@ Download these from the workflow run page to view detailed HTML and XML reports 
 
 Please check [CI-CD-API-tests-images.pdf](images/CI-CD-API-tests-images.pdf)
 
-------
+
 
 # 12. Project Management
 
@@ -1319,18 +1319,12 @@ We use Github Project for project management and created tasks for each team mem
 
 The Kanban board is here: https://github.com/orgs/flyingcloud4156/projects/4
 
-------
+
 
 # 13. Third-Party Code
 
-（原 README 没有，需要新增）
-
-说明：
-
-- 使用的所有第三方库均由 Maven 下载
-- 若有嵌入式第三方代码（几乎没有）则必须列出
-
-------
+N/A
+ 
 
 # 14. AI Documentation
 
@@ -1350,7 +1344,7 @@ Prompt examples (summarized):
 - “Refactor long lines and adjust variable usage to satisfy Checkstyle.”
 
 
-------
+
 
 # 15. Submission Notes
 
