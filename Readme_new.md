@@ -28,7 +28,6 @@ We have consulted the professor regarding this adjustment, and received approval
 
 # 2. Building and Running Instructions
 
-（原节保留，但需新增 CI 相关说明）
 
 ## 2.1 Local Development Setup
 
@@ -39,7 +38,7 @@ We have consulted the professor regarding this adjustment, and received approval
 
 ## 2.2 Running a MacBook Based Instance (Iteration 1)
 
-- (keep existing link)
+[run_local_guide.md](MacBook_first_iteration_demo/run_local_guide.md)
 
 ## 2.3 Running a Cloud Based Instance (Iteration 2)
 
