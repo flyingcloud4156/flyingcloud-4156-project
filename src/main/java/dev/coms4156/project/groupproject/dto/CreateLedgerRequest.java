@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
+import java.util.List;
 import lombok.Data;
 
 /** Request to create a new ledger. */
@@ -28,7 +29,8 @@ public class CreateLedgerRequest {
   private LocalDate shareStartDate;
 
   @Valid
-  @NotNull(message = "Category cannot be null")
-  @Schema(description = "Category to create for the ledger")
-  private CreateCategoryRequest category;
+  @NotNull(message = "Categories cannot be null")
+  @Size(min = 1, message = "At least one category is required")
+  @Schema(description = "A list of categories to create for the ledger")
+  private List<CreateCategoryRequest> categories;
 }

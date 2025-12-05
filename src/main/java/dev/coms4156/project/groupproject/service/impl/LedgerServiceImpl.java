@@ -93,7 +93,9 @@ public class LedgerServiceImpl extends ServiceImpl<LedgerMapper, Ledger> impleme
     save(ledger);
 
     // Create category from the request
-    createCategoryFromRequest(ledger.getId(), req.getCategory());
+    for (CreateCategoryRequest categoryRequest : req.getCategories()) {
+      createCategoryFromRequest(ledger.getId(), categoryRequest);
+    }
 
     LedgerMember member = new LedgerMember();
     member.setLedgerId(ledger.getId());
@@ -581,7 +583,7 @@ public class LedgerServiceImpl extends ServiceImpl<LedgerMapper, Ledger> impleme
 
         if (transferAmount.compareTo(BigDecimal.ZERO) > 0) {
           SettlementPlanResponse.TransferItem transfer =
-              new SettlementPlanResponse.TransferItem(
+              createTransferItem(
                   debtor.getUserId(),
                   debtor.getUserName(),
                   creditor.getUserId(),
@@ -674,7 +676,7 @@ public class LedgerServiceImpl extends ServiceImpl<LedgerMapper, Ledger> impleme
 
       if (transferAmount.compareTo(BigDecimal.ZERO) > 0) {
         SettlementPlanResponse.TransferItem transfer =
-            new SettlementPlanResponse.TransferItem(
+            createTransferItem(
                 debtor.getUserId(),
                 debtor.getUserName(),
                 creditor.getUserId(),
@@ -785,6 +787,22 @@ public class LedgerServiceImpl extends ServiceImpl<LedgerMapper, Ledger> impleme
     BigDecimal getAmount() {
       return amount;
     }
+  }
+
+  /**
+   * Create a transfer item for settlement plan.
+   *
+   * @param fromUserId payer user ID
+   * @param fromUserName payer user name
+   * @param toUserId receiver user ID
+   * @param toUserName receiver user name
+   * @param amount transfer amount
+   * @return transfer item
+   */
+  private SettlementPlanResponse.TransferItem createTransferItem(
+      Long fromUserId, String fromUserName, Long toUserId, String toUserName, BigDecimal amount) {
+    return new SettlementPlanResponse.TransferItem(
+        fromUserId, fromUserName, toUserId, toUserName, amount);
   }
 
   /**

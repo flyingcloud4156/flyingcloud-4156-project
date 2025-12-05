@@ -1,16 +1,8 @@
--- Test data seed for Integration Tests
--- This file should be run after ledger_flow.sql to populate initial test data
+-- Test Data Seed File
+-- This file is used to initialize test data for integration tests in CI.
+-- Note: Most integration tests create their own test data in @BeforeEach methods,
+-- so this file may be empty or contain minimal seed data if needed.
 
-USE ledger;
-
--- Insert additional currencies (if needed)
-INSERT INTO currency (code, exponent) VALUES
-('EUR', 2),
-('GBP', 2),
-('JPY', 0),
-('CNY', 2)
-ON DUPLICATE KEY UPDATE exponent = VALUES(exponent);
-
--- Note: Categories are ledger-specific and will be created in each integration test
--- as they require a valid ledger_id
-
+-- If you need to add seed data for specific test scenarios, add SQL statements here.
+-- Example:
+-- INSERT INTO users (email, name, password_hash) VALUES ('test@example.com', 'Test User', 'hash');

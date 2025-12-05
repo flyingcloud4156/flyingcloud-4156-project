@@ -68,6 +68,7 @@ mysql -u root -p ledger < ops/sql/backup/ledger_big_seed.sql
 
 ### Start Backend API Server
 ```bash
+kill -9 $(lsof -t -i :8081)
 # Set environment variables for database connection
 export DB_URL="jdbc:mysql://localhost:3306/ledger?useSSL=false&serverTimezone=America/New_York&characterEncoding=utf8&allowPublicKeyRetrieval=true"
 export DB_USER="root"

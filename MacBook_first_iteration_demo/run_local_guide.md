@@ -155,6 +155,7 @@ mysql -u root -p -e "USE ledger; SHOW TABLES;"
 **Set environment variables for local services:**
 
 ```bash
+kill -9 $(lsof -t -i :8081)
 export DB_URL="jdbc:mysql://localhost:3306/ledger?useSSL=false&serverTimezone=America/New_York&characterEncoding=utf8&allowPublicKeyRetrieval=true"
 export DB_USER="root"
 export DB_PASS="your_mysql_root_password_here"

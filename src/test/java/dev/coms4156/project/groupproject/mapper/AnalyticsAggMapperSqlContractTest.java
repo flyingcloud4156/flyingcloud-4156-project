@@ -36,11 +36,11 @@ class AnalyticsAggMapperSqlContractTest {
     String sql =
         sqlOf("sumIncomeExpense", Long.class, LocalDateTime.class, LocalDateTime.class, Long.class);
 
-    assertTrue(sql.contains("WHERE ledger_id = #{ledgerId}"));
-    assertTrue(sql.contains("txn_at >= #{start}"));
-    assertTrue(sql.contains("txn_at <  #{end}"));
-    assertTrue(sql.contains("type IN ('INCOME','EXPENSE')"));
-    assertTrue(sql.contains("(is_private = 0 OR created_by = #{currentUserId})"));
+    assertTrue(sql.contains("t.ledger_id = #{ledgerId}"));
+    assertTrue(sql.contains("t.txn_at >= #{start}"));
+    assertTrue(sql.contains("t.txn_at <  #{end}"));
+    assertTrue(sql.contains("t.type IN ('INCOME','EXPENSE')"));
+    assertTrue(sql.contains("(t.is_private = 0 OR t.created_by = #{currentUserId})"));
   }
 
   @Test
@@ -48,10 +48,10 @@ class AnalyticsAggMapperSqlContractTest {
     String sql =
         sqlOf("monthlyStats", Long.class, LocalDateTime.class, LocalDateTime.class, Long.class);
 
-    assertTrue(sql.contains("DATE_FORMAT(txn_at, '%Y-%m') AS period"));
-    assertTrue(sql.contains("GROUP BY DATE_FORMAT(txn_at, '%Y-%m')"));
+    assertTrue(sql.contains("DATE_FORMAT(t.txn_at, '%Y-%m') AS period"));
+    assertTrue(sql.contains("GROUP BY DATE_FORMAT(t.txn_at, '%Y-%m')"));
     assertTrue(sql.contains("ORDER BY period ASC"));
-    assertTrue(sql.contains("(is_private = 0 OR created_by = #{currentUserId})"));
+    assertTrue(sql.contains("(t.is_private = 0 OR t.created_by = #{currentUserId})"));
   }
 
   @Test
@@ -76,10 +76,10 @@ class AnalyticsAggMapperSqlContractTest {
             int.class,
             Long.class);
 
-    assertTrue(sql.contains("GROUP BY note"));
+    assertTrue(sql.contains("GROUP BY t.note"));
     assertTrue(sql.contains("LIMIT #{limit}"));
-    assertTrue(sql.contains("type = 'EXPENSE'"));
-    assertTrue(sql.contains("(is_private = 0 OR created_by = #{currentUserId})"));
+    assertTrue(sql.contains("t.type = 'EXPENSE'"));
+    assertTrue(sql.contains("(t.is_private = 0 OR t.created_by = #{currentUserId})"));
   }
 
   @Test

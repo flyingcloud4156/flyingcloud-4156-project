@@ -84,7 +84,7 @@ class LedgerDatabaseIntegrationTest {
     category.setName("Food");
     category.setKind("EXPENSE");
     category.setIsActive(true);
-    request.setCategory(category);
+    request.setCategories(java.util.Collections.singletonList(category));
 
     LedgerResponse response = ledgerService.createLedger(request);
 
@@ -112,7 +112,7 @@ class LedgerDatabaseIntegrationTest {
     category.setName("Transport");
     category.setKind("EXPENSE");
     category.setIsActive(true);
-    request.setCategory(category);
+    request.setCategories(java.util.Collections.singletonList(category));
 
     LedgerResponse response = ledgerService.createLedger(request);
 
@@ -139,7 +139,7 @@ class LedgerDatabaseIntegrationTest {
     category.setName("Entertainment");
     category.setKind("EXPENSE");
     category.setIsActive(true);
-    createRequest.setCategory(category);
+    createRequest.setCategories(java.util.Collections.singletonList(category));
 
     LedgerResponse createResponse = ledgerService.createLedger(createRequest);
     Long ledgerId = createResponse.getLedgerId();
@@ -169,7 +169,7 @@ class LedgerDatabaseIntegrationTest {
     category.setName("Utilities");
     category.setKind("EXPENSE");
     category.setIsActive(true);
-    createRequest.setCategory(category);
+    createRequest.setCategories(java.util.Collections.singletonList(category));
 
     LedgerResponse createResponse = ledgerService.createLedger(createRequest);
     Long ledgerId = createResponse.getLedgerId();
@@ -198,7 +198,7 @@ class LedgerDatabaseIntegrationTest {
     category.setName("Misc");
     category.setKind("EXPENSE");
     category.setIsActive(true);
-    request.setCategory(category);
+    request.setCategories(java.util.Collections.singletonList(category));
 
     LedgerResponse response = ledgerService.createLedger(request);
     Long ledgerId = response.getLedgerId();

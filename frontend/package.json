@@ -3,10 +3,12 @@
   "private": true,
   "type": "commonjs",
   "scripts": {
-    "test": "jest --runInBand"
+    "start": "serve .",
+    "test": "jest --runInBand --passWithNoTests"
   },
   "devDependencies": {
     "jest": "^29.7.0",
-    "jsdom": "^24.1.0"
+    "jsdom": "^24.1.0",
+    "serve": "^14.2.5"
   }
 }
