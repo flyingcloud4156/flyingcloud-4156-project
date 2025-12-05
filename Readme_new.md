@@ -691,21 +691,21 @@ Unit tests will be run by CI automatically on push.
 
 ## 7.1 Automated API Test Scripts
 
-API tests are located in flyingcloud-4156-project/ops/test, there are in total 6 api tests files.
+We keep all bash API suites under `API_test/` (executable). Key suites:
+- `api_all.sh`: full E2E (resets DB, starts Spring Boot) covers auth/user/ledger/txn/settlement/analytics.
+- `api_negative.sh`: negative + boundary (auth, ledgers, transactions, analytics months clamp, non-member/404).
+- `api_budget_tests.sh`, `api_settlement_execution_tests.sh`, `api_tests_iteration1.sh`, `test_ledger_filtering.sh`: scoped suites.
 
-To execute api test, after starting the service, you can simply do ./{file_name}, for example `./api_budget_tests.sh`
+Local run (service/DB/Redis available):
+```bash
+cd API_test
+HOST=http://localhost:8081 ./api_all.sh
+HOST=http://localhost:8081 ./api_negative.sh
+```
 
-**Note: API tests are run manually and are not automated in the CI pipeline.** This is because API tests require:
-- A running database instance (MySQL) with specific test data
-- A running Spring Boot application server
-- Authentication tokens that expire and need to be refreshed during test execution
-- Complex state management across multiple API calls (e.g., creating users, then using their tokens)
-- Manual verification of complex workflows that are difficult to automate in a CI environment
+CI automation: GitHub Actions now runs `api_all.sh` and `api_negative.sh` in `.github/workflows/ci.yml` (with MySQL/Redis services) after `mvn clean verify`.
 
-While these tests could theoretically be automated in CI, it would require setting up database containers, managing application lifecycle, and handling authentication state, which adds significant complexity. The bash scripts provide a practical way to test the complete API workflow manually while still being automated in execution.
-
-Before using bash scripts to test,we've also used Postman to test some APIs ,you can access the test cases here: https://swjy1412-6196945.postman.co/workspace/Jinyi-Wang's-Workspace~67097b2f-bdc0-4997-8ef5-9b20805b25b5/collection/49421217-e21193f8-cfc5-4f6b-bef2-d9b136d6f83d?action=share&source=copy-link&creator=49421217
-However due to authentication and database issues, this test cases are not easy to be replicated on local machines, so we switched to using bash scripts.
+Historic Postman collection (reference only, not maintained for CI): https://swjy1412-6196945.postman.co/workspace/Jinyi-Wang's-Workspace~67097b2f-bdc0-4997-8ef5-9b20805b25b5/collection/49421217-e21193f8-cfc5-4f6b-bef2-d9b136d6f83d?action=share&source=copy-link&creator=49421217
 
 ## 7.2 Equivalence Partitions per Endpoint
 
@@ -833,7 +833,7 @@ mvn test -Dtest="dev.coms4156.project.groupproject.integration.*Test"
 
 ## 8.4 CI Integration
 
-Integration tests are automatically executed in GitHub Actions CI for every push and pull request.
+Integration tests are automatically executed in GitHub Actions CI for every push and pull request (`mvn clean verify` + MySQL/Redis services). API suites `api_all.sh` and `api_negative.sh` also run in CI.
 
 ------
 

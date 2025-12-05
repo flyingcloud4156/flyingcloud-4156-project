@@ -21,7 +21,11 @@ if [[ -n "$DB_PASS" ]]; then
 fi
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
-PROJECT_ROOT=$(cd "${SCRIPT_DIR}/../.." && pwd)
+# Prefer git root; fallback to parent of API_test
+PROJECT_ROOT=$((git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null) || true)
+if [[ -z "${PROJECT_ROOT}" ]]; then
+  PROJECT_ROOT=$(cd "${SCRIPT_DIR}/.." && pwd)
+fi
 
 DB_SEED_FILE="${PROJECT_ROOT}/ops/sql/backup/ledger_big_seed.sql"
 SCHEMA_FILE="${PROJECT_ROOT}/ops/sql/ledger_flow.sql"

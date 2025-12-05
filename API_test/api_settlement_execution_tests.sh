@@ -30,7 +30,11 @@ if [[ -n "$DB_PASS" ]]; then
 fi
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
-PROJECT_ROOT=$(cd "${SCRIPT_DIR}/../.." && pwd)
+# Prefer git root if available; fallback to parent of API_test
+PROJECT_ROOT=$((git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null) || true)
+if [[ -z "${PROJECT_ROOT}" ]]; then
+  PROJECT_ROOT=$(cd "${SCRIPT_DIR}/.." && pwd)
+fi
 
 SCHEMA_FILE="${PROJECT_ROOT}/ops/sql/ledger_flow.sql"
 SEED_FILE="${PROJECT_ROOT}/ops/sql/backup/ledger_big_seed.sql"
@@ -213,14 +217,16 @@ sub "Create test ledger"
 ledger_payload=$(jq -n --arg name "Settlement Test Ledger $RAND" '{
   name: $name,
   ledger_type: "GROUP_BALANCE",
-  base_currency: "USD"
+  base_currency: "USD",
+  categories: [
+    { name: "Settlement Default", kind: "EXPENSE" }
+  ]
 }')
 ledger_body=$(api_call POST "/api/v1/ledgers" "$ledger_payload" "$ALICE_TOKEN")
 assert_success "$ledger_body"
 LEDGER_ID="$(echo "$ledger_body" | jq -r '.data.ledger_id')"
 
 sub "Create category for transactions"
-mysql_db_query "INSERT INTO categories (ledger_id, name, kind, is_active) VALUES ($LEDGER_ID, 'Expenses', 'EXPENSE', 1);"
 CATEGORY_ID=$(mysql_db_query "SELECT id FROM categories WHERE ledger_id=$LEDGER_ID LIMIT 1;")
 
 sub "Add Bob as EDITOR"

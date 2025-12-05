@@ -13,9 +13,17 @@ set -euo pipefail
 IFS=$'\n\t'
 
 # --- Configuration ---
-HOST="http://localhost:8081"
-DB_SCHEMA_FILE=/Users/jinyiwang/Desktop/4156project-final/flyingcloud-4156-project/ops/sql/ledger_flow.sql
-DB_SEED_FILE=/Users/jinyiwang/Desktop/4156project-final/flyingcloud-4156-project/ops/sql/backup/ledger.sql
+HOST="${HOST:-http://127.0.0.1:8081}"
+
+# Resolve repo root (prefer git, fallback to parent of API_test)
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
+PROJECT_ROOT=$((git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null) || true)
+if [[ -z "${PROJECT_ROOT}" ]]; then
+  PROJECT_ROOT=$(cd "${SCRIPT_DIR}/.." && pwd)
+fi
+
+DB_SCHEMA_FILE="${PROJECT_ROOT}/ops/sql/ledger_flow.sql"
+DB_SEED_FILE="${PROJECT_ROOT}/ops/sql/backup/ledger.sql"
 
 # Test users
 NEW_USER1_EMAIL="alex.chen.eng2025@gmail.com"
@@ -320,7 +328,7 @@ echo_title "7. LEDGER CREATION API TESTS"
 
 echo_subtitle "7.1 Typical Valid: Create standard group balance ledger"
 payload=$(jq -n --arg name "Tech Team Road Trip 2025" --arg type "GROUP_BALANCE" --arg currency "USD" \
-    '{name:$name, ledger_type:$type, base_currency:$currency}')
+    '{name:$name, ledger_type:$type, base_currency:$currency, categories:[{name:"Default", kind:"EXPENSE"}]}')
 resp=$(api_post "/api/v1/ledgers" "$payload" "$USER1_TOKEN")
 echo "$resp" | jq . || echo "$resp"
 LEDGER_ID=$(echo "$resp" | jq -r '.data.ledger_id // empty')
@@ -333,7 +341,7 @@ payload=$(jq -n \
     --arg type "GROUP_BALANCE" \
     --arg currency "USD" \
     --argjson date "[2025,1,1]" \
-    '{name:$name, ledger_type:$type, base_currency:$currency, share_start_date:$date}')
+    '{name:$name, ledger_type:$type, base_currency:$currency, share_start_date:$date, categories:[{name:"Default", kind:"EXPENSE"}]}')
 resp=$(api_post "/api/v1/ledgers" "$payload" "$USER1_TOKEN")
 echo "$resp" | jq . || echo "$resp"
 LEDGER2_ID=$(echo "$resp" | jq -r '.data.ledger_id // empty')
@@ -341,21 +349,21 @@ echo " Secondary ledger created with ID: $LEDGER2_ID"
 
 echo_subtitle "7.3 Invalid: Create ledger without auth token"
 payload=$(jq -n --arg name "No Auth Ledger" --arg type "GROUP_BALANCE" --arg currency "USD" \
-    '{name:$name, ledger_type:$type, base_currency:$currency}')
+    '{name:$name, ledger_type:$type, base_currency:$currency, categories:[{name:"Default", kind:"EXPENSE"}]}')
 resp=$(api_post "/api/v1/ledgers" "$payload")
 echo "$resp" | jq . || echo "$resp"
 echo " Unauthorized ledger creation properly rejected"
 
 echo_subtitle "7.4 Invalid: Create ledger with invalid type"
 payload=$(jq -n --arg name "Invalid Type Ledger" --arg type "INVALID_TYPE" --arg currency "USD" \
-    '{name:$name, ledger_type:$type, base_currency:$currency}')
+    '{name:$name, ledger_type:$type, base_currency:$currency, categories:[{name:"Default", kind:"EXPENSE"}]}')
 resp=$(api_post "/api/v1/ledgers" "$payload" "$USER1_TOKEN")
 echo "$resp" | jq . || echo "$resp"
 echo " Invalid ledger type properly rejected"
 
 echo_subtitle "7.5 Invalid: Create ledger with empty name"
 payload=$(jq -n --arg name "" --arg type "GROUP_BALANCE" --arg currency "USD" \
-    '{name:$name, ledger_type:$type, base_currency:$currency}')
+    '{name:$name, ledger_type:$type, base_currency:$currency, categories:[{name:"Default", kind:"EXPENSE"}]}')
 resp=$(api_post "/api/v1/ledgers" "$payload" "$USER1_TOKEN")
 echo "$resp" | jq . || echo "$resp"
 echo " Empty name properly rejected"
