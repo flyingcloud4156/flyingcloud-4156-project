@@ -831,7 +831,7 @@ None. All external dependencies are limited to database and Redis.
 
 ## 8.3 Running Integration Tests
 
-Integration tests are included in the Maven verify phase. To run all tests (unit + integration):
+Integration tests are included in the Maven verify phase. To run only integration test:
 
 ```bash
 mvn test -Dtest="dev.coms4156.project.groupproject.integration.*Test"
