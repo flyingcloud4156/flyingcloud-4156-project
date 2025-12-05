@@ -344,7 +344,7 @@ ledger_payload_valid=$(jq -n --arg name "API Negative Test Ledger $RAND" '{
   ledger_type: "GROUP_BALANCE",
   base_currency: "USD",
   categories: [
-    { name: "Test Category", kind: "EXPENSE", isActive: true }
+    { name: "Test Category", kind: "EXPENSE" }
   ]
 }')
 ledger_body=$(api_call POST "/api/v1/ledgers" "$ledger_payload_valid" "$ALICE_TOKEN")
@@ -356,7 +356,7 @@ ledger_payload_missing_name=$(jq -n '{
   ledger_type: "GROUP_BALANCE",
   base_currency: "USD",
   categories: [
-    { name: "Test Category", kind: "EXPENSE", isActive: true }
+    { name: "Test Category", kind: "EXPENSE" }
   ]
 }')
 body=$(api_call POST "/api/v1/ledgers" "$ledger_payload_missing_name" "$ALICE_TOKEN")
@@ -368,7 +368,7 @@ ledger_payload_bad_type=$(jq -n --arg name "Bad Type Ledger $RAND" '{
   ledger_type: "INVALID_TYPE",
   base_currency: "USD",
   categories: [
-    { name: "Test Category", kind: "EXPENSE", isActive: true }
+    { name: "Test Category", kind: "EXPENSE" }
   ]
 }')
 body=$(api_call POST "/api/v1/ledgers" "$ledger_payload_bad_type" "$ALICE_TOKEN")
@@ -380,7 +380,7 @@ ledger_payload_bad_currency=$(jq -n --arg name "Bad Currency Ledger $RAND" '{
   ledger_type: "GROUP_BALANCE",
   base_currency: "XYZ",
   categories: [
-    { name: "Test Category", kind: "EXPENSE", isActive: true }
+    { name: "Test Category", kind: "EXPENSE" }
   ]
 }')
 body=$(api_call POST "/api/v1/ledgers" "$ledger_payload_bad_currency" "$ALICE_TOKEN")

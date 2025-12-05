@@ -367,8 +367,8 @@ ledger_payload=$(jq -n --arg name "Road Trip Fund - $RAND" '{
   ledger_type: "GROUP_BALANCE",
   base_currency: "USD",
   categories: [
-    { name: "Gas",   kind: "EXPENSE", isActive: true },
-    { name: "Food",  kind: "EXPENSE", isActive: true }
+    { name: "Gas",   kind: "EXPENSE" },
+    { name: "Food",  kind: "EXPENSE" }
   ]
 }')
 ledger_body=$(api_call POST "/api/v1/ledgers" "$ledger_payload" "$ALICE_TOKEN")
