@@ -499,7 +499,6 @@ The following scenarios form our manual E2E regression checklist. They are desig
        - Banner updates
        - Status text recalculated
        - Charts still correct after budget changes
-     
 9. **Verify analytics charts**
 
     - On the right side of the dashboard:
@@ -758,6 +757,7 @@ For each major unit:
 - `BudgetServiceImplTest`
 - `TransactionBudgetIntegrationTest` (integration test, verifies automatic budget check when transaction is created)
 
+<<<<<<< HEAD
 ### 6.2.4 TransactionService.createTransaction()
 
 **Input Parameters:**
@@ -1095,9 +1095,13 @@ mvn clean test
 
 ## 6.4 Unit Tests in CI
 
-Unit tests will be run by CI automatically on push.
+CI (`.github/workflows/ci.yml`) provisions MySQL/Redis and runs `mvn clean verify`, which triggers:
+- Backend unit tests (Surefire)
+- Frontend Jest tests via `frontend-maven-plugin` (npm test in `frontend/`)
+- Integration/Failsafe tests and coverage
+This runs automatically on push/PR to main/ddl branches.
 
-------
+
 
 # 7. API Testing
 
