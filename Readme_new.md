@@ -32,25 +32,33 @@ We have consulted the professor regarding this adjustment, and received approval
 
 ## 2.1 Local Development Setup
 
-- JDK17、Maven、IDE 说明（保留原文字）
-- 如何在本地运行服务：`mvn clean install`, `mvn spring-boot:run`
-- 本地运行数据库（MySQL/PostgreSQL）的说明
-- 配置环境变量（如有）
+- JDK17, Maven, IDE notes
+- How to run the service locally: `mvn clean install`, `mvn spring-boot:run`
+- Local DB (MySQL/PostgreSQL) instructions
+- Environment variables (if any)
 
-## 2.2 Running a Macbook Based Instance (Iteration 1)
+## 2.2 Running a MacBook Based Instance (Iteration 1)
 
-（保留原链接）
+- (keep existing link)
 
 ## 2.3 Running a Cloud Based Instance (Iteration 2)
 
-（必须扩展：课程要求）
+Must include:
 
-内容必须包括：
-
-- GCP 部署方式（Cloud Run / Cloud SQL / VPC Connector）
-- 可访问的 service URL
-- 如何验证部署在云端的实例正在运行
-- 导师访问方式（无需账号则说明）
+- GCP deployment (Cloud Run / Cloud SQL / VPC Connector)
+- Accessible service URL: http://136.114.83.248:3000/
+- How to verify the cloud instance is running:
+  - Open the URL above; the login page should render.
+  - Use a seed account to log in; dashboard loads indicate backend + DB connectivity.
+- Mentor access (no extra account needed if using seed users):
+  - Seed users (password for all: `Passw0rd!`):
+    - alice@gmail.com
+    - bob@gmail.com
+    - charlie@gmail.com
+    - diana@gmail.com
+    - evan@gmail.com
+    - fay@gmail.com
+    - gina@gmail.com
 
 
 # 3. API Documentation
@@ -916,13 +924,21 @@ The Kanban board is here: https://github.com/orgs/flyingcloud4156/projects/4
 
 # 14. AI Documentation
 
-（原 README 已有 → 保留并扩大）
+We used AI assistance in the following areas:
 
-必须包括：
+- Documentation and comments: drafting and polishing markdown sections,  comments, and test descriptions.
+- Style fixes: helping spot and correct Checkstyle/PMD warnings (line length, declaration usage distance).
+- Testing gaps: identifying missing or weak test coverage and suggesting additional test cases.
 
-- 使用 AI 的部分
-- 你如何修改、验证、人工审查
-- Prompt examples
+Review and validation:
+- All AI-suggested changes were manually reviewed, edited, and validated via unit/API/integration test runs.
+- CI (GitHub Actions) uses style/static analysis and full test suites to guard correctness.
+
+Prompt examples (summarized):
+- “Suggest concise English documentation for cloud deployment steps.”
+- “Identify missing tests for analytics edge cases and propose assertions.”
+- “Refactor long lines and adjust variable usage to satisfy Checkstyle.”
+
 
 ------
 
