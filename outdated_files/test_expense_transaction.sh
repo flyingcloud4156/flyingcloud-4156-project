@@ -92,7 +92,7 @@ mysql -u root -e "CREATE DATABASE ledger;"
 echo "🔄 Loading schema..."
 mysql -u root ledger < "$DB_SCHEMA_FILE"
 
-echo "🔄 Loading seed data..."
+echo "🔄 Loading test data..."
 mysql -u root ledger < "$DB_SEED_FILE"
 
 echo "✅ Database reset successfully!"
