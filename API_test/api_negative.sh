@@ -343,11 +343,9 @@ ledger_payload_valid=$(jq -n --arg name "API Negative Test Ledger $RAND" '{
   name: $name,
   ledger_type: "GROUP_BALANCE",
   base_currency: "USD",
-  category: {
-    name: "Test Category",
-    kind: "EXPENSE",
-    is_active: true
-  }
+  categories: [
+    { name: "Test Category", kind: "EXPENSE", isActive: true }
+  ]
 }')
 ledger_body=$(api_call POST "/api/v1/ledgers" "$ledger_payload_valid" "$ALICE_TOKEN")
 assert_success "$ledger_body"
@@ -356,7 +354,10 @@ LEDGER_ID="$(echo "$ledger_body" | jq -r '.data.ledger_id')"
 sub "[LEDGER-CREATE-MISSING-NAME] Create ledger with missing name"
 ledger_payload_missing_name=$(jq -n '{
   ledger_type: "GROUP_BALANCE",
-  base_currency: "USD"
+  base_currency: "USD",
+  categories: [
+    { name: "Test Category", kind: "EXPENSE", isActive: true }
+  ]
 }')
 body=$(api_call POST "/api/v1/ledgers" "$ledger_payload_missing_name" "$ALICE_TOKEN")
 assert_failure "$body"
@@ -365,7 +366,10 @@ sub "[LEDGER-CREATE-INVALID-TYPE] Create ledger with invalid ledger_type"
 ledger_payload_bad_type=$(jq -n --arg name "Bad Type Ledger $RAND" '{
   name: $name,
   ledger_type: "INVALID_TYPE",
-  base_currency: "USD"
+  base_currency: "USD",
+  categories: [
+    { name: "Test Category", kind: "EXPENSE", isActive: true }
+  ]
 }')
 body=$(api_call POST "/api/v1/ledgers" "$ledger_payload_bad_type" "$ALICE_TOKEN")
 assert_failure "$body"
@@ -374,7 +378,10 @@ sub "[LEDGER-CREATE-INVALID-CURRENCY] Create ledger with unknown base_currency"
 ledger_payload_bad_currency=$(jq -n --arg name "Bad Currency Ledger $RAND" '{
   name: $name,
   ledger_type: "GROUP_BALANCE",
-  base_currency: "XYZ"
+  base_currency: "XYZ",
+  categories: [
+    { name: "Test Category", kind: "EXPENSE", isActive: true }
+  ]
 }')
 body=$(api_call POST "/api/v1/ledgers" "$ledger_payload_bad_currency" "$ALICE_TOKEN")
 assert_failure "$body"
