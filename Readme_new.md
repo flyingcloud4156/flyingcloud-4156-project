@@ -241,6 +241,39 @@ Must include:
   * HTTP 404 Status Code with "Ledger not found."
   * HTTP 500 Status Code with "Error occurred while listing transactions."
 
+#### DELETE /api/v1/ledgers/{ledgerId}/transactions/{transactionId}
+* Expected Input Parameters:
+  * ledgerId (long): the unique identifier of the ledger
+  * transactionId (long): the unique identifier of the transaction to delete
+* Expected Output: A JSON object (Result<Void>) indicating deletion success
+* Description: Deletes a transaction and all its associated splits and debt edges. Only the transaction creator or users with OWNER/ADMIN role can delete transactions.
+* Upon Success: HTTP 204 Status Code returned with no content
+* Upon Failure:
+  * HTTP 401 Status Code with "Not logged in."
+  * HTTP 403 Status Code with "Insufficient permissions. Only creator, OWNER, or ADMIN can delete transactions."
+  * HTTP 404 Status Code with "Transaction not found."
+  * HTTP 500 Status Code with "Error occurred while deleting transaction."
+
+#### GET /api/v1/ledgers/{ledgerId}/analytics/overview
+* Expected Input Parameters:
+  * ledgerId (long): the unique identifier of the ledger
+  * months (integer, optional): number of months to analyze (default 3, max 24)
+* Expected Output: A JSON object (LedgerAnalyticsOverview) containing:
+  * totalIncome (decimal): total income for the period
+  * totalExpense (decimal): total expense for the period
+  * trend (list): monthly income/expense trend data
+  * categories (list): expense breakdown by category with amounts and ratios
+  * accountsReceivable (list): users who are owed money (AR) with amounts
+  * accountsPayable (list): users who owe money (AP) with amounts
+  * recommendations (list): rule-based recommendations (e.g., SPEND_TOO_HIGH if expenses exceed income)
+* Description: Provides comprehensive analytics overview including income/expense totals, trend analysis, category breakdown, AR/AP balances, and recommendations. Private transactions are filtered based on current user permissions.
+* Upon Success: HTTP 200 Status Code returned with analytics overview in JSON
+* Upon Failure:
+  * HTTP 401 Status Code with "Not logged in."
+  * HTTP 403 Status Code with "Not a member of this ledger."
+  * HTTP 404 Status Code with "Ledger not found."
+  * HTTP 500 Status Code with "Error occurred while retrieving analytics overview."
+
 #### POST /api/v1/ledgers/{ledgerId}/budgets
 * Expected Input Parameters: JSON object (SetBudgetRequest) containing the following fields
   * categoryId (long, optional): category ID for category-specific budget (null for ledger-level budget)
@@ -274,6 +307,50 @@ Must include:
   * HTTP 401 Status Code with "Not logged in."
   * HTTP 403 Status Code with "Not a member of this ledger."
   * HTTP 500 Status Code with "Error occurred while retrieving budget status."
+
+#### GET /api/v1/ledgers/{ledgerId}/settlement-plan
+* Expected Input Parameters:
+  * ledgerId (long): the unique identifier of the ledger
+* Expected Output: A JSON object (SettlementPlanResponse) containing:
+  * transfers (list): list of transfer items, each with:
+    * fromUserId (long): user ID who should pay
+    * toUserId (long): user ID who should receive
+    * amount (decimal): transfer amount in ledger base currency
+  * transferCount (integer): total number of transfers in the plan
+  * totalAmount (decimal): total amount to be transferred (sum of all transfer amounts)
+* Description: Generates a minimal settlement plan for N-party debts using the heap-greedy algorithm. This endpoint uses default settings (no rounding, no caps, no payment channel constraints). For advanced options, use the POST endpoint.
+* Upon Success: HTTP 200 Status Code returned with settlement plan in JSON
+* Upon Failure:
+  * HTTP 401 Status Code with "Not logged in."
+  * HTTP 403 Status Code with "Not a member of this ledger."
+  * HTTP 404 Status Code with "Ledger not found."
+  * HTTP 500 Status Code with "Error occurred while generating settlement plan."
+
+#### POST /api/v1/ledgers/{ledgerId}/settlement-plan
+* Expected Input Parameters:
+  * ledgerId (long): the unique identifier of the ledger
+  * SettlementConfig (optional, JSON object): configuration for advanced settlement options:
+    * roundingStrategy (string, optional): rounding strategy - "ROUND_HALF_UP" (default), "TRIM_TO_UNIT", or "NONE"
+    * maxTransferAmount (decimal, optional): maximum transfer amount per transaction (cap). Null means no cap.
+    * paymentChannels (map, optional): map of user ID pairs (fromUserId-toUserId as string key) to allowed payment channels (set of strings). Empty means all channels allowed.
+    * forceMinCostFlow (boolean, optional): force use of min-cost flow algorithm instead of heap-greedy (default: false)
+    * minCostFlowThreshold (integer, optional): threshold for switching to min-cost flow. If heap-greedy produces more transfers than this threshold, fallback to min-cost flow.
+    * currencyRates (map, optional): currency conversion rates map (fromCurrency-toCurrency as string key -> rate as decimal). If not provided, assumes 1:1 for same currency.
+* Expected Output: A JSON object (SettlementPlanResponse) containing:
+  * transfers (list): list of transfer items, each with:
+    * fromUserId (long): user ID who should pay
+    * toUserId (long): user ID who should receive
+    * amount (decimal): transfer amount (after rounding and currency conversion if applicable)
+  * transferCount (integer): total number of transfers in the plan
+  * totalAmount (decimal): total amount to be transferred (sum of all transfer amounts)
+* Description: Generates a settlement plan with custom constraints, rounding rules, currency conversion, and algorithm selection. Supports both heap-greedy (default) and min-cost flow algorithms. Can apply transfer caps, payment channel constraints, and currency conversion rates.
+* Upon Success: HTTP 200 Status Code returned with settlement plan in JSON
+* Upon Failure:
+  * HTTP 400 Status Code with "Invalid input." (e.g., invalid rounding strategy, negative cap)
+  * HTTP 401 Status Code with "Not logged in."
+  * HTTP 403 Status Code with "Not a member of this ledger."
+  * HTTP 404 Status Code with "Ledger not found."
+  * HTTP 500 Status Code with "Error occurred while generating settlement plan."
 
 
 # 4. Client Application
@@ -680,26 +757,335 @@ For each major unit:
 - `BudgetServiceImplTest`
 - `TransactionBudgetIntegrationTest` (integration test, verifies automatic budget check when transaction is created)
 
-### 6.2.4 AnalyticsService.overview()
+<<<<<<< HEAD
+### 6.2.4 TransactionService.createTransaction()
 
-**Inputs:** `ledgerId`, `months`
+**Input Parameters:**
+- `ledgerId` (Long): Ledger ID
+- `CreateTransactionRequest`:
+  - `type` (String): Transaction type (EXPENSE, INCOME, LOAN)
+  - `amountTotal` (BigDecimal): Total transaction amount
+  - `currency` (String): Transaction currency
+  - `payerId` (Long): User ID who paid
+  - `splits` (List<SplitItem>): List of split items with userId, method (EQUAL, PERCENT, WEIGHT, EXACT), amount/percent/weight
+  - `categoryId` (Long, optional): Category ID
+  - `note` (String, optional): Transaction note
+  - `txnAt` (LocalDateTime): Transaction timestamp
+  - `isPrivate` (Boolean): Whether transaction is private
 
-**Valid/Functional partitions:**
-- Signed-in ledger member, `months` between 1 and 24 returns totals, trend, categories, AR/AP, merchants.
-- If expenses exceed income, a warning recommendation is included; otherwise, no recommendation.
-- Category names that are blank or null are rendered as "Uncategorized"; ratios stay safe when total expense is zero.
-- AR/AP rows from different users are merged and sorted by net (AR minus AP).
-- Trend fills missing months with zero income/expense to keep continuity.
+**Valid Partitions:**
+- Authenticated user who is a ledger member
+- Valid transaction types: EXPENSE, INCOME, LOAN
+- Valid split methods: EQUAL, PERCENT, WEIGHT, EXACT
+- Currency matches ledger base currency
+- All split users are ledger members
+- Split amounts sum correctly to total amount (for EXACT method)
+- Split percents sum to 100 (for PERCENT method)
+- Split weights are positive (for WEIGHT method)
+- Valid date/time
+- Payer is a ledger member
 
-**Invalid/Boundary partitions:**
-- No current user: rejects with `AUTH_REQUIRED`.
-- Ledger does not exist: rejects with `LEDGER_NOT_FOUND`.
-- User is not a member: membership check fails.
-- `months` is null or ≤0: defaults to 3; `months` > 24: capped to 24.
+**Invalid Partitions:**
+- Unauthenticated user
+- User not a ledger member
+- Ledger does not exist
+- Currency mismatch with ledger
+- Invalid transaction type
+- Invalid split method
+- Split users not in ledger
+- Split amounts don't sum to total (EXACT method)
+- Split percents don't sum to 100 (PERCENT method)
+- Duplicate users in splits
+- Missing required fields (type, amountTotal, payerId, splits)
+- Empty splits list
+- Negative or zero amount
 
-**Test Class:** `AnalyticsServiceImplTest`
+**Boundary Cases:**
+- Zero amount (if allowed)
+- Very large amounts
+- Maximum number of splits
+- Single split (minimum)
+- Empty splits list
+- Date at epoch/current time
+- All splits equal (EQUAL method)
+- Single user in splits
+- Payer included in splits vs. payer excluded from splits
+- Category ID null vs. valid category ID
+- Private transaction vs. public transaction
 
+**Test Class Names:**
+- `TransactionServiceImplTest` (98+ test cases, >95% branch coverage)
 
+### 6.2.5 TransactionService.getTransaction()
+
+**Input Parameters:**
+- `ledgerId` (Long): Ledger ID
+- `transactionId` (Long): Transaction ID
+
+**Valid Partitions:**
+- Authenticated user who is a ledger member
+- Transaction exists in the ledger
+- Transaction is public OR transaction is private but created by current user
+- Ledger exists
+
+**Invalid Partitions:**
+- Unauthenticated user
+- User not a ledger member
+- Transaction does not exist
+- Transaction belongs to different ledger
+- Transaction is private and created by another user
+
+**Boundary Cases:**
+- First transaction in ledger
+- Last transaction in ledger
+- Transaction with no splits
+- Transaction with maximum splits
+- Public transaction accessed by member
+- Private transaction accessed by creator
+- Private transaction accessed by non-creator member (should fail)
+
+**Test Class Names:**
+- `TransactionServiceImplTest`
+
+### 6.2.6 TransactionService.deleteTransaction()
+
+**Input Parameters:**
+- `ledgerId` (Long): Ledger ID
+- `transactionId` (Long): Transaction ID
+
+**Valid Partitions:**
+- Authenticated user with OWNER or ADMIN role
+- Transaction exists in the ledger
+- User is a ledger member
+- Ledger exists
+
+**Invalid Partitions:**
+- Unauthenticated user
+- User not a ledger member
+- User has MEMBER role (insufficient permissions)
+- Transaction does not exist
+- Transaction belongs to different ledger
+
+**Boundary Cases:**
+- Delete first transaction
+- Delete last transaction
+- Delete transaction with associated debt edges
+- Delete transaction with budget alerts
+
+**Test Class Names:**
+- `TransactionServiceImplTest`
+
+### 6.2.7 LedgerService.createLedger()
+
+**Input Parameters:**
+- `CreateLedgerRequest`:
+  - `name` (String): Ledger name
+  - `ledgerType` (String): GROUP_BALANCE or PERSONAL
+  - `baseCurrency` (String): Base currency code
+  - `categories` (List<String>, optional): Category names
+  - `shareStartDate` (LocalDate, optional): Start date for sharing
+
+**Valid Partitions:**
+- Authenticated user
+- Valid ledger type: GROUP_BALANCE, PERSONAL
+- Valid currency code (exists in currency table)
+- Non-empty name
+- Categories list (empty, single, multiple)
+- Valid date or null
+
+**Invalid Partitions:**
+- Unauthenticated user
+- Empty or null name
+- Invalid ledger type
+- Invalid currency code
+- Invalid date format
+
+**Boundary Cases:**
+- Empty categories list
+- Single category
+- Maximum number of categories
+- Very long name
+- Minimum name length
+- Date at epoch
+- Date in future
+- Date in past
+
+**Test Class Names:**
+- `LedgerServiceImplTest`
+
+### 6.2.8 LedgerService.getMyLedgers()
+
+**Input Parameters:**
+- None (uses current authenticated user)
+
+**Valid Partitions:**
+- Authenticated user
+- User has ledgers (1, 2, many)
+- User has no ledgers (empty list)
+
+**Invalid Partitions:**
+- Unauthenticated user
+
+**Boundary Cases:**
+- User with no ledgers (returns empty list)
+- User with single ledger
+- User with many ledgers
+- User with both GROUP_BALANCE and PERSONAL ledgers
+
+**Test Class Names:**
+- `LedgerServiceImplTest`
+
+### 6.2.9 LedgerService.getLedgerDetails()
+
+**Input Parameters:**
+- `ledgerId` (Long): Ledger ID
+
+**Valid Partitions:**
+- Authenticated user who is a ledger member (any role)
+- Ledger exists
+
+**Invalid Partitions:**
+- Unauthenticated user
+- User not a ledger member
+- Ledger does not exist
+
+**Boundary Cases:**
+- Ledger with no members (only owner)
+- Ledger with many members
+- Ledger with no transactions
+- Ledger with many transactions
+- Ledger with no categories
+- Ledger with many categories
+
+**Test Class Names:**
+- `LedgerServiceImplTest`
+
+### 6.2.10 LedgerService.getSettlementPlan()
+
+**Input Parameters:**
+- `ledgerId` (Long): Ledger ID
+- `SettlementConfig` (optional): Configuration for rounding, caps, payment channels, currency conversion
+
+**Valid Partitions:**
+- Authenticated user who is a ledger member
+- Ledger exists
+- Simple debt structure (heap-greedy algorithm sufficient)
+- Complex debt structure (min-cost flow algorithm needed)
+- Multiple creditors and debtors
+- Bidirectional debts (netting)
+- Currency conversion scenarios
+- Payment channel constraints
+- Transfer amount caps
+- Rounding strategies: ROUND_HALF_UP, TRIM_TO_UNIT, NONE
+
+**Invalid Partitions:**
+- Unauthenticated user
+- User not a ledger member
+- Ledger does not exist
+- Invalid currency conversion rates
+- Invalid rounding strategy
+
+**Boundary Cases:**
+- Zero balances (no settlement needed)
+- Single creditor, single debtor
+- All users have zero net balance
+- Maximum iterations reached
+- Transfer amount equals cap
+- Remaining balances become zero during processing
+- No debt edges (returns empty plan)
+- Fully offset debts (returns empty plan)
+- Minimal transfers (heap-greedy optimal)
+- Complex cycle requiring min-cost flow
+- Payment channel blocked (skips transfer)
+- Payment channel allowed (creates transfer)
+- Currency conversion with null rates (uses 1.0)
+- Rounding with null config (no rounding)
+- Rounding with invalid strategy (uses default)
+
+**Test Class Names:**
+- `LedgerServiceImplTest` (200+ test cases, >95% branch coverage)
+
+### 6.2.11 AnalyticsService.getAnalyticsOverview()
+
+**Input Parameters:**
+- `ledgerId` (Long): Ledger ID
+- `months` (Integer, optional): Number of months to analyze (default 3, max 24)
+
+**Valid Partitions:**
+- Authenticated user who is a ledger member
+- Ledger exists
+- `months`: 1-24
+- Transactions exist or do not exist
+- Public and private transactions
+- Multiple categories
+- Income and expense transactions
+
+**Invalid Partitions:**
+- Unauthenticated user
+- User not a ledger member
+- Ledger does not exist
+- `months`: < 1 or > 24 (clamped to valid range)
+
+**Boundary Cases:**
+- `months` = 1 (minimum)
+- `months` = 24 (maximum)
+- `months` = 0 (defaults to 3)
+- `months` > 24 (clamped to 24)
+- No transactions (returns zeros/empty lists)
+- Single transaction
+- Many transactions
+- Only expenses (no income)
+- Only income (no expenses)
+- Private transactions excluded for non-creators
+- Category with null/blank name (normalized to "Uncategorized")
+- AR/AP with disjoint users (merged and sorted)
+
+**Test Class Names:**
+- `AnalyticsServiceImplTest`
+
+### 6.2.12 UserService.getUserById()
+
+**Input Parameters:**
+- `userId` (Long): User ID
+
+**Valid Partitions:**
+- Authenticated user
+- User exists
+- Querying own profile or another user's profile
+
+**Invalid Partitions:**
+- Unauthenticated user
+- User does not exist
+
+**Boundary Cases:**
+- Querying own user ID
+- Querying another user's ID
+- First user in system
+- Last user in system
+
+**Test Class Names:**
+- `UserServiceImplTest`
+
+### 6.2.13 CurrencyService.getAllCurrencies()
+
+**Input Parameters:**
+- None
+
+**Valid Partitions:**
+- Always valid (no authentication required)
+- Currencies exist in database
+
+**Invalid Partitions:**
+- None (always returns list, may be empty)
+
+**Boundary Cases:**
+- Empty currency list
+- Single currency
+- Many currencies
+- Currencies with different exponents
+
+**Test Class Names:**
+- `CurrencyServiceImplTest`
 
 ## 6.3 How to Run Unit Tests
 

@@ -202,31 +202,47 @@ This document details all equivalence partitions tested for each API endpoint in
 
 ### 2.7 GET /api/v1/ledgers/{ledgerId}/settlement-plan
 
-**Endpoint**: Get settlement plan
+**Endpoint**: Get settlement plan (default configuration)
 
 | Partition ID | Partition Type | Input Description | Test Case | Expected Result | Test File |
 |--------------|----------------|-------------------|-----------|-----------------|-----------|
-| SETTLEMENT-GET-V1 | Valid | As member | SETTLEMENT-VALID-AS-MEMBER | HTTP 200, settlement plan | api_negative.sh |
+| SETTLEMENT-GET-V1 | Valid (Typical) | As member, simple debt structure | SETTLEMENT-VALID-AS-MEMBER | HTTP 200, settlement plan | api_negative.sh |
+| SETTLEMENT-GET-V2 | Valid (Atypical) | As member, complex debt structure | SETTLEMENT-COMPLEX-DEBTS | HTTP 200, settlement plan | api_negative.sh |
+| SETTLEMENT-GET-V3 | Valid (Boundary) | As member, no debts (empty plan) | SETTLEMENT-NO-DEBTS | HTTP 200, empty plan | api_negative.sh |
+| SETTLEMENT-GET-V4 | Valid (Boundary) | As member, fully offset debts | SETTLEMENT-FULLY-OFFSET | HTTP 200, empty plan | api_negative.sh |
 | SETTLEMENT-GET-I1 | Invalid | As non-member | SETTLEMENT-AS-NON-MEMBER | HTTP 403, forbidden | api_negative.sh |
+| SETTLEMENT-GET-I2 | Invalid | Non-existent ledger | SETTLEMENT-NONEXISTENT-LEDGER | HTTP 404, not found | api_negative.sh |
+| SETTLEMENT-GET-I3 | Invalid | Without authentication | SETTLEMENT-NO-AUTH | HTTP 401, unauthorized | api_negative.sh |
 
-**Total Partitions**: 2 (1 valid, 1 invalid)
+**Total Partitions**: 7 (4 valid, 3 invalid)
 
 ---
 
 ### 2.8 POST /api/v1/ledgers/{ledgerId}/settlement-plan
 
-**Endpoint**: Execute settlement plan
+**Endpoint**: Get settlement plan with custom configuration
 
 | Partition ID | Partition Type | Input Description | Test Case | Expected Result | Test File |
 |--------------|----------------|-------------------|-----------|-----------------|-----------|
-| SETTLEMENT-EXEC-V1 | Valid | As OWNER | SETTLEMENT-EXECUTE-AS-OWNER | HTTP 200, settlement executed | api_settlement_execution_tests.sh |
-| SETTLEMENT-EXEC-V2 | Valid | As EDITOR | SETTLEMENT-EXECUTE-AS-EDITOR | HTTP 200, settlement executed | api_settlement_execution_tests.sh |
-| SETTLEMENT-EXEC-V3 | Valid | As VIEWER | SETTLEMENT-VIEW-AS-VIEWER | HTTP 200, can view plan | api_settlement_execution_tests.sh |
-| SETTLEMENT-EXEC-I1 | Invalid | Without authentication | SETTLEMENT-NO-AUTH | HTTP 401, unauthorized | api_settlement_execution_tests.sh |
-| SETTLEMENT-EXEC-I2 | Invalid | Non-existent ledger | SETTLEMENT-NONEXISTENT-LEDGER | HTTP 404, not found | api_settlement_execution_tests.sh |
-| SETTLEMENT-EXEC-I3 | Invalid | As non-member | SETTLEMENT-NON-MEMBER | HTTP 403, forbidden | api_settlement_execution_tests.sh |
+| SETTLEMENT-POST-V1 | Valid (Typical) | As OWNER, null config (default) | SETTLEMENT-EXECUTE-AS-OWNER | HTTP 200, settlement plan | api_settlement_execution_tests.sh |
+| SETTLEMENT-POST-V2 | Valid (Typical) | As EDITOR, with rounding config | SETTLEMENT-EXECUTE-AS-EDITOR | HTTP 200, settlement plan | api_settlement_execution_tests.sh |
+| SETTLEMENT-POST-V3 | Valid (Atypical) | As VIEWER, with payment channel constraints | SETTLEMENT-VIEW-AS-VIEWER | HTTP 200, settlement plan | api_settlement_execution_tests.sh |
+| SETTLEMENT-POST-V4 | Valid (Atypical) | With transfer amount cap | SETTLEMENT-WITH-CAP | HTTP 200, settlement plan with capped transfers | api_settlement_execution_tests.sh |
+| SETTLEMENT-POST-V5 | Valid (Atypical) | With currency conversion rates | SETTLEMENT-WITH-CONVERSION | HTTP 200, settlement plan with converted amounts | api_settlement_execution_tests.sh |
+| SETTLEMENT-POST-V6 | Valid (Atypical) | Force min-cost flow algorithm | SETTLEMENT-FORCE-MINCOST | HTTP 200, settlement plan using min-cost flow | api_settlement_execution_tests.sh |
+| SETTLEMENT-POST-V7 | Valid (Atypical) | With rounding strategy ROUND_HALF_UP | SETTLEMENT-ROUNDING-HALF-UP | HTTP 200, settlement plan with rounded amounts | api_settlement_execution_tests.sh |
+| SETTLEMENT-POST-V8 | Valid (Atypical) | With rounding strategy TRIM_TO_UNIT | SETTLEMENT-ROUNDING-TRIM | HTTP 200, settlement plan with trimmed amounts | api_settlement_execution_tests.sh |
+| SETTLEMENT-POST-V9 | Valid (Atypical) | With rounding strategy NONE | SETTLEMENT-ROUNDING-NONE | HTTP 200, settlement plan without rounding | api_settlement_execution_tests.sh |
+| SETTLEMENT-POST-B1 | Boundary | Payment channel blocked for all transfers | SETTLEMENT-CHANNEL-BLOCKED | HTTP 200, empty plan (no valid transfers) | api_settlement_execution_tests.sh |
+| SETTLEMENT-POST-B2 | Boundary | Transfer cap smaller than all debts | SETTLEMENT-CAP-TOO-SMALL | HTTP 200, plan with capped transfers | api_settlement_execution_tests.sh |
+| SETTLEMENT-POST-I1 | Invalid | Without authentication | SETTLEMENT-NO-AUTH | HTTP 401, unauthorized | api_settlement_execution_tests.sh |
+| SETTLEMENT-POST-I2 | Invalid | Non-existent ledger | SETTLEMENT-NONEXISTENT-LEDGER | HTTP 404, not found | api_settlement_execution_tests.sh |
+| SETTLEMENT-POST-I3 | Invalid | As non-member | SETTLEMENT-NON-MEMBER | HTTP 403, forbidden | api_settlement_execution_tests.sh |
+| SETTLEMENT-POST-I4 | Invalid | Invalid rounding strategy | SETTLEMENT-INVALID-ROUNDING | HTTP 4xx, validation error | api_settlement_execution_tests.sh |
+| SETTLEMENT-POST-I5 | Invalid | Negative transfer cap | SETTLEMENT-NEGATIVE-CAP | HTTP 4xx, validation error | api_settlement_execution_tests.sh |
+| SETTLEMENT-POST-I6 | Invalid | Invalid currency conversion rates | SETTLEMENT-INVALID-CONVERSION | HTTP 4xx, validation error | api_settlement_execution_tests.sh |
 
-**Total Partitions**: 6 (3 valid, 3 invalid)
+**Total Partitions**: 16 (9 valid, 2 boundary, 5 invalid)
 
 ---
 
