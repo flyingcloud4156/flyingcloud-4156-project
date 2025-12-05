@@ -1359,7 +1359,110 @@ on completion the interceptor emits a  structured line with method, URI, sanitiz
 - Example shape: `event=ACCESS requestId=... method=POST uri=/api/v1/ledgers params={...} handler=... status=201 durationMs=45 user=alice exception=none`.
 
 
-# 16. Submission Notes
+# 16. How to use our Service to develop your own Clients (e.g., Company Back-Office Systems)
+Our sample web client focuses on **personal and small-group expense splitting** (e.g., friends sharing trips or roommates splitting bills). 
+However, the service itself is designed as a **generic ledger and settlement platform** that can support other types of clients, such as:
+
+- A **company back-office reimbursement system**
+- An **internal finance dashboard** that tracks shared project costs
+- A **department cost allocation tool** that settles inter-team charges
+
+This section explains what a hypothetical third-party developer would need to do in order to build their own client on top of our service.
+
+## 16.1 Conceptual Mapping
+
+A third-party client does **not** need to reuse our UI, but it should understand and reuse the **core domain concepts**exposed by the API:
+
+- **User** – an authenticated identity in the system
+    - In a company setting: an employee, approver, or accountant.
+- **Ledger** – a logical “pool” or “project” that groups transactions and members
+    - In a company setting: a project, cost center, team trip, department budget, etc.
+- **Ledger member** – a user participating in a ledger
+    - In a company setting: employees involved in the project / cost center.
+- **Transaction** – a concrete money movement recorded in a ledger
+    - In a company setting: an expense report item, invoice, purchase, internal chargeback, etc.
+- **Splits** – how a transaction amount is allocated across members
+    - In a company setting: how a cost is shared across employees, departments, or cost centers.
+- **Budget** – a monthly spending limit for a ledger (optionally per category)
+    - In a company setting: a project or department monthly budget.
+- **Settlement plan** – a suggested set of transfers to settle all net balances
+    - In a company setting: who should reimburse whom, or how internal transfers should be booked.
+
+A different client (for example, a company back-office UI) can present these concepts with its own terminology while still calling the same APIs.
+
+## 16.2 Minimal Integration Steps
+
+A third-party client generally needs to implement the following steps:
+
+1. **Authentication and user identity**
+    - Use `POST /api/v1/auth/login` (or a future SSO wrapper) to obtain an access token.
+    - Pass `X-Auth-Token` on subsequent requests.
+    - Use `GET /api/v1/users/me` to confirm the logged-in user and map it to the company’s notion of “current employee” or “operator”.
+2. **Creating and managing ledgers**
+    - Use `POST /api/v1/ledgers` to create ledgers representing internal entities such as:
+        - “Project A – Q1 2025”
+        - “Marketing Campaign – Europe”
+        - “Team Offsite – NYC”
+    - Use `GET /api/v1/ledgers/mine` or a dedicated admin view to list ledgers relevant to the current user.
+3. **Onboarding members**
+    - Use `GET /api/v1/user-lookup?email=...` to map company email addresses to service user IDs.
+    - Use `POST /api/v1/ledgers/{ledgerId}/members` to add employees or departments as members of the ledger.
+    - Optionally use `DELETE /api/v1/ledgers/{ledgerId}/members/{userId}` to remove people who leave a project.
+4. **Recording and viewing transactions**
+    - Use `POST /api/v1/ledgers/{ledgerId}/transactions` to record:
+        - Expense lines from reimbursement claims
+        - Vendor invoices
+        - Internal transfers between cost centers
+    - The third-party client controls:
+        - How transaction forms look
+        - Which fields are required from business users
+    - Use `GET /api/v1/ledgers/{ledgerId}/transactions` and
+      `GET /api/v1/ledgers/{ledgerId}/transactions/{txId}` to power:
+        - Back-office tables
+        - Detail views
+        - Audit/review screens
+5. **Budgets and monitoring**
+    - Use `POST /api/v1/ledgers/{ledgerId}/budgets` to set monthly budgets for projects or departments.
+    - Use `GET /api/v1/ledgers/{ledgerId}/budgets/status?year=YYYY&month=MM` to show:
+        - How much has been spent
+        - Whether a given budget is near its limit or exceeded
+    - A third-party client can build dashboards, alerts, or approval workflows based on this status.
+6. **Reporting and analytics**
+    - Use `GET /api/v1/ledgers/{ledgerId}/analytics/overview?months=...` to obtain:
+        - Income/expense trends
+        - Category breakdowns
+    - A company back-office UI can render this data in:
+        - Internal reporting dashboards
+        - Exportable CSVs
+        - Visualizations embedded in an admin portal.
+7. **Settlement and period closing**
+    - Use `GET /api/v1/ledgers/{ledgerId}/settlement-plan` to compute a default settlement for all members in a ledger.
+    - Use `POST /api/v1/ledgers/{ledgerId}/settlement-plan` with advanced options to enforce business rules (e.g., a max transfer size).
+    - A third-party system might:
+        - Convert each suggested transfer into an internal journal entry
+        - Generate reimbursement instructions
+        - Trigger payroll or payment runs.
+
+## 16.3 What the Third-Party Client Controls
+
+The third-party developer is free to choose:
+
+- **Technology stack**
+    - Web SPA, mobile app, desktop tool, or a batch process.
+- **UI and workflows**
+    - For example, a company admin portal with list/detail views, approval buttons, and export features.
+- **Additional business rules**
+    - E.g., only finance role can confirm settlement, extra validation before posting a transaction, integration with HR or ERP systems.
+
+Our service remains a **domain-focused backend** that handles:
+
+- Correct accounting of ledgers, members, and transactions
+- Consistent budgeting and analytics across time
+- Deterministic N-party settlement computation
+
+Any third-party client that follows the integration steps above can reuse these capabilities in their own context without adopting our UI or UX.
+
+# 17. Submission Notes
 
  
 - Tag name: `checkpoint2` (graded snapshot).
