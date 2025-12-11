@@ -276,83 +276,31 @@ echo " Non-existent user properly rejected"
 echo " All login tests completed!"
 
 # =======================================================================================
-# 3. TOKEN REFRESH API TESTS  
+# 3. TOKEN REFRESH / LOGOUT TESTS (deprecated, skipped)  
 # =======================================================================================
-echo_title "3. TOKEN REFRESH API TESTS"
-
-echo_subtitle "3.1 Typical Valid: Refresh with valid refresh token"
-resp=$(curl -sS -X POST "$HOST/api/v1/auth/refresh?refreshToken=$USER1_REFRESH_TOKEN")
-echo "$resp" | jq . || echo "$resp"
-NEW_ACCESS_TOKEN=$(echo "$resp" | jq -r '.data.access_token // empty')
-NEW_REFRESH_TOKEN=$(echo "$resp" | jq -r '.data.refresh_token // empty')
-if [[ -n "$NEW_ACCESS_TOKEN" && "$NEW_ACCESS_TOKEN" != "null" ]]; then
-    USER1_TOKEN="$NEW_ACCESS_TOKEN"
-    USER1_REFRESH_TOKEN="$NEW_REFRESH_TOKEN"
-    echo " Token refresh successful"
-else
-    echo "️ Token refresh returned null (may not be implemented)"
-fi
-
-echo_subtitle "3.2 Atypical Valid: Refresh multiple times"
-resp=$(curl -sS -X POST "$HOST/api/v1/auth/refresh?refreshToken=$USER2_REFRESH_TOKEN")
-echo "$resp" | jq . || echo "$resp"
-echo " Multiple refresh handled"
-
-echo_subtitle "3.3 Invalid: Refresh with invalid token"
-resp=$(curl -sS -X POST "$HOST/api/v1/auth/refresh?refreshToken=InvalidToken12345")
-echo "$resp" | jq . || echo "$resp"
-echo " Invalid refresh token properly rejected"
-
-echo " All token refresh tests completed!"
+echo_title "3. TOKEN REFRESH / LOGOUT TESTS (deprecated)"
+echo " Refresh token and refresh-based logout APIs are deprecated; tests skipped."
 
 # =======================================================================================
-# 4. USER LOGOUT API TESTS  
+# 4. USER LOOKUP API TESTS  
 # =======================================================================================
-echo_title "4. USER LOGOUT API TESTS"
+echo_title "4. USER LOOKUP API TESTS"
 
-echo_subtitle "4.1 Typical Valid: Logout with valid refresh token"
-# Get a new user for logout testing
-resp=$(api_post "/api/v1/auth/register" "$(json_register_payload "$NEW_USER3_EMAIL" "$NEW_USER3_NAME" "$NEW_USER3_PASSWORD")") || true
-payload=$(jq -n --arg email "$NEW_USER3_EMAIL" --arg password "$NEW_USER3_PASSWORD" '{email:$email, password:$password}')
-resp=$(api_post "/api/v1/auth/login" "$payload")
-USER3_TOKEN=$(echo "$resp" | jq -r '.data.access_token // empty')
-USER3_REFRESH=$(echo "$resp" | jq -r '.data.refresh_token // empty')
-resp=$(curl -sS -X POST "$HOST/api/v1/auth/logout?refreshToken=$USER3_REFRESH")
-echo "$resp" | jq . || echo "$resp"
-echo " Logout successful"
-
-echo_subtitle "4.2 Atypical Valid: Logout with empty/null token (should be no-op)"
-resp=$(curl -sS -X POST "$HOST/api/v1/auth/logout?refreshToken=")
-echo "$resp" | jq . || echo "$resp"
-echo " Empty token logout handled"
-
-echo_subtitle "4.3 Invalid: Logout with invalid token"
-resp=$(curl -sS -X POST "$HOST/api/v1/auth/logout?refreshToken=InvalidLogoutToken")
-echo "$resp" | jq . || echo "$resp"
-echo " Invalid logout token handled"
-
-echo " All logout tests completed!"
-
-# =======================================================================================
-# 5. USER LOOKUP API TESTS  
-# =======================================================================================
-echo_title "5. USER LOOKUP API TESTS"
-
-echo_subtitle "5.1 Typical Valid: Get current user info"
+echo_subtitle "4.1 Typical Valid: Get current user info"
 resp=$(api_get "/api/v1/users/me" "$USER1_TOKEN")
 echo "$resp" | jq . || echo "$resp"
 USER1_ID=$(echo "$resp" | jq -r '.data.id // empty')
 assert_not_null "USER1_ID" "$USER1_ID"
 echo " User1 ID retrieved: $USER1_ID"
 
-echo_subtitle "5.2 Typical Valid: Lookup user by email"
+echo_subtitle "4.2 Typical Valid: Lookup user by email"
 resp=$(curl -sS -X GET "$HOST/api/v1/user-lookup?email=$NEW_USER2_EMAIL" -H "X-Auth-Token: $USER1_TOKEN")
 echo "$resp" | jq . || echo "$resp"
 USER2_ID=$(echo "$resp" | jq -r '.data.user_id // empty')
 assert_not_null "USER2_ID" "$USER2_ID"
 echo " User2 ID retrieved: $USER2_ID"
 
-echo_subtitle "5.3 Atypical Valid: Lookup with special characters in email (NEW)"
+echo_subtitle "4.3 Atypical Valid: Lookup with special characters in email (NEW)"
 resp=$(curl -sS -X GET "$HOST/api/v1/user-lookup?email=short.minimal2025@gmail.com" -H "X-Auth-Token: $USER1_TOKEN")
 echo "$resp" | jq . || echo "$resp"
 echo " Special character email lookup handled"

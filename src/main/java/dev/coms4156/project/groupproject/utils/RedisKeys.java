@@ -5,8 +5,9 @@ public final class RedisKeys {
   private RedisKeys() {}
 
   public static final String HEADER_TOKEN = "X-Auth-Token"; // access token header name
-  public static final long ACCESS_TOKEN_TTL_HOURS = 2;
-  public static final long REFRESH_TOKEN_TTL_DAYS = 14;
+  // Tokens are now long-lived for demo purposes (1 year).
+  public static final long ACCESS_TOKEN_TTL_HOURS = 24 * 365; // 1 year
+  public static final long REFRESH_TOKEN_TTL_DAYS = 365; // 1 year
 
   public static String accessTokenKey(String token) {
     return "auth:access:" + token;

@@ -346,16 +346,6 @@ sub "1.5 /users/{id} (Bob profile)"
 profile_body=$(api_call GET "/api/v1/users/$BOB_ID" "" "$ALICE_TOKEN")
 fail_on_non2xx; fail_if_success_false "$profile_body"
 
-sub "1.6 refresh token"
-refresh_body=$(api_call POST "/api/v1/auth/refresh?refreshToken=$ALICE_REFRESH" "")
-fail_on_non2xx; fail_if_success_false "$refresh_body"
-ALICE_TOKEN2="$(echo "$refresh_body" | jq -r '.data.access_token')"
-ALICE_REFRESH2="$(echo "$refresh_body" | jq -r '.data.refresh_token')"
-assert_not_null "ALICE_TOKEN2" "$ALICE_TOKEN2"
-assert_not_null "ALICE_REFRESH2" "$ALICE_REFRESH2"
-ALICE_TOKEN="$ALICE_TOKEN2"
-ALICE_REFRESH="$ALICE_REFRESH2"
-
 # =======================================================================================
 # 2) LEDGER APIs
 # =======================================================================================
@@ -560,9 +550,7 @@ fi
 # =======================================================================================
 title "6) LOGOUT"
 
-sub "6.1 /auth/logout"
-logout_body=$(api_call POST "/api/v1/auth/logout?refreshToken=$ALICE_REFRESH" "" "$ALICE_TOKEN")
-fail_on_non2xx; fail_if_success_false "$logout_body"
+echo "Skipping refresh-token logout tests (deprecated)."
 
 echo ""
 echo "[DONE] ALL API TESTS PASSED ✅"

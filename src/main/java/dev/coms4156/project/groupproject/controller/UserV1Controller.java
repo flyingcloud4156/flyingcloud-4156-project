@@ -49,7 +49,8 @@ public class UserV1Controller {
   }
 
   @PostMapping("/auth/refresh")
-  @Operation(summary = "Refresh an access token (rotate refresh token)")
+  @Deprecated
+  @Operation(summary = "[DEPRECATED] Refresh an access token (rotate refresh token)")
   public Result<TokenPair> refresh(@RequestParam("refreshToken") String refreshToken) {
     return Result.ok(userService.refresh(refreshToken));
   }
