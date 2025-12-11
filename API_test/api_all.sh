@@ -17,24 +17,24 @@ IFS=$'\n\t'
 #   #   brew services start redis
 #   #
 #   # Configure DB environment variables
-#   #   export DB_HOST="127.0.0.1"
+#   #   export DB_API_HOST="127.0.0.1"
 #   #   export DB_PORT="3306"
 #   #   export DB_USER="root"
 #   #   export DB_PASS="your_mysql_root_password"
 #   #
 #   # Run script (LOAD_BIG_SEED=1 expresses intention to load big seed; script always
 #   # loads the big seed file to keep behavior backward compatible)
-#   #   LOAD_BIG_SEED=1 HOST=http://localhost:8081 bash ops/test/api_all.sh
+#   #   LOAD_BIG_SEED=1 API_HOST=http://localAPI_HOST:8081 bash ops/test/api_all.sh
 # =======================================================================================
 
-HOST="${HOST:-http://127.0.0.1:8081}"
+API_HOST="${API_HOST:-http://127.0.0.1:8081}"
 
 # Whether to load the large seed SQL file (currently we always load the big seed file,
 # this flag is kept only for compatibility / future extension)
 LOAD_BIG_SEED="${LOAD_BIG_SEED:-0}"
 
 # Database configuration (can be overridden by environment variables)
-DB_HOST="${DB_HOST:-127.0.0.1}"
+DB_API_HOST="${DB_API_HOST:-127.0.0.1}"
 DB_PORT="${DB_PORT:-3306}"
 DB_USER="${DB_USER:-root}"
 DB_PASS="${DB_PASS:-}"
@@ -56,7 +56,7 @@ log_debug() {
 }
 
 # Construct MySQL argument array. Only add -p if DB_PASS is non-empty.
-MYSQL_ARGS=(-h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER")
+MYSQL_ARGS=(-h"$DB_API_HOST" -P"$DB_PORT" -u"$DB_USER")
 if [[ -n "$DB_PASS" ]]; then
   MYSQL_ARGS+=(-p"$DB_PASS")
 fi
@@ -92,10 +92,10 @@ start_spring_app() {
 
   # Set environment variables for Spring Boot (use standard Spring props)
   export SPRING_PROFILES_ACTIVE="$PROFILE_VAL"
-  export SPRING_DATASOURCE_URL="${SPRING_DATASOURCE_URL:-jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_NAME}?useSSL=false&serverTimezone=America/New_York&characterEncoding=utf8&allowPublicKeyRetrieval=true}"
+  export SPRING_DATASOURCE_URL="${SPRING_DATASOURCE_URL:-jdbc:mysql://${DB_API_HOST}:${DB_PORT}/${DB_NAME}?useSSL=false&serverTimezone=America/New_York&characterEncoding=utf8&allowPublicKeyRetrieval=true}"
   export SPRING_DATASOURCE_USERNAME="${SPRING_DATASOURCE_USERNAME:-$DB_USER}"
   export SPRING_DATASOURCE_PASSWORD="${SPRING_DATASOURCE_PASSWORD:-$DB_PASS}"
-  export SPRING_REDIS_HOST="${SPRING_REDIS_HOST:-${REDIS_HOST:-localhost}}"
+  export SPRING_REDIS_API_HOST="${SPRING_REDIS_API_HOST:-${REDIS_API_HOST:-localAPI_HOST}}"
   export SPRING_REDIS_PORT="${SPRING_REDIS_PORT:-${REDIS_PORT:-6379}}"
   export SPRING_REDIS_PASSWORD="${SPRING_REDIS_PASSWORD:-${REDIS_PASSWORD:-}}"
 
@@ -111,7 +111,7 @@ start_spring_app() {
   local count=0
   while [[ $count -lt $APP_START_TIMEOUT ]]; do
     local http_code
-    http_code=$(curl -s -o /dev/null -w "%{http_code}" "$HOST/api/v1/auth/login" 2>/dev/null || echo "000")
+    http_code=$(curl -s -o /dev/null -w "%{http_code}" "$API_HOST/api/v1/auth/login" 2>/dev/null || echo "000")
     if [[ "$http_code" == "405" ]]; then
       echo "[OK] Spring Boot app is ready!"
       return 0
@@ -210,7 +210,7 @@ api_call() {
   local payload="${3:-}"
   local token="${4:-}"
 
-  local url="$HOST$path"
+  local url="$API_HOST$path"
 
   local headers=(-H "Accept: application/json")
   if [[ "$method" == "POST" || "$method" == "PUT" || "$method" == "PATCH" ]]; then

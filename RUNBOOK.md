@@ -208,6 +208,17 @@ cd  /home/zh2701/flyingcloud-4156-project
 
 # Or directly copy project files to this directory
 ```
+update codes
+```angular2html
+
+cd /home/zh2701/flyingcloud-4156-project
+
+git remote -v
+
+git remote set-url origin https://github.com/flyingcloud4156/flyingcloud-4156-project.git
+
+git pull
+```
 
 ## Step 6: Create Database and Setup User
 
