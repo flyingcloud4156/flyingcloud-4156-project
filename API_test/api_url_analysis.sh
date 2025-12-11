@@ -255,6 +255,36 @@ echo "$txn3" | jq .
 TXN3_ID=$(echo "$txn3" | jq -r '.data.transaction_id')
 
 # ------------------------------------------------------------------------------
+# Step 14b: Create INCOME transaction (txn4) 10 USD, percent splits (50/30/20)
+# ------------------------------------------------------------------------------
+echo "Step 14b: POST /transactions (txn4: INCOME 10 USD, percent 50/30/20)"
+txn4=$(
+  curl -sS -X POST "$API_HOST/api/v1/ledgers/$LEDGER_ID/transactions" \
+    -H "Content-Type: application/json" \
+    -H "X-Auth-Token: $ALICE_TOKEN" \
+    -d @- <<EOF
+{
+  "txn_at": "2025-10-20T12:00:00",
+  "type": "INCOME",
+  "payer_id": "$ALICE_ID",
+  "amount_total": 10.00,
+  "currency": "USD",
+  "note": "Income percent demo",
+  "is_private": false,
+  "rounding_strategy": "NONE",
+  "tail_allocation": "PAYER",
+  "splits": [
+    { "user_id": "$ALICE_ID",   "split_method": "PERCENT", "share_value": 50, "included": true },
+    { "user_id": "$BOB_ID",     "split_method": "PERCENT", "share_value": 30, "included": true },
+    { "user_id": "$CHARLIE_ID", "split_method": "PERCENT", "share_value": 20, "included": true }
+  ]
+}
+EOF
+)
+echo "$txn4" | jq .
+TXN4_ID=$(echo "$txn4" | jq -r '.data.transaction_id')
+
+# ------------------------------------------------------------------------------
 # Step 15: Transaction details for txn1
 # ------------------------------------------------------------------------------
 echo "Step 15: GET /transactions/{id} (txn1)"
