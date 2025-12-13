@@ -474,7 +474,7 @@ curl -sS -X GET "$API_HOST/api/v1/ledgers/$LEDGER_ID/budgets/status?year=2025&mo
 # ------------------------------------------------------------------------------
 # Step 32: Create transaction to trigger Budget Alert
 # ------------------------------------------------------------------------------
-echo "Step 32: POST /transactions (Create $2500 expense to exceed $2000 budget)"
+echo "Step 32: POST /transactions (Create \$2500 expense to exceed \$2000 budget)"
 txn_alert=$(
   curl -sS -X POST "$API_HOST/api/v1/ledgers/$LEDGER_ID/transactions" \
     -H "Content-Type: application/json" \
