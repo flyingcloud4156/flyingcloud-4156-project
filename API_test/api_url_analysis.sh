@@ -335,7 +335,7 @@ curl -sS -X POST "$API_HOST/api/v1/ledgers/$LEDGER_ID/settlement-plan" \
   -H "X-Auth-Token: $ALICE_TOKEN" \
   -d @- <<EOF | jq .
 {
-  "roundingStrategy": "ROUND_HALF_UP"
+  "rounding_strategy": "ROUND_HALF_UP"
 }
 EOF
 
@@ -348,7 +348,7 @@ curl -sS -X POST "$API_HOST/api/v1/ledgers/$LEDGER_ID/settlement-plan" \
   -H "X-Auth-Token: $ALICE_TOKEN" \
   -d @- <<EOF | jq .
 {
-  "roundingStrategy": "TRIM_TO_UNIT"
+  "rounding_strategy": "TRIM_TO_UNIT"
 }
 EOF
 
@@ -361,8 +361,8 @@ curl -sS -X POST "$API_HOST/api/v1/ledgers/$LEDGER_ID/settlement-plan" \
   -H "X-Auth-Token: $ALICE_TOKEN" \
   -d @- <<EOF | jq .
 {
-  "roundingStrategy": "ROUND_HALF_UP",
-  "maxTransferAmount": 50.00
+  "rounding_strategy": "ROUND_HALF_UP",
+  "max_transfer_amount": 50.00
 }
 EOF
 
@@ -375,8 +375,8 @@ curl -sS -X POST "$API_HOST/api/v1/ledgers/$LEDGER_ID/settlement-plan" \
   -H "X-Auth-Token: $ALICE_TOKEN" \
   -d @- <<EOF | jq .
 {
-  "roundingStrategy": "ROUND_HALF_UP",
-  "forceMinCostFlow": true
+  "rounding_strategy": "ROUND_HALF_UP",
+  "force_min_cost_flow": true
 }
 EOF
 
@@ -389,8 +389,8 @@ curl -sS -X POST "$API_HOST/api/v1/ledgers/$LEDGER_ID/settlement-plan" \
   -H "X-Auth-Token: $ALICE_TOKEN" \
   -d @- <<EOF | jq .
 {
-  "roundingStrategy": "ROUND_HALF_UP",
-  "minCostFlowThreshold": 5
+  "rounding_strategy": "ROUND_HALF_UP",
+  "min_cost_flow_threshold": 5
 }
 EOF
 
@@ -403,8 +403,8 @@ curl -sS -X POST "$API_HOST/api/v1/ledgers/$LEDGER_ID/settlement-plan" \
   -H "X-Auth-Token: $ALICE_TOKEN" \
   -d @- <<EOF | jq .
 {
-  "roundingStrategy": "ROUND_HALF_UP",
-  "paymentChannels": {
+  "rounding_strategy": "ROUND_HALF_UP",
+  "payment_channels": {
     "${BOB_ID}-${ALICE_ID}": ["VENMO", "PAYPAL"],
     "${CHARLIE_ID}-${ALICE_ID}": ["CASH", "BANK_TRANSFER"]
   }
@@ -420,10 +420,10 @@ curl -sS -X POST "$API_HOST/api/v1/ledgers/$LEDGER_ID/settlement-plan" \
   -H "X-Auth-Token: $ALICE_TOKEN" \
   -d @- <<EOF | jq .
 {
-  "roundingStrategy": "ROUND_HALF_UP",
-  "maxTransferAmount": 100.00,
-  "minCostFlowThreshold": 10,
-  "forceMinCostFlow": false
+  "rounding_strategy": "ROUND_HALF_UP",
+  "max_transfer_amount": 100.00,
+  "min_cost_flow_threshold": 10,
+  "force_min_cost_flow": false
 }
 EOF
 
@@ -436,7 +436,7 @@ curl -sS -X POST "$API_HOST/api/v1/ledgers/$LEDGER_ID/settlement-plan" \
   -H "X-Auth-Token: $ALICE_TOKEN" \
   -d @- <<EOF | jq .
 {
-  "roundingStrategy": "NONE"
+  "rounding_strategy": "NONE"
 }
 EOF
 
