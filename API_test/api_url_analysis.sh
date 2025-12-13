@@ -326,4 +326,127 @@ echo "Step 20: GET /analytics/overview?months=3"
 curl -sS -X GET "$API_HOST/api/v1/ledgers/$LEDGER_ID/analytics/overview?months=3" \
   -H "X-Auth-Token: $ALICE_TOKEN" | jq .
 
+# ------------------------------------------------------------------------------
+# Step 21: POST /settlement-plan with rounding strategy (ROUND_HALF_UP)
+# ------------------------------------------------------------------------------
+echo "Step 21: POST /settlement-plan (with ROUND_HALF_UP rounding)"
+curl -sS -X POST "$API_HOST/api/v1/ledgers/$LEDGER_ID/settlement-plan" \
+  -H "Content-Type: application/json" \
+  -H "X-Auth-Token: $ALICE_TOKEN" \
+  -d @- <<EOF | jq .
+{
+  "roundingStrategy": "ROUND_HALF_UP"
+}
+EOF
+
+# ------------------------------------------------------------------------------
+# Step 22: POST /settlement-plan with rounding strategy (TRIM_TO_UNIT)
+# ------------------------------------------------------------------------------
+echo "Step 22: POST /settlement-plan (with TRIM_TO_UNIT rounding)"
+curl -sS -X POST "$API_HOST/api/v1/ledgers/$LEDGER_ID/settlement-plan" \
+  -H "Content-Type: application/json" \
+  -H "X-Auth-Token: $ALICE_TOKEN" \
+  -d @- <<EOF | jq .
+{
+  "roundingStrategy": "TRIM_TO_UNIT"
+}
+EOF
+
+# ------------------------------------------------------------------------------
+# Step 23: POST /settlement-plan with max transfer amount cap
+# ------------------------------------------------------------------------------
+echo "Step 23: POST /settlement-plan (with max transfer amount cap: 50.00)"
+curl -sS -X POST "$API_HOST/api/v1/ledgers/$LEDGER_ID/settlement-plan" \
+  -H "Content-Type: application/json" \
+  -H "X-Auth-Token: $ALICE_TOKEN" \
+  -d @- <<EOF | jq .
+{
+  "roundingStrategy": "ROUND_HALF_UP",
+  "maxTransferAmount": 50.00
+}
+EOF
+
+# ------------------------------------------------------------------------------
+# Step 24: POST /settlement-plan with force min-cost flow algorithm
+# ------------------------------------------------------------------------------
+echo "Step 24: POST /settlement-plan (force min-cost flow algorithm)"
+curl -sS -X POST "$API_HOST/api/v1/ledgers/$LEDGER_ID/settlement-plan" \
+  -H "Content-Type: application/json" \
+  -H "X-Auth-Token: $ALICE_TOKEN" \
+  -d @- <<EOF | jq .
+{
+  "roundingStrategy": "ROUND_HALF_UP",
+  "forceMinCostFlow": true
+}
+EOF
+
+# ------------------------------------------------------------------------------
+# Step 25: POST /settlement-plan with min-cost flow threshold
+# ------------------------------------------------------------------------------
+echo "Step 25: POST /settlement-plan (with min-cost flow threshold: 5)"
+curl -sS -X POST "$API_HOST/api/v1/ledgers/$LEDGER_ID/settlement-plan" \
+  -H "Content-Type: application/json" \
+  -H "X-Auth-Token: $ALICE_TOKEN" \
+  -d @- <<EOF | jq .
+{
+  "roundingStrategy": "ROUND_HALF_UP",
+  "minCostFlowThreshold": 5
+}
+EOF
+
+# ------------------------------------------------------------------------------
+# Step 26: POST /settlement-plan with payment channel constraints
+# ------------------------------------------------------------------------------
+echo "Step 26: POST /settlement-plan (with payment channel constraints)"
+curl -sS -X POST "$API_HOST/api/v1/ledgers/$LEDGER_ID/settlement-plan" \
+  -H "Content-Type: application/json" \
+  -H "X-Auth-Token: $ALICE_TOKEN" \
+  -d @- <<EOF | jq .
+{
+  "roundingStrategy": "ROUND_HALF_UP",
+  "paymentChannels": {
+    "${BOB_ID}-${ALICE_ID}": ["VENMO", "PAYPAL"],
+    "${CHARLIE_ID}-${ALICE_ID}": ["CASH", "BANK_TRANSFER"]
+  }
+}
+EOF
+
+# ------------------------------------------------------------------------------
+# Step 27: POST /settlement-plan with combined options (comprehensive test)
+# ------------------------------------------------------------------------------
+echo "Step 27: POST /settlement-plan (combined: rounding + cap + threshold)"
+curl -sS -X POST "$API_HOST/api/v1/ledgers/$LEDGER_ID/settlement-plan" \
+  -H "Content-Type: application/json" \
+  -H "X-Auth-Token: $ALICE_TOKEN" \
+  -d @- <<EOF | jq .
+{
+  "roundingStrategy": "ROUND_HALF_UP",
+  "maxTransferAmount": 100.00,
+  "minCostFlowThreshold": 10,
+  "forceMinCostFlow": false
+}
+EOF
+
+# ------------------------------------------------------------------------------
+# Step 28: POST /settlement-plan with NONE rounding (no rounding)
+# ------------------------------------------------------------------------------
+echo "Step 28: POST /settlement-plan (with NONE rounding strategy)"
+curl -sS -X POST "$API_HOST/api/v1/ledgers/$LEDGER_ID/settlement-plan" \
+  -H "Content-Type: application/json" \
+  -H "X-Auth-Token: $ALICE_TOKEN" \
+  -d @- <<EOF | jq .
+{
+  "roundingStrategy": "NONE"
+}
+EOF
+
+# ------------------------------------------------------------------------------
+# Step 29: POST /settlement-plan with empty body (should use defaults)
+# ------------------------------------------------------------------------------
+echo "Step 29: POST /settlement-plan (empty body, should use defaults)"
+curl -sS -X POST "$API_HOST/api/v1/ledgers/$LEDGER_ID/settlement-plan" \
+  -H "Content-Type: application/json" \
+  -H "X-Auth-Token: $ALICE_TOKEN" \
+  -d '{}' | jq .
+
 echo "All curl steps completed. (Refresh-token-based logout is deprecated and intentionally skipped.)"
