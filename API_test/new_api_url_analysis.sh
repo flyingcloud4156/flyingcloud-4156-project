@@ -448,4 +448,51 @@ curl -sS -X POST "$API_HOST/api/v1/ledgers/$LEDGER_ID/settlement-plan" \
   -H "X-Auth-Token: $ALICE_TOKEN" \
   -d '{}' | jq .
 
+# ------------------------------------------------------------------------------
+# Step 30: POST /budgets (Set Ledger-level Budget)
+# ------------------------------------------------------------------------------
+echo "Step 30: POST /budgets (Set budget for 2025-12)"
+curl -sS -X POST "$API_HOST/api/v1/ledgers/$LEDGER_ID/budgets" \
+  -H "Content-Type: application/json" \
+  -H "X-Auth-Token: $ALICE_TOKEN" \
+  -d @- <<EOF | jq .
+{
+  "category_id": null,
+  "year": 2025,
+  "month": 12,
+  "limit_amount": 2000.00
+}
+EOF
+
+# ------------------------------------------------------------------------------
+# Step 31: GET /budgets/status
+# ------------------------------------------------------------------------------
+echo "Step 31: GET /budgets/status (Check 2025-12 status)"
+curl -sS -X GET "$API_HOST/api/v1/ledgers/$LEDGER_ID/budgets/status?year=2025&month=12" \
+  -H "X-Auth-Token: $ALICE_TOKEN" | jq .
+
+# ------------------------------------------------------------------------------
+# Step 32: Create transaction to trigger Budget Alert
+# ------------------------------------------------------------------------------
+echo "Step 32: POST /transactions (Create $2500 expense to exceed $2000 budget)"
+txn_alert=$(
+  curl -sS -X POST "$API_HOST/api/v1/ledgers/$LEDGER_ID/transactions" \
+    -H "Content-Type: application/json" \
+    -H "X-Auth-Token: $ALICE_TOKEN" \
+    -d @- <<EOF
+{
+  "txn_at": "2025-12-15T12:00:00",
+  "type": "EXPENSE",
+  "payer_id": "$ALICE_ID",
+  "amount_total": 2500.00,
+  "currency": "USD",
+  "note": "Expensive dinner (Alert Test)",
+  "splits": [
+    { "user_id": "$ALICE_ID", "split_method": "EXACT", "share_value": 2500.00, "included": true }
+  ]
+}
+EOF
+)
+echo "$txn_alert" | jq .
+
 echo "All curl steps completed. (Refresh-token-based logout is deprecated and intentionally skipped.)"
