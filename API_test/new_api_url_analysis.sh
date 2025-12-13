@@ -2,7 +2,6 @@
 set -euo pipefail
 
 # ==============================================================================
-# FILE: API_test/api_all_curl_only.sh
 # PURPOSE:
 #   - Call the same APIs as api_all.sh using curl (and jq for parsing) only
 #   - No DB reset / no app startup; assumes backend is running with seed data
@@ -421,7 +420,7 @@ curl -sS -X POST "$API_HOST/api/v1/ledgers/$LEDGER_ID/settlement-plan" \
   -d @- <<EOF | jq .
 {
   "rounding_strategy": "ROUND_HALF_UP",
-  "max_transfer_amount": 100.00,
+  "max_transfer_amount": 50.00,
   "min_cost_flow_threshold": 10,
   "force_min_cost_flow": false
 }
